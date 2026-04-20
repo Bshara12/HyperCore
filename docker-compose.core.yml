@@ -1,0 +1,232 @@
+version: "3.9"
+
+services:
+
+  # ================= CMS =================
+
+  cms-app-1:
+    build: ./projects/cms-service
+    volumes:
+      - ./projects/cms-service:/var/www
+    networks:
+      - core
+    restart: unless-stopped
+
+  cms-app-2:
+    build: ./projects/cms-service
+    volumes:
+      - ./projects/cms-service:/var/www
+    networks:
+      - core
+    restart: unless-stopped
+
+  cms-nginx:
+    image: nginx:alpine
+    ports:
+      - "8081:80"
+    volumes:
+      - ./projects/cms-service:/var/www
+      - ./projects/cms-service/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - cms-app-1
+      - cms-app-2
+    networks:
+      - core
+    restart: unless-stopped
+
+  cms-mysql-master:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: cms_service
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql/cms/master.cnf:/etc/mysql/conf.d/master.cnf
+    ports:
+      - "3308:3306"
+    networks:
+      - core
+
+  cms-mysql-slave:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql/cms/slave.cnf:/etc/mysql/conf.d/slave.cnf
+    ports:
+      - "3311:3306"
+    networks:
+      - core
+
+  cms-redis:
+    image: redis:alpine
+    networks:
+      - core
+
+
+  # ================= LOGGING =================
+
+  logging-app:
+    build: ./projects/logging-service
+    volumes:
+      - ./projects/logging-service:/var/www/html
+    networks:
+      - core
+
+  logging-nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./projects/logging-service:/var/www/html
+      - ./projects/logging-service/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - logging-app
+    networks:
+      - core
+
+  logging-mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: logging_service
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    networks:
+      - core
+
+
+  # ================= AUTH =================
+
+  auth-app-1:
+    build: ./projects/auth-service
+    volumes:
+      - ./projects/auth-service:/var/www
+    networks:
+      - core
+    restart: unless-stopped
+
+  auth-app-2:
+    build: ./projects/auth-service
+    volumes:
+      - ./projects/auth-service:/var/www
+    networks:
+      - core
+    restart: unless-stopped
+
+  auth-nginx:
+    image: nginx:alpine
+    ports:
+      - "8003:80"
+    volumes:
+      - ./projects/auth-service:/var/www
+      - ./projects/auth-service/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - auth-app-1
+      - auth-app-2
+    networks:
+      - core
+    restart: unless-stopped
+
+  auth-mysql-master:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: auth_service
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql/auth/master.cnf:/etc/mysql/conf.d/master.cnf
+    ports:
+      - "3314:3306"
+    networks:
+      - core
+
+  auth-mysql-slave:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql/auth/slave.cnf:/etc/mysql/conf.d/slave.cnf
+    ports:
+      - "3315:3306"
+    networks:
+      - core
+
+  auth-redis:
+    image: redis:alpine
+    networks:
+      - core
+
+
+  # ================= ECOMMERCE =================
+
+  ecommerce-app-1:
+    build: ./projects/E-Commerce_Service
+    volumes:
+      - ./projects/E-Commerce_Service:/var/www
+    networks:
+      - core
+    restart: unless-stopped
+
+  ecommerce-app-2:
+    build: ./projects/E-Commerce_Service
+    volumes:
+      - ./projects/E-Commerce_Service:/var/www
+    networks:
+      - core
+    restart: unless-stopped
+
+  ecommerce-nginx:
+    image: nginx:alpine
+    ports:
+      - "8002:80"
+    volumes:
+      - ./projects/E-Commerce_Service:/var/www
+      - ./projects/E-Commerce_Service/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - ecommerce-app-1
+      - ecommerce-app-2
+    networks:
+      - core
+    restart: unless-stopped
+
+  ecommerce-mysql-master:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: ecommerce_service
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql/ecommerce/master.cnf:/etc/mysql/conf.d/master.cnf
+    ports:
+      - "3312:3306"
+    networks:
+      - core
+
+  ecommerce-mysql-slave:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql/ecommerce/slave.cnf:/etc/mysql/conf.d/slave.cnf
+    ports:
+      - "3313:3306"
+    networks:
+      - core
+
+  ecommerce-redis:
+    image: redis:alpine
+    networks:
+      - core
+
+
+  # ================= RABBITMQ =================
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "25675:25675"
+    networks:
+      - core
+
+
+networks:
+  core:
