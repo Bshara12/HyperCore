@@ -224,6 +224,9 @@ services:
     ports:
       - "5672:5672"
       - "25675:25675"
+    environment:
+      RABBITMQ_DEFAULT_USER: appuser
+      RABBITMQ_DEFAULT_PASS: apppass
     networks:
       - core
 
