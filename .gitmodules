@@ -1,12 +1,12 @@
 [submodule "projects/Auth-Service"]
 	path = projects/Auth-Service
-	url = https://github.com/Bshara12/Auth-Service.git
+	url = https://github.com/codelyoko97/Auth-Service.git
 [submodule "projects/E-Commerce_Service"]
 	path = projects/E-Commerce_Service
-	url = https://github.com/Bshara12/E-Commerce_Service.git
+	url = https://github.com/FerasDeveloper/E-Commerce_Service.git
 [submodule "projects/cms-service"]
 	path = projects/cms-service
-	url = https://github.com/Bshara12/cms-service.git
+	url = https://github.com/Bshara12/CMS-Servise.git
 [submodule "projects/logging-service"]
 	path = projects/logging-service
 	url = https://github.com/Bshara12/logging-service.git
