@@ -1,0 +1,52 @@
+
+services:
+  logging-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: logging-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - rabbitmq
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: logging_service
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+
+    ports:
+      - "8000:8000"
+      - "9000:9000"
+  mysql:
+    image: mysql:8
+    container_name: logging-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: logging_service
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+     RABBITMQ_DEFAULT_USER: appuser
+     RABBITMQ_DEFAULT_PASS: apppass
+
+volumes:
+  mysql_data:
