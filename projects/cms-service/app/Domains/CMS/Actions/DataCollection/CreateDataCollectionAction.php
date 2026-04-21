@@ -3,7 +3,9 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class CreateDataCollectionAction extends Action
 {
@@ -19,7 +21,10 @@ class CreateDataCollectionAction extends Action
   public function execute($dto)
   {
     return $this->run(function () use ($dto) {
-      return $this->repository->create($dto);
+
+      $collection = $this->repository->create($dto);
+      Cache::forget(CacheKeys::collections($dto->project_id));
+      return $collection;
     });
   }
 }

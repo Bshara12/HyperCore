@@ -4,7 +4,9 @@ namespace App\Domains\CMS\Actions\DataType;
 
 use App\Domains\CMS\DTOs\DataType\CreateDataTypeDTO;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class CreateDataTypeAction extends Action
 {
@@ -26,7 +28,7 @@ class CreateDataTypeAction extends Action
       );
 
       $dataType = $this->repository->create($dto);
-
+      Cache::forget(CacheKeys::dataTypes($dto->project_id));
       return $dataType;
     });
   }

@@ -3,11 +3,12 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class InsertCollectionItemsAction extends Action
 {
-
   protected function circuitServiceName(): string
   {
     return 'dataCollection.insertItems';
@@ -19,9 +20,14 @@ class InsertCollectionItemsAction extends Action
 
   public function execute($dto)
   {
-    $this->run(function () use ($dto) {
+    return $this->run(function () use ($dto) {
+
       $collection = $this->repository->getBySlug($dto->collectionSlug);
-      return $this->repository->insertItems($collection->id, $dto->items);
+      $this->repository->insertItems($collection->id, $dto->items);
+
+      Cache::forget(CacheKeys::collectionItems($collection->id));
+      Cache::forget(CacheKeys::collectionEntries($collection->id));
+      Cache::forget(CacheKeys::collectionById($collection->id));
     });
   }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Domains\E_Commerce\Actions\Offers;
 
+use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferPriceRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
 use App\Services\CMS\CMSApiClient;
+use Illuminate\Support\Facades\Cache;
 
 class RemoveOfferItemsAction extends Action
 {
@@ -22,14 +24,21 @@ class RemoveOfferItemsAction extends Action
 
   public function execute($dto)
   {
-    $this->run(function () use ($dto) {
+    return $this->run(function () use ($dto) {
+
       $message = $this->cms->removeCollectionItems($dto->collectionSlug, $dto->items);
+
       if ($message === "Items removed successfully") {
+
         $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
         $offer = $this->offerRepository->findByCollectionId($collection['id']);
+
         foreach ($dto->items as $item) {
           $this->offerPriceRepository->deleteOfferPriceForEntryAndProject($item, $offer->id);
         }
+
+        Cache::forget(CacheKeys::offer($collection['id']));
+        Cache::forget(CacheKeys::offerBySlug($dto->collectionSlug));
       }
     });
   }

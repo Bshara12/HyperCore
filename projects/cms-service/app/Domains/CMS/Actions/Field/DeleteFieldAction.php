@@ -3,8 +3,10 @@
 namespace App\Domains\CMS\Actions\Field;
 
 use App\Domains\CMS\Repositories\Interface\FieldRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\DataTypeField;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DeleteFieldAction extends Action
@@ -23,6 +25,7 @@ class DeleteFieldAction extends Action
   {
     $this->run(function () use ($field) {
       $this->repository->delete($field);
+      Cache::forget(CacheKeys::fields($field->data_type_id));
     });
   }
 }

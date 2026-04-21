@@ -4,6 +4,8 @@ namespace App\Domains\E_Commerce\Actions\Order;
 
 use App\Domains\E_Commerce\DTOs\Order\UpdateOrderStatusDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterface;
+use App\Domains\E_Commerce\Support\CacheKeys;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class UpdateOrderStatusAction
@@ -57,6 +59,14 @@ class UpdateOrderStatusAction
       // 🔥 تحديث كل items (هون المطلوب)
       $this->orderRepo->updateItemsStatus($order->id, $dto->status);
 
+      // ✅ Status تغير — امسح كل الـ Cache المتعلق بهذا الـ Order
+      Cache::forget(CacheKeys::order($order->id, $order->user_id));
+      Cache::forget(CacheKeys::userOrders($order->user_id, $order->project_id));
+
+      // ✅ امسح كل الـ admin cache لأن الـ status تغير
+      // نستخدم tags هنا لأننا ما نعرف كل الـ filter combinations
+      Cache::tags(['admin_orders'])->flush();
+      
       return $order;
     });
   }

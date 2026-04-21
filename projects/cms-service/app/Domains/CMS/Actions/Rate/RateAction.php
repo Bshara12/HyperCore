@@ -6,7 +6,9 @@ use App\Domains\CMS\DTOs\Rate\RateDTO;
 use App\Domains\CMS\Repositories\Interface\DataEntryRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\RatingRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Support\CurrentProject;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class RateAction
@@ -139,25 +141,23 @@ class RateAction
       $dto->rateableType,
       $dto->rateableId
     );
+
     $data = [
       'ratings_count' => $stats->count,
-      'ratings_avg' => round($stats->avg, 2)
+      'ratings_avg'   => round($stats->avg, 2)
     ];
 
-    // match ($dto->rateableType) {
-    //   'project' => $this->projects->update($dto->rateableId, $data),
-    //   'data' => $this->dataEntries->update($dto->rateableId, $data),
-    // };
     match ($dto->rateableType) {
       'project' => $this->projects->updateRatingStats(
         $this->projects->findById($dto->rateableId)->id,
         $data
       ),
-
       'data' => $this->dataEntries->updateRatingStats(
         $dto->rateableId,
         $data
       ),
     };
+
+    Cache::forget(CacheKeys::ratingStats($dto->rateableType, $dto->rateableId));
   }
 }
