@@ -4,8 +4,10 @@ namespace App\Domains\CMS\Actions\DataType;
 
 use App\Domains\CMS\DTOs\DataType\UpdateDataTypeDTO;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\DataType;
+use Illuminate\Support\Facades\Cache;
 
 class UpdateDataTypeAction extends Action
 {
@@ -27,7 +29,11 @@ class UpdateDataTypeAction extends Action
         ignoreId: $dataType->id
       );
 
-      return $this->repository->update($dataType, $dto);
+      $updated = $this->repository->update($dataType, $dto);
+      Cache::forget(CacheKeys::dataType($dataType->id));
+      Cache::forget(CacheKeys::dataTypeBySlug($dataType->slug, $dataType->project_id));
+      Cache::forget(CacheKeys::dataTypes($dataType->project_id));
+      return $updated;
     });
   }
 }

@@ -7,9 +7,11 @@ use App\Domains\E_Commerce\DTOs\Order\CheckoutDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterface;
+use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\Payment\Actions\ProcessPaymentAction;
 use App\Domains\Payment\DTOs\PaymentDTO;
 use App\Domains\Payment\Services\PaymentService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutAction
@@ -177,6 +179,20 @@ class CheckoutAction
 
       // 8. delete cart
       $this->cartRepo->delete($cart->id);
+      // ✅ بعد الـ Checkout:
+      // 1. السلة انحذفت — امسح الـ Cache
+      Cache::forget(CacheKeys::cart($dto->user_id, $dto->project_id));
+
+      // 2. Order جديد أنشئ — امسح قائمة orders المستخدم
+      Cache::forget(CacheKeys::userOrders($dto->user_id, $dto->project_id));
+
+      // 3. الـ Stock تغير — امسح الـ stock cache
+      foreach ($pricing['items'] as $item) {
+        Cache::forget("stock:ids:" . md5($item['product_id']));
+      }
+
+      // 4. امسح admin orders cache
+      Cache::tags(['admin_orders'])->flush();
 
       return $this->orderRepo->loadItems($order);
     });

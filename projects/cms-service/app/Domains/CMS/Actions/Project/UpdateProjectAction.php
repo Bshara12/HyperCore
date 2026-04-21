@@ -4,9 +4,11 @@ namespace   App\Domains\CMS\Actions\Project;
 
 use App\Domains\CMS\DTOs\Project\UpdateProjectDTO;
 use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
 use App\Models\Project;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Request;
 
 class UpdateProjectAction extends Action
@@ -26,16 +28,21 @@ class UpdateProjectAction extends Action
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'audit',
-        userId: Request()->attributes->get('auth_user')->id??3,
+        userId: Request()->attributes->get('auth_user')->id ?? 3,
         entityType: 'project',
         entityId: null,
         oldValues: null,
         newValues: null
       ));
-      return $this->repository->update(
+
+      $updated = $this->repository->update(
         $project,
         $dto->toArray()
       );
+
+      Cache::forget(CacheKeys::project($project->id));
+      Cache::forget(CacheKeys::allProjects());
+      return $updated;
     });
   }
 }

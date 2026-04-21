@@ -5,8 +5,10 @@ namespace App\Domains\CMS\Actions\Field;
 use App\Domains\CMS\Actions\Field\CreationStrategy\FieldTypeFactory;
 use App\Domains\CMS\DTOs\Field\CreateFieldDTO;
 use App\Domains\CMS\Repositories\Interface\FieldRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\DataTypeField;
+use Illuminate\Support\Facades\Cache;
 
 class UpdateFieldAction extends Action
 {
@@ -39,7 +41,9 @@ class UpdateFieldAction extends Action
         $normalizedSettings['data_type_relation_id'] = $this->createFieldAction->ensureDataTypeRelationExists($dto, $normalizedSettings);
       }
 
-      return $this->repository->update($dto, $field, $normalizedSettings);
+      $updated = $this->repository->update($dto, $field, $normalizedSettings);
+      Cache::forget(CacheKeys::fields($dto->data_type_id));
+      return $updated;
     });
   }
 }

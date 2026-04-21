@@ -3,7 +3,9 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class DeactivateCollectionAction extends Action
 {
@@ -19,7 +21,13 @@ class DeactivateCollectionAction extends Action
   public function execute($dto)
   {
     return $this->run(function () use ($dto) {
-      return $this->repository->deactivate($dto);
+
+      $result = $this->repository->deactivate($dto);
+
+      Cache::forget(CacheKeys::collection($dto->project_id, $dto->slug));
+      Cache::forget(CacheKeys::collections($dto->project_id));
+
+      return $result;
     });
   }
 }

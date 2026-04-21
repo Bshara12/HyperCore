@@ -3,7 +3,9 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class ReOrderCollectionItemsAction extends Action
 {
@@ -19,8 +21,14 @@ class ReOrderCollectionItemsAction extends Action
   public function execute($dto)
   {
     return $this->run(function () use ($dto) {
+
       $collection = $this->repository->getBySlug($dto->collectionSlug);
-      return $this->repository->reOrderItems($collection->id, $dto->items);
+      $result = $this->repository->reOrderItems($collection->id, $dto->items);
+
+      Cache::forget(CacheKeys::collectionItems($collection->id));
+      Cache::forget(CacheKeys::collectionById($collection->id));
+
+      return $result;
     });
   }
 }
