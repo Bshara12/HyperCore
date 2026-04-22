@@ -2,6 +2,7 @@
 
 namespace App\Domains\CMS\Actions\Stock;
 
+use App\Events\SystemLogEvent;
 use App\Models\DataEntry;
 
 class DecrementStockAction
@@ -23,6 +24,15 @@ class DecrementStockAction
       if ($currentStock < $item['quantity']) {
         throw new \Exception("Not enough stock for product {$entry->id}");
       }
+
+
+        event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'update_count',
+        userId: $entry->id,
+        entityType: 'data',
+        entityId:null
+      ));
 
       $countValue->update([
         'value' => $currentStock - $item['quantity']

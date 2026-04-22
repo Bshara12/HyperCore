@@ -5,6 +5,7 @@ namespace App\Domains\E_Commerce\Actions\Cart;
 use App\Domains\E_Commerce\DTOs\Cart\UpdateCartItemsDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
+use App\Events\SystemLogEvent;
 
 class UpdateCartItemsAction
 {
@@ -36,7 +37,13 @@ class UpdateCartItemsAction
         ]);
       }
     }
-
+    event(new SystemLogEvent(
+      module: 'ecommerce',
+      eventType: 'update_cart_item',
+      userId: $dto->user_id,
+      entityType: 'cart',
+      entityId: $cart->id
+    ));
     return $this->cartRepo->loadItems($cart)->toArray();
   }
 }

@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Actions\DataType;
 
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 use App\Models\DataType;
 
 class DeleteDataTypeAction extends Action
@@ -21,6 +22,13 @@ class DeleteDataTypeAction extends Action
   {
     $this->run(function () use ($dataType) {
       $this->repository->delete($dataType);
+        event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'delete_datatype',
+        userId: null,
+        entityType: 'datatype',
+        entityId: $dataType->id
+      ));
     });
   }
 }

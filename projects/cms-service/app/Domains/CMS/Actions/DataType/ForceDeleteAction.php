@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Actions\DataType;
 
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 
 class ForceDeleteAction extends Action
 {
@@ -20,6 +21,13 @@ class ForceDeleteAction extends Action
   {
     $this->run(function () use ($dataTypeId) {
       $this->repository->forceDelete($dataTypeId);
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'force_delete_datatype',
+        userId: null,
+        entityType: 'datatype',
+        entityId: $dataTypeId
+      ));
     });
   }
 }
