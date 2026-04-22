@@ -4,7 +4,9 @@ namespace App\Domains\CMS\Read\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class GetCollectionEntriesAction extends Action
 {
@@ -21,10 +23,15 @@ class GetCollectionEntriesAction extends Action
   public function execute(string $projectKey, string $collectionSlug)
   {
     return $this->run(function () use ($projectKey, $collectionSlug) {
+
       $projectId = $this->projectRepository->findByKey($projectKey)->id;
       $collection = $this->repository->find($projectId, $collectionSlug);
-      $entries = $this->repository->getEntries($collection->id);
-      return $entries;
+
+      return Cache::remember(
+        CacheKeys::collectionEntries($collection->id),
+        CacheKeys::TTL_MEDIUM,
+        fn() => $this->repository->getEntries($collection->id)
+      );
     });
   }
 }

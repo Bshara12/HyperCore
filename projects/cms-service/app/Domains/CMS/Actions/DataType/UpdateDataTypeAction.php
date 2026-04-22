@@ -4,9 +4,11 @@ namespace App\Domains\CMS\Actions\DataType;
 
 use App\Domains\CMS\DTOs\DataType\UpdateDataTypeDTO;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
 use App\Models\DataType;
+use Illuminate\Support\Facades\Cache;
 
 class UpdateDataTypeAction extends Action
 {
@@ -27,6 +29,14 @@ class UpdateDataTypeAction extends Action
         slug: $dto->slug,
         ignoreId: $dataType->id
       );
+<<<<<<< HEAD
+
+      $updated = $this->repository->update($dataType, $dto);
+      Cache::forget(CacheKeys::dataType($dataType->id));
+      Cache::forget(CacheKeys::dataTypeBySlug($dataType->slug, $dataType->project_id));
+      Cache::forget(CacheKeys::dataTypes($dataType->project_id));
+      return $updated;
+=======
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'update_datatype',
@@ -35,6 +45,7 @@ class UpdateDataTypeAction extends Action
         entityId:$dataType->id??null
       ));
       return $this->repository->update($dataType, $dto);
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
     });
   }
 }

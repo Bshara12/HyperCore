@@ -2,10 +2,11 @@
 
 namespace App\Domains\E_Commerce\Actions\Offers;
 
+use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
-use App\Events\SystemLogEvent;
 use App\Services\CMS\CMSApiClient;
+use Illuminate\Support\Facades\Cache;
 
 class ActivateOfferAction extends Action
 {
@@ -22,16 +23,14 @@ class ActivateOfferAction extends Action
   public function execute($dto)
   {
     return $this->run(function () use ($dto) {
+
       $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
       $this->repository->activateOffer($collection['id']);
 
-      event(new SystemLogEvent(
-        module: 'ecommerce',
-        eventType: 'active_offer',
-        userId: null,
-        entityType: 'offer',
-        entityId: null
-      ));
+      Cache::forget(CacheKeys::offer($collection['id']));
+      Cache::forget(CacheKeys::offerBySlug($dto->collectionSlug));
+
+      return $collection;
     });
   }
 }

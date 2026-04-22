@@ -3,8 +3,10 @@
 namespace App\Domains\CMS\Read\Actions\Field;
 
 use App\Domains\CMS\Read\Repositories\Field\FieldRepositoryRead;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\DataType;
+use Illuminate\Support\Facades\Cache;
 
 class IndexFieldsAction extends Action
 {
@@ -13,14 +15,18 @@ class IndexFieldsAction extends Action
     return 'dataTypeField.indexFields';
   }
 
-  public function __construct(  
+  public function __construct(
     protected FieldRepositoryRead $repository
   ) {}
 
   public function execute(DataType $dataType)
   {
     return $this->run(function () use ($dataType) {
-      return $this->repository->list($dataType);
+      return Cache::remember(
+        CacheKeys::fields($dataType->id),
+        CacheKeys::TTL_MEDIUM,
+        fn() => $this->repository->list($dataType)
+      );
     });
   }
 }

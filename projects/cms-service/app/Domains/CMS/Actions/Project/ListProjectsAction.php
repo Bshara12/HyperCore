@@ -3,7 +3,9 @@
 namespace App\Domains\CMS\Actions\Project;
 
 use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class ListProjectsAction extends Action
 {
@@ -19,7 +21,12 @@ class ListProjectsAction extends Action
   public function execute(): \Illuminate\Support\Collection
   {
     return $this->run(function () {
-      return $this->repository->all();
+
+      return Cache::remember(
+        CacheKeys::allProjects(),      // المفتاح
+        CacheKeys::TTL_LONG,           // مدة الـ Cache (يوم)
+        fn() => $this->repository->all() // لو مش موجود، نجيبه من DB
+      );
     });
   }
 }

@@ -3,11 +3,16 @@
 namespace App\Domains\CMS\Actions\Data;
 
 use App\Domains\CMS\Repositories\Interface\DataEntryRepositoryInterface;
-use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\CMS\Repositories\Interface\DataEntryRelationRepository;
+use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\CMS\Repositories\Interface\SeoEntryRepository;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+<<<<<<< HEAD
+use Illuminate\Support\Facades\Cache;
+=======
 use App\Events\SystemLogEvent;
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -25,32 +30,6 @@ class DeleteDataEntryAction extends Action
     private SeoEntryRepository $seo,
     private DeleteEntryFilesAction $deleteFiles
   ) {}
-
-  // public function execute(int $entryId, int $projectId): void
-  // {
-  //   $this->run(function () use ($entryId, $projectId) {
-
-  //     $entry = $this->entries->findForProjectOrFail($entryId, $projectId);
-
-  //     $children = $this->relations->getEntriesWhereRelatedIs($entryId);
-
-  //     foreach ($children as $child) {
-  //       $this->execute($child['data_entry_id'], $projectId);
-  //     }
-
-
-  //     $this->deleteFiles->execute($entryId);
-
-  //     $this->values->deleteForEntry($entryId);
-
-  //     $this->relations->deleteForEntry($entryId);
-  //     $this->relations->deleteWhereRelatedIs($entryId);
-
-  //     $this->seo->deleteForEntry($entryId);
-
-  //     $entry->forceDelete();
-  //   });
-  // }
 
   public function execute(int $entryId, int $projectId): void
   {
@@ -71,14 +50,17 @@ class DeleteDataEntryAction extends Action
         $paths = $this->deleteFiles->execute($entryId);
 
         $this->values->deleteForEntry($entryId);
-
         $this->relations->deleteForEntry($entryId);
         $this->relations->deleteWhereRelatedIs($entryId);
-
         $this->seo->deleteForEntry($entryId);
 
         $entry->forceDelete();
       });
+
+      // ✅ مسح كل نسخ الـ Cache لهذا الـ entry (كل اللغات)
+      foreach (['default', 'ar', 'en', 'fr'] as $lang) {
+        Cache::forget(CacheKeys::entry($entryId, $lang));
+      }
 
       if (!empty($paths)) {
         Storage::disk('supabase')->delete($paths);

@@ -2,11 +2,10 @@
 
 namespace App\Domains\E_Commerce\Actions\Cart;
 
-use App\Domains\E_Commerce\DTOs\Cart\ClearCartDTO;
-use App\Domains\E_Commerce\Repositories\CartRepository;
-use App\Domains\E_Commerce\Repositories\CartItemRepository;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
+use App\Domains\E_Commerce\Support\CacheKeys;
+use Illuminate\Support\Facades\Cache;
 use App\Events\SystemLogEvent;
 use RuntimeException;
 
@@ -26,7 +25,8 @@ class ClearCartAction
     }
 
     $this->cartItemRepo->deleteByCartId($cart->id);
-
+    
+    Cache::forget(CacheKeys::cart($user_id, $project_id));
 
     event(new SystemLogEvent(
       module: 'ecommerce',
