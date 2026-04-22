@@ -4,6 +4,7 @@ namespace App\Domains\E_Commerce\Actions\Offers;
 
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
+use App\Events\SystemLogEvent;
 use App\Services\CMS\CMSApiClient;
 
 class DeactivateOfferAction extends Action
@@ -25,6 +26,14 @@ class DeactivateOfferAction extends Action
       $this->repository->deactivateOffer($collection['id']);
       // $this->repository->deleteOfferByCollectionId($collection['id']);
       // $this->cms->deactivationCollection($dto->collectionSlug, $dto->is_active);
+
+      event(new SystemLogEvent(
+        module: 'ecommerce',
+        eventType: 'deactive_offer',
+        userId: null,
+        entityType: 'offer',
+        entityId: $collection['id']??null
+      ));
     });
   }
 }

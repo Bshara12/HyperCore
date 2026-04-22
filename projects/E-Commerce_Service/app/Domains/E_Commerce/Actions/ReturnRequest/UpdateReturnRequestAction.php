@@ -6,6 +6,7 @@ use App\Domains\E_Commerce\DTOs\ReturnRequest\UpdateReturnRequestDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\ReturnRequest\ReturnRequestRepositoryInterface;
+use App\Events\SystemLogEvent;
 use Illuminate\Support\Facades\DB;
 
 class UpdateReturnRequestAction
@@ -114,6 +115,14 @@ class UpdateReturnRequestAction
           $newStatus
         );
       }
+
+      event(new SystemLogEvent(
+        module: 'ecommerce',
+        eventType: 'update_return_request',
+        userId: null,
+        entityType: 'return_request',
+        entityId: $dto->id
+      ));
       return $request;
     });
   }
