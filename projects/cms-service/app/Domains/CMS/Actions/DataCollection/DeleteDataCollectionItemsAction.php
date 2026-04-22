@@ -3,18 +3,24 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
+use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+<<<<<<< HEAD
+use Illuminate\Support\Facades\Cache;
+=======
 use App\Events\SystemLogEvent;
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 
 class DeleteDataCollectionItemsAction extends Action
 {
-
   protected function circuitServiceName(): string
   {
     return 'dataCollection.deleteItems';
   }
 
-  public function __construct(protected DataCollectionRepositoryInterface $repository) {}
+  public function __construct(
+    protected DataCollectionRepositoryInterface $repository
+  ) {}
 
   public function execute($collectionId)
   {
@@ -26,7 +32,14 @@ class DeleteDataCollectionItemsAction extends Action
       entityId: $collectionId
     ));
     return $this->run(function () use ($collectionId) {
-      return $this->repository->deleteItems($collectionId);
+
+      $result = $this->repository->deleteItems($collectionId);
+
+      Cache::forget(CacheKeys::collectionItems($collectionId));
+      Cache::forget(CacheKeys::collectionEntries($collectionId));
+      Cache::forget(CacheKeys::collectionById($collectionId));
+
+      return $result;
     });
   }
 }

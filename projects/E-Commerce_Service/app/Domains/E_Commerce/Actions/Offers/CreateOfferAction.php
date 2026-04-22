@@ -2,10 +2,11 @@
 
 namespace App\Domains\E_Commerce\Actions\Offers;
 
+use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
-use App\Events\SystemLogEvent;
 use App\Services\CMS\CMSApiClient;
+use Illuminate\Support\Facades\Cache;
 
 class CreateOfferAction extends Action
 {
@@ -22,6 +23,7 @@ class CreateOfferAction extends Action
   public function execute($dto)
   {
     return $this->run(function () use ($dto) {
+
       $response = $this->cms->createCollection($dto->CollectionToArray());
 
       if (!isset($response['data'])) {
@@ -29,21 +31,13 @@ class CreateOfferAction extends Action
       }
 
       $collection = $response['data'];
-
       $offer = $this->repository->create($collection['id'], $dto->OfferToArray());
 
-
-      event(new SystemLogEvent(
-        module: 'ecommerce',
-        eventType: 'create_offer',
-        userId: $dto->project_id??null,
-        entityType: 'offer',
-        entityId: $offer->id??null,
-      ));
+      Cache::forget(CacheKeys::offers($dto->project_id));
 
       return [
         'collection' => $collection,
-        'offer' => $offer
+        'offer'      => $offer,
       ];
     });
   }

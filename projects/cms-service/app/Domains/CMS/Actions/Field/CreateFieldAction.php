@@ -6,10 +6,15 @@ use App\Domains\Core\Actions\Action;
 use App\Domains\CMS\Actions\Field\CreationStrategy\FieldTypeFactory;
 use App\Domains\CMS\DTOs\Field\CreateFieldDTO;
 use App\Domains\CMS\Repositories\Interface\FieldRepositoryInterface;
+<<<<<<< HEAD
+use App\Domains\CMS\Support\CacheKeys;
+=======
 use App\Events\SystemLogEvent;
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 use App\Models\DataType;
 use App\Models\DataTypeField;
 use App\Models\DataTypeRelation;
+use Illuminate\Support\Facades\Cache;
 
 class CreateFieldAction extends Action
 {
@@ -31,6 +36,12 @@ class CreateFieldAction extends Action
       if ($dto->type === 'relation') {
         $normalizedSettings['data_type_relation_id'] = $this->ensureDataTypeRelationExists($dto, $normalizedSettings);
       }
+<<<<<<< HEAD
+      $field = $this->repository->create($dto, $normalizedSettings);
+      
+      Cache::forget(CacheKeys::fields($dto->data_type_id));
+      return $field;
+=======
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'create_field',
@@ -39,6 +50,7 @@ class CreateFieldAction extends Action
         entityId:null
       ));
       return $this->repository->create($dto, $normalizedSettings);
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
     });
   }
 

@@ -28,4 +28,8 @@ interface OfferRepositoryInterface
   public function getAndDeactivateExpiredOffers(Carbon $now);
 
   public function subscribe(int $collectionId, SubscribeDTO $dto): void;
+
+  public function deactivateOffer(int $collectionId): void;
+
+  public function activateOffer(int $collectionId): void;
 }

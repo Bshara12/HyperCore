@@ -8,6 +8,8 @@ use App\Domains\E_Commerce\DTOs\Order\CreateOrderDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderItemRepositoryInterface;
+use App\Domains\E_Commerce\Support\CacheKeys;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 // class CreateOrderFromCartAction
@@ -163,7 +165,7 @@ class CreateOrderFromCartAction
           throw new \Exception("Item not found in CMS: {$item->item_id}");
         }
         // ✅ تحقق إذا عنده stock
-        if (isset($entry['count'])||isset($entry['3'])) {
+        if (isset($entry['count']) || isset($entry['3'])) {
 
           $available = (int) $entry['3'];
           $requested = (int) $item->quantity;
@@ -210,7 +212,9 @@ class CreateOrderFromCartAction
 
       // 🟢 8. حذف الكارت
       $this->cartRepo->delete($cart->id);
-
+      Cache::forget(CacheKeys::cart($dto->user_id, $dto->project_id));
+      Cache::forget(CacheKeys::userOrders($dto->user_id, $dto->project_id));
+      Cache::tags(['admin_orders'])->flush();
       return $this->orderRepo->loadItems($order);
     });
   }

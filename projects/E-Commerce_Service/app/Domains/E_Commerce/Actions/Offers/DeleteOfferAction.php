@@ -2,10 +2,11 @@
 
 namespace App\Domains\E_Commerce\Actions\Offers;
 
+use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
-use App\Events\SystemLogEvent;
 use App\Services\CMS\CMSApiClient;
+use Illuminate\Support\Facades\Cache;
 
 class DeleteOfferAction extends Action
 {
@@ -22,16 +23,15 @@ class DeleteOfferAction extends Action
   public function execute(string $collectionSlug)
   {
     return $this->run(function () use ($collectionSlug) {
+
       $collection = $this->cms->getCollectionBySlug($collectionSlug);
+      $offer = $this->repository->findByCollectionId($collection['id']);
+
       $this->repository->deleteOfferByCollectionId($collection['id']);
-      // $this->cms->deactivationCollection($collectionSlug, false);
-        event(new SystemLogEvent(
-        module: 'ecommerce',
-        eventType: 'delete_offer',
-        userId: null,
-        entityType: 'offer',
-        entityId: $collection['id']??null
-      ));
+
+      Cache::forget(CacheKeys::offer($collection['id']));
+      Cache::forget(CacheKeys::offerBySlug($collectionSlug));
+      Cache::forget(CacheKeys::offers($offer->project_id));
     });
   }
 }
