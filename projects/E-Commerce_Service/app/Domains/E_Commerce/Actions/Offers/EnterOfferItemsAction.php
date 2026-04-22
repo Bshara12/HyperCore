@@ -4,6 +4,7 @@ namespace App\Domains\E_Commerce\Actions\Offers;
 
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferPriceRepositoryInterface;
+use App\Events\SystemLogEvent;
 
 class EnterOfferItemsAction extends Action
 {
@@ -42,7 +43,13 @@ class EnterOfferItemsAction extends Action
         } else {
           $entry['is_applied'] = false;
         }
-
+        event(new SystemLogEvent(
+          module: 'ecommerce',
+          eventType: 'enter_offer_item',
+          userId: null,
+          entityType: 'offer',
+          entityId: $entry->applied_offer_id??null
+        ));
         $this->repository->enterOfferItem($entry);
       }
     });

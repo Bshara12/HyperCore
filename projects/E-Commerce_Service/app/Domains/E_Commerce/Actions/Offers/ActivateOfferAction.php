@@ -4,6 +4,7 @@ namespace App\Domains\E_Commerce\Actions\Offers;
 
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
+use App\Events\SystemLogEvent;
 use App\Services\CMS\CMSApiClient;
 
 class ActivateOfferAction extends Action
@@ -23,6 +24,14 @@ class ActivateOfferAction extends Action
     return $this->run(function () use ($dto) {
       $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
       $this->repository->activateOffer($collection['id']);
+
+      event(new SystemLogEvent(
+        module: 'ecommerce',
+        eventType: 'active_offer',
+        userId: null,
+        entityType: 'offer',
+        entityId: null
+      ));
     });
   }
 }

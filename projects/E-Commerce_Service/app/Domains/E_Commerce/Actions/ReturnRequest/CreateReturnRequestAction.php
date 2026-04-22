@@ -5,6 +5,7 @@ namespace App\Domains\E_Commerce\Actions\ReturnRequest;
 use App\Domains\E_Commerce\DTOs\ReturnRequest\CreateReturnRequestDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\ReturnRequest\ReturnRequestRepositoryInterface;
+use App\Events\SystemLogEvent;
 
 class CreateReturnRequestAction
 {
@@ -24,6 +25,16 @@ class CreateReturnRequestAction
     if ($this->repo->findPendingByItem($dto->order_item_id)) {
       throw new \Exception('Request already exists');
     }
+
+    event(new SystemLogEvent(
+      module: 'ecommerce',
+      eventType: 'create_return_request',
+      userId: $dto->user_id ?? null,
+      entityType: 'return_request',
+      entityId: null
+    ));
+
+
 
     return $this->repo->create([
       'user_id' => $dto->user_id,

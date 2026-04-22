@@ -4,6 +4,7 @@ namespace App\Domains\E_Commerce\Actions\Offers;
 
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
+use App\Events\SystemLogEvent;
 use App\Services\CMS\CMSApiClient;
 
 class InsertOfferItemsAction extends Action
@@ -26,6 +27,17 @@ class InsertOfferItemsAction extends Action
       if ($message === "Items added successfully") {
         $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
         $offer = $this->repository->findByCollectionId($collection['id']);
+
+
+        event(new SystemLogEvent(
+          module: 'ecommerce',
+          eventType: 'enter_offer_item',
+          userId: null,
+          entityType: 'offer',
+          entityId: $entry->applied_offer_id ?? null
+        ));
+
+
         return [
           'meessage' => "Items added successfully",
           'collection' => $collection,

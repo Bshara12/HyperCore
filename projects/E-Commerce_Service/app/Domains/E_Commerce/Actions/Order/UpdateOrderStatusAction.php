@@ -4,6 +4,7 @@ namespace App\Domains\E_Commerce\Actions\Order;
 
 use App\Domains\E_Commerce\DTOs\Order\UpdateOrderStatusDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterface;
+use App\Events\SystemLogEvent;
 use Illuminate\Support\Facades\DB;
 
 class UpdateOrderStatusAction
@@ -56,6 +57,14 @@ class UpdateOrderStatusAction
 
       // 🔥 تحديث كل items (هون المطلوب)
       $this->orderRepo->updateItemsStatus($order->id, $dto->status);
+
+      event(new SystemLogEvent(
+        module: 'ecommerce',
+        eventType: 'update_order',
+        userId:$order->user_id??null,
+        entityType: 'order',
+        entityId: $order->id ?? null
+      ));
 
       return $order;
     });
