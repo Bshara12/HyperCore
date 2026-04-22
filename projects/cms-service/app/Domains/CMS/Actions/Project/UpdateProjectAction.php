@@ -27,12 +27,15 @@ class UpdateProjectAction extends Action
     return $this->run(function () use ($dto, $project) {
       event(new SystemLogEvent(
         module: 'cms',
+<<<<<<< HEAD
         eventType: 'audit',
         userId: Request()->attributes->get('auth_user')->id ?? 3,
+=======
+        eventType: 'project_updated',
+        userId:$project->owner_id,
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
         entityType: 'project',
-        entityId: null,
-        oldValues: null,
-        newValues: null
+        entityId: $project->id
       ));
 
       $updated = $this->repository->update(

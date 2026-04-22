@@ -10,6 +10,7 @@ use App\Domains\CMS\Repositories\Interface\SeoEntryRepository;
 use App\Domains\CMS\Services\SeoGeneratorService;
 use App\Domains\CMS\States\DataEntryStateResolver;
 use App\Events\EntryChanged;
+use App\Events\SystemLogEvent;
 use Illuminate\Support\Facades\DB;
 
 // class CreateDataEntryAction
@@ -103,6 +104,14 @@ class CreateDataEntryAction
     string $slug,
     ?int $userId
   ) {
+
+ event(new SystemLogEvent(
+     module: 'cms',
+     eventType: 'create_data',
+     userId: $userId,
+     entityType: 'data',
+     entityId:null
+ ));
 
     return $this->entries->create([
       'project_id' => $projectId,

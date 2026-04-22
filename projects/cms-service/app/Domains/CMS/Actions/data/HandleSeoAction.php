@@ -5,6 +5,7 @@ namespace App\Domains\CMS\Actions\data;
 use App\Domains\CMS\Repositories\Interface\SeoEntryRepository;
 use App\Domains\CMS\Services\SeoGeneratorService;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 
 class HandleSeoAction extends Action
 {
@@ -28,6 +29,13 @@ class HandleSeoAction extends Action
         $generated = $this->seoGenerator->generate($values);
         $this->seo->insertForEntry($entryId, $generated);
       }
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'handle_seo',
+        userId: null,
+        entityType: 'data',
+        entityId: $entryId
+      ));
     });
   }
 }

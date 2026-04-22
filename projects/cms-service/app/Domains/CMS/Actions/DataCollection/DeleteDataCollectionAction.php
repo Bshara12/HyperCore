@@ -5,7 +5,11 @@ namespace App\Domains\CMS\Actions\DataCollection;
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+<<<<<<< HEAD
 use Illuminate\Support\Facades\Cache;
+=======
+use App\Events\SystemLogEvent;
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 
 class DeleteDataCollectionAction extends Action
 {
@@ -23,6 +27,7 @@ class DeleteDataCollectionAction extends Action
     $this->run(function () use ($collectionSlug) {
 
       $collection = $this->repository->getBySlug($collectionSlug);
+<<<<<<< HEAD
 
       $this->repository->delete($collection->id);
 
@@ -32,6 +37,16 @@ class DeleteDataCollectionAction extends Action
       Cache::forget(CacheKeys::collectionItems($collection->id));
       Cache::forget(CacheKeys::collectionEntries($collection->id));
       Cache::forget(CacheKeys::collections($collection->project_id));
+=======
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'delete_collection',
+        userId: null,
+        entityType: 'collection',
+        entityId: $collection->id
+      ));
+      return $this->repository->delete($collection->id);
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
     });
   }
 }

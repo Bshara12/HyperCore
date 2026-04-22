@@ -8,7 +8,11 @@ use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\CMS\Repositories\Interface\SeoEntryRepository;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+<<<<<<< HEAD
 use Illuminate\Support\Facades\Cache;
+=======
+use App\Events\SystemLogEvent;
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -61,6 +65,13 @@ class DeleteDataEntryAction extends Action
       if (!empty($paths)) {
         Storage::disk('supabase')->delete($paths);
       }
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'delete_data',
+        userId: null,
+        entityType: 'data',
+        entityId: $entryId
+      ));
     });
   }
 }
