@@ -5,6 +5,7 @@ namespace App\Domains\E_Commerce\Actions\Cart;
 use App\Domains\E_Commerce\DTOs\Cart\AddCartItemsDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
+use App\Events\SystemLogEvent;
 
 class AddCartItemAction
 {
@@ -38,6 +39,13 @@ class AddCartItemAction
       }
     }
 
+    event(new SystemLogEvent(
+      module: 'ecommerce',
+      eventType: 'create_cart_item',
+      userId: $dto->user_id,
+      entityType: 'cart',
+      entityId: $cart->id
+    ));
     return $this->cartRepo->loadItems($cart);
   }
 }

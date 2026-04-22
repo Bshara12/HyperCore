@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Actions\data;
 
 use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 
 class InsertValuesAction extends Action
 {
@@ -21,5 +22,12 @@ class InsertValuesAction extends Action
     $this->run(function () use ($entryId, $dataTypeId, $values) {
       $this->values->bulkInsert($entryId, $dataTypeId, $values);
     });
+    event(new SystemLogEvent(
+      module: 'cms',
+      eventType: 'create_value',
+      userId:null,
+      entityType: 'data',
+      entityId: $entryId
+    ));
   }
 }

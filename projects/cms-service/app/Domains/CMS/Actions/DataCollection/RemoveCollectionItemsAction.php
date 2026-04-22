@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 
 class RemoveCollectionItemsAction extends Action
 {
@@ -22,5 +23,12 @@ class RemoveCollectionItemsAction extends Action
       $collection = $this->repository->getBySlug($dto->collectionSlug);
       return $this->repository->removeItems($collection->id, $dto->items);
     });
+    event(new SystemLogEvent(
+      module: 'cms',
+      eventType: 'delete_collection_item',
+      userId: null,
+      entityType: 'collection',
+      entityId: $dto->collectionSlug
+    ));
   }
 }

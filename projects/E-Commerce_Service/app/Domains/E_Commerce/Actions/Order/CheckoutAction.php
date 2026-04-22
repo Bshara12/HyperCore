@@ -10,6 +10,7 @@ use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterfac
 use App\Domains\Payment\Actions\ProcessPaymentAction;
 use App\Domains\Payment\DTOs\PaymentDTO;
 use App\Domains\Payment\Services\PaymentService;
+use App\Events\SystemLogEvent;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutAction
@@ -177,6 +178,16 @@ class CheckoutAction
 
       // 8. delete cart
       $this->cartRepo->delete($cart->id);
+
+
+      event(new SystemLogEvent(
+        module: 'ecommerce',
+        eventType: 'create_order',
+        userId:$dto->user_id,
+        entityType: 'order',
+        entityId: $order->id??null
+      ));
+
 
       return $this->orderRepo->loadItems($order);
     });

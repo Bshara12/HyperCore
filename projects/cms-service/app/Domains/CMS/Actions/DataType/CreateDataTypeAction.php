@@ -5,6 +5,7 @@ namespace App\Domains\CMS\Actions\DataType;
 use App\Domains\CMS\DTOs\DataType\CreateDataTypeDTO;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 
 class CreateDataTypeAction extends Action
 {
@@ -26,6 +27,15 @@ class CreateDataTypeAction extends Action
       );
 
       $dataType = $this->repository->create($dto);
+
+
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'create_datatype',
+        userId: null,
+        entityType: 'datatype',
+        entityId: null
+      ));
 
       return $dataType;
     });

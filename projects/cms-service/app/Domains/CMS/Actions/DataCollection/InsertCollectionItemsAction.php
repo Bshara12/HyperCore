@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 
 class InsertCollectionItemsAction extends Action
 {
@@ -23,5 +24,12 @@ class InsertCollectionItemsAction extends Action
       $collection = $this->repository->getBySlug($dto->collectionSlug);
       return $this->repository->insertItems($collection->id, $dto->items);
     });
+    event(new SystemLogEvent(
+      module: 'cms',
+      eventType: 'add_collection_item',
+      userId: null,
+      entityType: 'collection',
+      entityId: $dto->slug
+    ));
   }
 }

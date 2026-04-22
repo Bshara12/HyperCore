@@ -6,6 +6,7 @@ use App\Domains\Core\Actions\Action;
 use App\Domains\CMS\Actions\Field\CreationStrategy\FieldTypeFactory;
 use App\Domains\CMS\DTOs\Field\CreateFieldDTO;
 use App\Domains\CMS\Repositories\Interface\FieldRepositoryInterface;
+use App\Events\SystemLogEvent;
 use App\Models\DataType;
 use App\Models\DataTypeField;
 use App\Models\DataTypeRelation;
@@ -30,6 +31,13 @@ class CreateFieldAction extends Action
       if ($dto->type === 'relation') {
         $normalizedSettings['data_type_relation_id'] = $this->ensureDataTypeRelationExists($dto, $normalizedSettings);
       }
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'create_field',
+        userId: null,
+        entityType: 'field',
+        entityId:null
+      ));
       return $this->repository->create($dto, $normalizedSettings);
     });
   }

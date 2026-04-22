@@ -3,11 +3,11 @@
 namespace App\Domains\CMS\Services;
 
 use App\Domains\CMS\Actions\Project\CreateProjectAction;
+use App\Domains\CMS\Actions\Project\DeleteProjectAction;
 use App\Domains\CMS\Actions\Project\ListProjectsAction;
 use App\Domains\CMS\Actions\Project\ShowProjectAction;
 use App\Domains\CMS\Actions\Project\UpdateProjectAction;
 use App\Domains\CMS\DTOs\CreateProjectDTO;
-use App\Domains\CMS\DTOs\Project\DeleteProjectAction;
 use App\Domains\CMS\DTOs\Project\UpdateProjectDTO;
 use App\Models\Project;
 

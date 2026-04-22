@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Actions\data;
 
 use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 
 class DeleteValuesAction extends Action
 {
@@ -20,5 +21,13 @@ class DeleteValuesAction extends Action
     $this->run(function () use ($entryId) {
       $this->values->deleteForEntry($entryId);
     });
+     event(new SystemLogEvent(
+     module: 'cms',
+     eventType: 'create_data_value',
+     userId: null,
+     entityType: 'data',
+     entityId: $entryId
+ ));
   }
+  
 }

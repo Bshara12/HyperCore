@@ -5,6 +5,7 @@ namespace App\Domains\E_Commerce\Actions\Cart;
 use App\Domains\E_Commerce\DTOs\Cart\RemoveCartItemsDTO;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
+use App\Events\SystemLogEvent;
 
 class RemoveCartItemsAction
 {
@@ -20,6 +21,16 @@ class RemoveCartItemsAction
     throw_if(! $cart, \Exception::class, 'Cart not found.');
 
     $this->cartItemRepo->deleteByIds($cart->id, $dto->item_ids);
+
+
+
+    event(new SystemLogEvent(
+      module: 'ecommerce',
+      eventType: 'remove_cart_item',
+      userId: $dto->user_id,
+      entityType: 'cart',
+      entityId: $cart->id
+    ));
 
     return $this->cartRepo->loadItems($cart)->toArray();
   }
