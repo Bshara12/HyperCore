@@ -6,7 +6,11 @@ use App\Domains\CMS\DTOs\Rate\RateDTO;
 use App\Domains\CMS\Repositories\Interface\DataEntryRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\RatingRepositoryInterface;
+<<<<<<< HEAD
 use App\Domains\CMS\Support\CacheKeys;
+=======
+use App\Events\SystemLogEvent;
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 use App\Support\CurrentProject;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -79,6 +83,14 @@ class RateAction
       $this->updateStats($dto);
 
       DB::commit();
+
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'rate',
+        userId: $dto->userId,
+        entityType: 'rate',
+        entityId:$existing->id??null
+      ));
 
       return true;
     } catch (\Exception $e) {

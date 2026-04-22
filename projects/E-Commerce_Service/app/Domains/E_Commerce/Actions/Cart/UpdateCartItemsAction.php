@@ -7,6 +7,7 @@ use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartItemRepositoryInterf
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
 use App\Domains\E_Commerce\Support\CacheKeys;
 use Illuminate\Support\Facades\Cache;
+use App\Events\SystemLogEvent;
 
 class UpdateCartItemsAction
 {
@@ -39,6 +40,13 @@ class UpdateCartItemsAction
       }
     }
     Cache::forget(CacheKeys::cart($dto->user_id, $dto->project_id));
+    event(new SystemLogEvent(
+      module: 'ecommerce',
+      eventType: 'update_cart_item',
+      userId: $dto->user_id,
+      entityType: 'cart',
+      entityId: $cart->id
+    ));
     return $this->cartRepo->loadItems($cart)->toArray();
   }
 }

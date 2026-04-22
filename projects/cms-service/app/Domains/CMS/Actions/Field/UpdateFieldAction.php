@@ -7,6 +7,7 @@ use App\Domains\CMS\DTOs\Field\CreateFieldDTO;
 use App\Domains\CMS\Repositories\Interface\FieldRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
+use App\Events\SystemLogEvent;
 use App\Models\DataTypeField;
 use Illuminate\Support\Facades\Cache;
 
@@ -40,10 +41,21 @@ class UpdateFieldAction extends Action
       if ($dto->type === 'relation') {
         $normalizedSettings['data_type_relation_id'] = $this->createFieldAction->ensureDataTypeRelationExists($dto, $normalizedSettings);
       }
+<<<<<<< HEAD
 
       $updated = $this->repository->update($dto, $field, $normalizedSettings);
       Cache::forget(CacheKeys::fields($dto->data_type_id));
       return $updated;
+=======
+      event(new SystemLogEvent(
+        module: 'cms',
+        eventType: 'update_field',
+        userId: null,
+        entityType: 'field',
+        entityId: $field->id??null
+      ));
+      return $this->repository->update($dto, $field, $normalizedSettings);
+>>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
     });
   }
 }

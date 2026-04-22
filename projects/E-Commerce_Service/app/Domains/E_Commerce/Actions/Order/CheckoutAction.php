@@ -12,6 +12,7 @@ use App\Domains\Payment\Actions\ProcessPaymentAction;
 use App\Domains\Payment\DTOs\PaymentDTO;
 use App\Domains\Payment\Services\PaymentService;
 use Illuminate\Support\Facades\Cache;
+use App\Events\SystemLogEvent;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutAction
@@ -193,6 +194,16 @@ class CheckoutAction
 
       // 4. امسح admin orders cache
       Cache::tags(['admin_orders'])->flush();
+
+
+      event(new SystemLogEvent(
+        module: 'ecommerce',
+        eventType: 'create_order',
+        userId:$dto->user_id,
+        entityType: 'order',
+        entityId: $order->id??null
+      ));
+
 
       return $this->orderRepo->loadItems($order);
     });
