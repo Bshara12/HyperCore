@@ -41,12 +41,10 @@ class UpdateFieldAction extends Action
       if ($dto->type === 'relation') {
         $normalizedSettings['data_type_relation_id'] = $this->createFieldAction->ensureDataTypeRelationExists($dto, $normalizedSettings);
       }
-<<<<<<< HEAD
 
       $updated = $this->repository->update($dto, $field, $normalizedSettings);
       Cache::forget(CacheKeys::fields($dto->data_type_id));
       return $updated;
-=======
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'update_field',
@@ -55,7 +53,6 @@ class UpdateFieldAction extends Action
         entityId: $field->id??null
       ));
       return $this->repository->update($dto, $field, $normalizedSettings);
->>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
     });
   }
 }

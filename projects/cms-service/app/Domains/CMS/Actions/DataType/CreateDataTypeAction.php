@@ -6,11 +6,8 @@ use App\Domains\CMS\DTOs\DataType\CreateDataTypeDTO;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
-<<<<<<< HEAD
 use Illuminate\Support\Facades\Cache;
-=======
 use App\Events\SystemLogEvent;
->>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 
 class CreateDataTypeAction extends Action
 {
@@ -32,9 +29,7 @@ class CreateDataTypeAction extends Action
       );
 
       $dataType = $this->repository->create($dto);
-<<<<<<< HEAD
       Cache::forget(CacheKeys::dataTypes($dto->project_id));
-=======
 
 
       event(new SystemLogEvent(
@@ -45,7 +40,6 @@ class CreateDataTypeAction extends Action
         entityId: null
       ));
 
->>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
       return $dataType;
     });
   }

@@ -5,11 +5,8 @@ namespace App\Domains\CMS\Actions\DataCollection;
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
-<<<<<<< HEAD
 use Illuminate\Support\Facades\Cache;
-=======
 use App\Events\SystemLogEvent;
->>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
 
 class InsertCollectionItemsAction extends Action
 {
