@@ -4,7 +4,9 @@ namespace App\Domains\Booking\Actions\Client;
 
 use App\Domains\Booking\DTOs\Client\CreateBookingDTO;
 use App\Domains\Booking\Repositories\Interface\BookingRepositoryInterface;
+use App\Domains\Booking\Support\CacheKeys;
 use App\Models\Booking;
+use Illuminate\Support\Facades\Cache;
 
 class CreateBookingRecordAction
 {
@@ -24,5 +26,7 @@ class CreateBookingRecordAction
       'amount'      => $dto->amount,
       'currency'    => $dto->currency,
     ]);
+    Cache::tags(["resource_{$dto->resourceId}_bookings"])->flush();
+    Cache::forget(CacheKeys::userBookings($dto->userId));
   }
 }

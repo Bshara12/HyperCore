@@ -4,8 +4,10 @@ namespace App\Domains\Booking\Actions;
 
 use App\Domains\Booking\DTOs\CancellationPolicyDTO;
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Domains\Booking\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\Resource;
+use Illuminate\Support\Facades\Cache;
 
 class SetCancellationPolicyAction extends Action
 {
@@ -13,7 +15,7 @@ class SetCancellationPolicyAction extends Action
   {
     return 'resource.setPolicy';
   }
-  
+
   public function __construct(
     private readonly ResourceRepositoryInterface $repository,
   ) {}
@@ -27,6 +29,8 @@ class SetCancellationPolicyAction extends Action
 
     $this->run(function () use ($resource, $dtos) {
       $this->repository->setPolicies($resource, $dtos);
+      Cache::forget(CacheKeys::resource($resource->id));
+      Cache::forget(CacheKeys::resources($resource->project_id));
     });
   }
 }

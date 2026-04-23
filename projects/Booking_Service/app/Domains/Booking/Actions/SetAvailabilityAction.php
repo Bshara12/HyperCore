@@ -4,8 +4,10 @@ namespace App\Domains\Booking\Actions;
 
 use App\Domains\Booking\DTOs\AvailabilityDTO;
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Domains\Booking\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\Resource;
+use Illuminate\Support\Facades\Cache;
 
 class SetAvailabilityAction extends Action
 {
@@ -13,7 +15,7 @@ class SetAvailabilityAction extends Action
   {
     return 'resource.setAvailability';
   }
-  
+
   public function __construct(
     private readonly ResourceRepositoryInterface $repository,
   ) {}
@@ -27,6 +29,8 @@ class SetAvailabilityAction extends Action
 
     $this->run(function () use ($resource, $dtos) {
       $this->repository->setAvailabilities($resource, $dtos);
+      Cache::forget(CacheKeys::resource($resource->id));
+      Cache::forget(CacheKeys::resources($resource->project_id));
     });
   }
 }
