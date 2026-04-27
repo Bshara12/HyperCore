@@ -30,6 +30,12 @@ class DataEntry extends Model
   // }
 
 
+  // test*************************
+  public function project()
+  {
+    return $this->belongsTo(Project::class);
+  }
+  // ******************
   public function dataType()
   {
     return $this->belongsTo(DataType::class);

@@ -5,6 +5,7 @@ namespace App\Domains\E_Commerce\Actions\Offers;
 use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
+use App\Events\SystemLogEvent;
 use App\Services\CMS\CMSApiClient;
 use Illuminate\Support\Facades\Cache;
 
@@ -34,6 +35,13 @@ class InsertOfferItemsAction extends Action
         Cache::forget(CacheKeys::offer($collection['id']));
         Cache::forget(CacheKeys::offerBySlug($dto->collectionSlug));
 
+        event(new SystemLogEvent(
+          module: 'ecommerce',
+          eventType: 'isert_offer_item',
+          userId: null,
+          entityType: 'offer',
+          entityId: $collection['id'] ?? null
+        ));
         return [
           'message'    => "Items added successfully",
           'collection' => $collection,

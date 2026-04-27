@@ -27,13 +27,8 @@ class UpdateProjectAction extends Action
     return $this->run(function () use ($dto, $project) {
       event(new SystemLogEvent(
         module: 'cms',
-<<<<<<< HEAD
-        eventType: 'audit',
-        userId: Request()->attributes->get('auth_user')->id ?? 3,
-=======
         eventType: 'project_updated',
-        userId:$project->owner_id,
->>>>>>> 3281b57fe309f120693e70fedad5e2094b119700
+        userId: $project->owner_id,
         entityType: 'project',
         entityId: $project->id
       ));

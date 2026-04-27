@@ -37,20 +37,16 @@ services:
     volumes:
       - cms_master_data:/var/lib/mysql
       - ./mysql/cms/master.cnf:/etc/mysql/conf.d/master.cnf
-    ports:
-      - "3308:3306"
     networks: [core]
 
-  cms-mysql-slave:
-    image: mysql:8
-    environment:
-      MYSQL_ROOT_PASSWORD: secret
-    volumes:
-      - cms_slave_data:/var/lib/mysql
-      - ./mysql/cms/slave.cnf:/etc/mysql/conf.d/slave.cnf
-    ports:
-      - "3311:3306"
-    networks: [core]
+  # cms-mysql-slave:
+  #   image: mysql:8
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: secret
+  #   volumes:
+  #     - cms_slave_data:/var/lib/mysql
+  #     - ./mysql/cms/slave.cnf:/etc/mysql/conf.d/slave.cnf
+  #   networks: [core]
 
   cms-redis:
     image: redis:alpine
@@ -83,8 +79,6 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - logging_data:/var/lib/mysql
-    ports:
-      - "3307:3306"
     networks: [core]
 
 
@@ -125,20 +119,16 @@ services:
     volumes:
       - auth_master_data:/var/lib/mysql
       - ./mysql/auth/master.cnf:/etc/mysql/conf.d/master.cnf
-    ports:
-      - "3314:3306"
     networks: [core]
 
-  auth-mysql-slave:
-    image: mysql:8
-    environment:
-      MYSQL_ROOT_PASSWORD: secret
-    volumes:
-      - auth_slave_data:/var/lib/mysql
-      - ./mysql/auth/slave.cnf:/etc/mysql/conf.d/slave.cnf
-    ports:
-      - "3315:3306"
-    networks: [core]
+  # auth-mysql-slave:
+  #   image: mysql:8
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: secret
+  #   volumes:
+  #     - auth_slave_data:/var/lib/mysql
+  #     - ./mysql/auth/slave.cnf:/etc/mysql/conf.d/slave.cnf
+  #   networks: [core]
 
   auth-redis:
     image: redis:alpine
@@ -182,20 +172,16 @@ services:
     volumes:
       - ecommerce_master_data:/var/lib/mysql
       - ./mysql/ecommerce/master.cnf:/etc/mysql/conf.d/master.cnf
-    ports:
-      - "3312:3306"
     networks: [core]
 
-  ecommerce-mysql-slave:
-    image: mysql:8
-    environment:
-      MYSQL_ROOT_PASSWORD: secret
-    volumes:
-      - ecommerce_slave_data:/var/lib/mysql
-      - ./mysql/ecommerce/slave.cnf:/etc/mysql/conf.d/slave.cnf
-    ports:
-      - "3313:3306"
-    networks: [core]
+  # ecommerce-mysql-slave:
+  #   image: mysql:8
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: secret
+  #   volumes:
+  #     - ecommerce_slave_data:/var/lib/mysql
+  #     - ./mysql/ecommerce/slave.cnf:/etc/mysql/conf.d/slave.cnf
+  #   networks: [core]
 
   ecommerce-redis:
     image: redis:alpine
@@ -239,20 +225,16 @@ services:
     volumes:
       - booking_master_data:/var/lib/mysql
       - ./mysql/booking/master.cnf:/etc/mysql/conf.d/master.cnf
-    ports:
-      - "3316:3306"
     networks: [core]
 
-  booking-mysql-slave:
-    image: mysql:8
-    environment:
-      MYSQL_ROOT_PASSWORD: secret
-    volumes:
-      - booking_slave_data:/var/lib/mysql
-      - ./mysql/booking/slave.cnf:/etc/mysql/conf.d/slave.cnf
-    ports:
-      - "3317:3306"
-    networks: [core]
+  # booking-mysql-slave:
+  #   image: mysql:8
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: secret
+  #   volumes:
+  #     - booking_slave_data:/var/lib/mysql
+  #     - ./mysql/booking/slave.cnf:/etc/mysql/conf.d/slave.cnf
+  #   networks: [core]
 
   booking-redis:
     image: redis:alpine
