@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Auth\Service\AuthServiceClient;
+use App\Http\Controllers\CmsAnalyticsController;
 use App\Http\Controllers\SearchClickController;
 use App\Http\Controllers\DataCollectionController;
 use App\Http\Controllers\DataEntryController;
@@ -356,7 +357,25 @@ Route::middleware(['resolve.project', 'auth.user'])
 Route::post('/wallet/topup', [PaymentController::class, 'topUp'])
   ->middleware(['auth.user', 'permission:wallet.topup']);
 
+// -------------------------
+// CMS Analytics
+// -------------------------
+Route::prefix('cms/analytics')->middleware('auth.user')->group(function () {
 
+  // --- Admin ---
+  Route::prefix('admin')->group(function () {
+    Route::get('/overview', [CmsAnalyticsController::class, 'adminOverview']);
+    Route::get('/projects-growth', [CmsAnalyticsController::class, 'projectsGrowth']);
+  });
+
+  // --- Project Owner ---
+  Route::prefix('projects')->middleware('resolve.project')->group(function () {
+    Route::get('/content', [CmsAnalyticsController::class, 'contentSummary']);
+    Route::get('/content-growth', [CmsAnalyticsController::class, 'contentGrowth']);
+    Route::get('/top-rated', [CmsAnalyticsController::class, 'topRated']);
+    Route::get('/ratings', [CmsAnalyticsController::class, 'ratingsReport']);
+  });
+});
 
 
 // Rate
@@ -373,9 +392,9 @@ Route::get('/search', SearchController::class)->middleware('auth.user', 'resolve
 Route::post('/search/click', SearchClickController::class)->middleware('auth.user', 'resolve.project');
 Route::get('/search/suggestions', SearchSuggestionController::class)
   ->middleware(['resolve.project']);  // لا يحتاج auth إلزامي
-  
+
 Route::get('/search/popular', PopularSearchController::class)
-    ->middleware(['resolve.project']);
+  ->middleware(['resolve.project']);
 
 
 // routes/api.php - مؤقت للـ debugging فقط

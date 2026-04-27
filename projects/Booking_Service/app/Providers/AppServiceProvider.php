@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domains\Booking\Analytics\Repositories\AnalyticsRepositoryInterface;
+use App\Domains\Booking\Analytics\Repositories\EloquentBookingAnalyticsRepository;
 use App\Domains\Booking\Repositories\Eloquent\EloquentBookingCancellationPolicyRepository;
 use App\Domains\Booking\Repositories\Eloquent\EloquentBookingRepository;
 use App\Domains\Booking\Repositories\Eloquent\EloquentResourceRepository;
@@ -20,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
     $this->app->bind(ResourceRepositoryInterface::class, EloquentResourceRepository::class);
     $this->app->bind(BookingRepositoryInterface::class, EloquentBookingRepository::class);
     $this->app->bind(BookingCancellationPolicyRepositoryInterface::class, EloquentBookingCancellationPolicyRepository::class);
+    $this->app->bind(AnalyticsRepositoryInterface::class, EloquentBookingAnalyticsRepository::class);
   }
 
   /**

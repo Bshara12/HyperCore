@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookingAnalyticsController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ResourceController;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,17 @@ Route::middleware(['resolve.project', 'auth.user'])
     Route::post('/cancel', [BookingController::class, 'cancel']);
     Route::post('/reschedule', [BookingController::class, 'reschedule']);
   });
+
+Route::prefix('booking/analytics')
+  ->middleware(['resolve.project', 'auth.user'])
+  ->group(function () {
+    Route::get('/overview', [BookingAnalyticsController::class, 'overview']);
+    Route::get('/trend', [BookingAnalyticsController::class, 'trend']);
+    Route::get('/resources', [BookingAnalyticsController::class, 'resourcePerformance']);
+    Route::get('/cancellations', [BookingAnalyticsController::class, 'cancellations']);
+    Route::get('/peak-times', [BookingAnalyticsController::class, 'peakTimes']);
+  });
+
 Route::get('/test', function () {
   return gethostname();
 });
