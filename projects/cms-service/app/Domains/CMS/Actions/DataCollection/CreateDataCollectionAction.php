@@ -25,6 +25,7 @@ class CreateDataCollectionAction extends Action
 
       $collection = $this->repository->create($dto);
       Cache::forget(CacheKeys::collections($dto->project_id));
+
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'collection_create',

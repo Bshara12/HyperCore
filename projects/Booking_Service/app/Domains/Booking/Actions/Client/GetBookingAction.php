@@ -3,6 +3,8 @@
 namespace App\Domains\Booking\Actions\Client;
 
 use App\Domains\Booking\Repositories\Interface\BookingRepositoryInterface;
+use App\Domains\Booking\Support\CacheKeys;
+use Illuminate\Support\Facades\Cache;
 
 class GetBookingAction
 {
@@ -12,12 +14,18 @@ class GetBookingAction
 
   public function execute(int $id)
   {
-    $booking = $this->repo->findById($id);
+    return Cache::remember(
+      CacheKeys::booking($id),
+      CacheKeys::TTL_SHORT,
+      function () use ($id) {
+        $booking = $this->repo->findById($id);
 
-    if (!$booking) {
-      throw new \Exception('Booking not found');
-    }
+        if (!$booking) {
+          throw new \Exception('Booking not found');
+        }
 
-    return $booking;
+        return $booking;
+      }
+    );
   }
 }

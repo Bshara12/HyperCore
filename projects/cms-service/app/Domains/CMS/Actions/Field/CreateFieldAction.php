@@ -37,6 +37,7 @@ class CreateFieldAction extends Action
 
       Cache::forget(CacheKeys::fields($dto->data_type_id));
 
+      return $field;
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'create_field',

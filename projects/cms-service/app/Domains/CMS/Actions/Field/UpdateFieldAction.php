@@ -44,6 +44,8 @@ class UpdateFieldAction extends Action
 
       $updated = $this->repository->update($dto, $field, $normalizedSettings);
       Cache::forget(CacheKeys::fields($dto->data_type_id));
+
+      return $updated;
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'update_field',
@@ -54,6 +56,7 @@ class UpdateFieldAction extends Action
       return $updated;
 
       // return $this->repository->update($dto, $field, $normalizedSettings);
+  
     });
   }
 }

@@ -3,8 +3,10 @@
 namespace App\Domains\Booking\Actions;
 
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Domains\Booking\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\Resource;
+use Illuminate\Support\Facades\Cache;
 
 class DeleteResourceAction extends Action
 {
@@ -21,6 +23,10 @@ class DeleteResourceAction extends Action
   {
     $this->run(function () use ($resource) {
       $this->repository->delete($resource);
+      Cache::forget(CacheKeys::resource($resource->id));
+      Cache::forget(CacheKeys::resources($resource->project_id));
+
+      Cache::tags(["resource_{$resource->id}_bookings"])->flush();
     });
   }
 }
