@@ -30,7 +30,6 @@ class UpdateDataCollectionAction extends Action
       Cache::forget(CacheKeys::collectionEntries($dto->collection_id));
       Cache::forget(CacheKeys::collections($collection->project_id));
 
-
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'update_collection',

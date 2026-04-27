@@ -28,6 +28,7 @@ class UpdateProjectAction extends Action
       event(new SystemLogEvent(
         module: 'cms',
         eventType: 'project_updated',
+
         userId: $project->owner_id,
         entityType: 'project',
         entityId: $project->id

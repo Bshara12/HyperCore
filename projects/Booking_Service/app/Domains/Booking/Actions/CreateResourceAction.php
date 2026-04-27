@@ -4,8 +4,10 @@ namespace App\Domains\Booking\Actions;
 
 use App\Domains\Booking\DTOs\ResourceDTO;
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Domains\Booking\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Models\Resource;
+use Illuminate\Support\Facades\Cache;
 
 class CreateResourceAction extends Action
 {
@@ -21,7 +23,9 @@ class CreateResourceAction extends Action
   public function execute(ResourceDTO $dto): Resource
   {
     return $this->run(function () use ($dto) {
-      return $this->repository->create($dto);
+      $resource = $this->repository->create($dto);
+      Cache::forget(CacheKeys::resources($resource->project_id));
+      return $resource;
     });
   }
 }
