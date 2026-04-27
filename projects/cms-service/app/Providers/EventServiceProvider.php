@@ -26,6 +26,9 @@ class EventServiceProvider extends ServiceProvider
     \App\Events\SystemLogEvent::class => [
       \App\Listeners\PublishSystemLog::class,
     ],
+    \App\Events\DataEntrySavedEvent::class => [
+      \App\Listeners\IndexDataEntryListener::class,
+    ],
   ];
 
 

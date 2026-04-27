@@ -31,7 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ], 404);
       }
     });
-  })
+  })->withCommands([
+    \App\Console\Commands\SearchReindexCommand::class,
+  ])
   ->withSchedule(function (Schedule $schedule) {
     $schedule->command('app:publish-scheduled-entries')
       ->everyMinute();

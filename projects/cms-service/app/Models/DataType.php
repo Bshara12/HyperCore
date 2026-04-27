@@ -11,7 +11,7 @@ class DataType extends Model
 {
   use SoftDeletes;
   use HasFactory;
-  
+
   protected $fillable = [
     'project_id',
     'name',
@@ -70,5 +70,9 @@ class DataType extends Model
   public function relatedRelations()
   {
     return $this->hasMany(DataTypeRelation::class, 'related_data_type_id');
+  }
+  public function getRouteKeyName()
+  {
+    return 'slug';
   }
 }

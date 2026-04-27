@@ -16,6 +16,7 @@ use App\Domains\CMS\DTOs\Data\CreateDataEntryDto;
 use App\Domains\CMS\Repositories\Interface\DataEntryRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\CMS\Requests\DataEntryRequest;
+use App\Events\DataEntrySavedEvent;
 use App\Events\EntryChanged;
 use App\Support\CurrentProject;
 use DomainException;
@@ -96,8 +97,8 @@ class DataEntryService
 
       $entry->load('values');
 
-      event(new EntryChanged($entry, $userId));
-
+      // event(new EntryChanged($entry, $userId));
+      event(new DataEntrySavedEvent($entry));
       return $entry;
     });
   }
@@ -152,6 +153,7 @@ class DataEntryService
       $entry->load('values');
 
       event(new EntryChanged($entry, $userId));
+      event(new DataEntrySavedEvent($entry));
 
       return $entry;
     });

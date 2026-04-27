@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Auth\Service\AuthServiceClient;
+use App\Http\Controllers\SearchClickController;
 use App\Http\Controllers\DataCollectionController;
 use App\Http\Controllers\DataEntryController;
 use App\Http\Controllers\DataEntryPublishController;
@@ -10,10 +11,13 @@ use App\Http\Controllers\EntryDetailController;
 use App\Http\Controllers\EntryVersionController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PopularSearchController;
 use App\Http\Controllers\ProjectAccessController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectEntriesController;
 use App\Http\Controllers\RatingController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SearchSuggestionController;
 use App\Http\Controllers\StockController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -166,7 +170,8 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
 Route::put('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'update']);
 
 
-Route::post('/projects/{project}/data-types/{dataType}/entries', [DataEntryController::class, 'store']);
+Route::post('/data-types/{dataType}/entries', [DataEntryController::class, 'store'])->middleware('resolve.project');
+// Route::post('/projects/{project}/data-types/{dataType}/entries', [DataEntryController::class, 'store']);
 
 Route::delete('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'destroy']);
 
@@ -344,7 +349,7 @@ Route::middleware(['resolve.project', 'auth.user'])
     Route::post('/pay', [PaymentController::class, 'charge']);
     Route::post('/installment', [PaymentController::class, 'payInstallment']);
     Route::post('/refund', [PaymentController::class, 'refund']);
-      // ->middleware('permission:payment.refund');
+    // ->middleware('permission:payment.refund');
   });
 
 // تعبئة رصيد — أدمن فقط
@@ -355,9 +360,42 @@ Route::post('/wallet/topup', [PaymentController::class, 'topUp'])
 
 
 // Rate
-Route::post('/ratings', [RatingController::class, 'store'])->middleware(['auth.user','resolve.project']);
+Route::post('/ratings', [RatingController::class, 'store'])->middleware(['auth.user', 'resolve.project']);
 Route::get('/ratings', [RatingController::class, 'index'])->middleware('auth.user');
 Route::get('/ratings/stats', [RatingController::class, 'stats'])->middleware('auth.user');
+
+
+
+
+
+// search
+Route::get('/search', SearchController::class)->middleware('auth.user', 'resolve.project');
+Route::post('/search/click', SearchClickController::class)->middleware('auth.user', 'resolve.project');
+Route::get('/search/suggestions', SearchSuggestionController::class)
+  ->middleware(['resolve.project']);  // لا يحتاج auth إلزامي
+  
+Route::get('/search/popular', PopularSearchController::class)
+    ->middleware(['resolve.project']);
+
+
+// routes/api.php - مؤقت للـ debugging فقط
+Route::get('/debug/search-user', function (Request $request) {
+  $user      = $request->attributes->get('auth_user');
+  $projectId = \App\Support\CurrentProject::id();
+
+  return response()->json([
+    'user_raw'       => $user,
+    'user_id'        => $user['id'] ?? $user['data']['id'] ?? null,
+    'user_structure' => is_array($user) ? array_keys($user) : gettype($user),
+    'project_id'     => $projectId,
+    'token'          => substr($request->bearerToken() ?? '', 0, 15) . '...',
+  ]);
+})->middleware(['auth.user', 'resolve.project']);
+
+
+
+
+
 
 
 
@@ -390,9 +428,9 @@ Route::get('/ratings/stats', [RatingController::class, 'stats'])->middleware('au
 //   [EntryDetailController::class, 'showwithsametype']
 // );
 Route::get('/b', function () {
-    return "CMS OK";
+  return "CMS OK";
 });
 
 Route::get('/test', function () {
-    return gethostname();
+  return gethostname();
 });
