@@ -4,9 +4,9 @@ namespace App\Domains\Booking\Support;
 
 class CacheKeys
 {
-  const TTL_SHORT  = 300;    // 5 دقائق
+  const TTL_SHORT = 300;    // 5 دقائق
   const TTL_MEDIUM = 3600;   // ساعة
-  const TTL_LONG   = 86400;  // يوم
+  const TTL_LONG = 86400;  // يوم
 
   // ============================================
   // 🔑 Resources

@@ -10,7 +10,7 @@ class LogClickAction
 {
     public function __construct(
         private UserBehaviorRepositoryInterface $repository,
-        private UserPreferenceAnalyzer          $analyzer,
+        private UserPreferenceAnalyzer $analyzer,
     ) {}
 
     public function execute(LogClickDTO $dto): void

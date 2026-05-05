@@ -11,26 +11,26 @@ use Illuminate\Support\Facades\Cache;
 
 class SetAvailabilityAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'resource.setAvailability';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'resource.setAvailability';
+    }
 
-  public function __construct(
-    private readonly ResourceRepositoryInterface $repository,
-  ) {}
+    public function __construct(
+        private readonly ResourceRepositoryInterface $repository,
+    ) {}
 
-  public function execute(Resource $resource, array $availabilities): void
-  {
-    $dtos = array_map(
-      fn(array $item) => AvailabilityDTO::fromArray($item, $resource->id),
-      $availabilities
-    );
+    public function execute(Resource $resource, array $availabilities): void
+    {
+        $dtos = array_map(
+            fn (array $item) => AvailabilityDTO::fromArray($item, $resource->id),
+            $availabilities
+        );
 
-    $this->run(function () use ($resource, $dtos) {
-      $this->repository->setAvailabilities($resource, $dtos);
-      Cache::forget(CacheKeys::resource($resource->id));
-      Cache::forget(CacheKeys::resources($resource->project_id));
-    });
-  }
+        $this->run(function () use ($resource, $dtos) {
+            $this->repository->setAvailabilities($resource, $dtos);
+            Cache::forget(CacheKeys::resource($resource->id));
+            Cache::forget(CacheKeys::resources($resource->project_id));
+        });
+    }
 }

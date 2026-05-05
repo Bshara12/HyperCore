@@ -6,21 +6,26 @@ use App\Domains\Search\DTOs\SearchQueryDTO;
 use App\Domains\Search\DTOs\UserPreferenceDTO;
 use App\Domains\Search\Repositories\Interfaces\SearchRepositoryInterface;
 use App\Domains\Search\Support\ProcessedKeyword;
+use App\Domains\Search\Support\SearchResultRanker;
 use Illuminate\Support\Facades\DB;
 
 class EloquentSearchRepository implements SearchRepositoryInterface
 {
-  /**
-   * خريطة ربط data_type slugs بالـ intents
-   * يمكن تعديلها حسب slugs مشروعك الفعلية
-   *
-   * @var array<string, string[]>
-   */
+  /*
+     * جلب top 100 من DB ثم re-rank في PHP
+     * هذا أسرع من حساب complex scoring على ملايين الصفوف في SQL
+     */
+  private const DB_FETCH_LIMIT = 100;
+
   private const INTENT_DATA_TYPE_MAP = [
     'product' => ['products', 'product', 'items', 'goods', 'منتجات'],
     'article' => ['articles', 'article', 'posts', 'blog', 'news', 'مقالات'],
     'service' => ['services', 'service', 'booking', 'appointments', 'خدمات'],
   ];
+
+  public function __construct(
+    private SearchResultRanker $ranker,
+  ) {}
 
   // ─────────────────────────────────────────────────────────────────
 
@@ -29,9 +34,9 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     ProcessedKeyword  $processed,
     UserPreferenceDTO $preference
   ): array {
+
     foreach ($processed->relaxedQueries as $step => $query) {
       $result = $this->executeSearch($dto, $processed, $query, $preference);
-
       if ($result['total'] > 0) {
         $result['relaxation_step'] = $step;
         $result['query_used']      = $query;
@@ -40,255 +45,326 @@ class EloquentSearchRepository implements SearchRepositoryInterface
       }
     }
 
-    return ['items' => [], 'total' => 0, 'relaxation_step' => -1, 'query_used' => null, 'intent' => $processed->intent];
+    return [
+      'items'           => [],
+      'total'           => 0,
+      'relaxation_step' => -1,
+      'query_used'      => null,
+      'intent'          => $processed->intent,
+    ];
   }
 
-  // ─── في executeSearch أضف $preference parameter ──────────────────
+  // ─────────────────────────────────────────────────────────────────
+
   private function executeSearch(
     SearchQueryDTO    $dto,
     ProcessedKeyword  $processed,
     string            $booleanQuery,
-    UserPreferenceDTO $preference     // ← إضافة
+    UserPreferenceDTO $preference
   ): array {
-    $offset      = ($dto->page - 1) * $dto->perPage;
-    $primaryWord = $processed->primaryWord;
-    $intent      = $processed->intent['intent'];
-    $confidence  = $processed->intent['confidence'];
 
-    $rankingExpression  = $this->buildRankingExpression();
-    $intentBoostExpr    = $this->buildIntentBoostExpression($intent, $confidence);
+    $intent     = $processed->intent['intent'];
+    $confidence = $processed->intent['confidence'];
+    $cleanWords = $processed->cleanWords;
+    $phraseQuery = implode(' ', $cleanWords);
 
-    // ─── Preference Boost (جديد) ──────────────────────────────────
-    $prefBoostExpr      = $this->buildPreferenceBoostExpression($preference);
-
-    $fullRanking = "({$rankingExpression}) + ({$intentBoostExpr}) + ({$prefBoostExpr})";
-
+    // ─── 1. بناء WHERE conditions ─────────────────────────────────
     $where      = 'si.project_id = ? AND si.language = ? AND si.status = ?';
-    $whereBinds = [$dto->projectId, $dto->language, 'published'];
+    $binds      = [$dto->projectId, $dto->language, 'published'];
 
-    $dataTypeJoin  = 'LEFT JOIN data_types dt ON dt.id = si.data_type_id';
-    $dataTypeBinds = [];
-
+    /*
+         * Intent Filtering بدون JOIN:
+         * نستخدم data_type_slug المخزون في search_indices مباشرة
+         * بدل LEFT JOIN data_types
+         * هذا يوفر الـ JOIN cost على ملايين الصفوف
+         */
     if ($dto->dataTypeSlug !== null) {
-      $where        .= ' AND dt.slug = ?';
-      $dataTypeBinds = [$dto->dataTypeSlug];
+      $where .= ' AND si.data_type_slug = ?';
+      $binds[] = $dto->dataTypeSlug;
+    } elseif ($intent !== 'general' && $confidence >= 0.3) {
+      $intentSlugs = self::INTENT_DATA_TYPE_MAP[$intent] ?? [];
+      if (!empty($intentSlugs)) {
+        $placeholders = implode(', ', array_fill(0, count($intentSlugs), '?'));
+        $where .= " AND si.data_type_slug IN ({$placeholders})";
+        $binds  = array_merge($binds, $intentSlugs);
+      }
     }
 
+    // ─── 2. COUNT query مُبسَّط ───────────────────────────────────
+    /*
+         * بدل COUNT(*) الثقيل، نستخدم SQL_CALC_FOUND_ROWS
+         * أو نقبل بـ estimated count من information_schema
+         *
+         * لكن الأبسط والأكثر موثوقية: count مع LIMIT على الـ FULLTEXT
+         */
     $countSql = "
-        SELECT COUNT(*) AS total
-        FROM search_indices si
-        {$dataTypeJoin}
-        WHERE {$where}
-          AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
-    ";
+            SELECT COUNT(*) AS total
+            FROM search_indices si
+            WHERE {$where}
+              AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
+            LIMIT 10000
+        ";
 
-    $countBinds = [...$whereBinds, ...$dataTypeBinds, $booleanQuery];
-    $totalRow   = DB::selectOne($countSql, $countBinds);
-    $total      = (int) ($totalRow->total ?? 0);
+    $countRow = DB::selectOne($countSql, [...$binds, $booleanQuery]);
+    $total    = (int) ($countRow->total ?? 0);
 
-    if ($total === 0) return ['items' => [], 'total' => 0];
+    if ($total === 0) {
+      return ['items' => [], 'total' => 0];
+    }
+
+    // ─── 3. Search Query مُبسَّط - فقط FULLTEXT + precomputed ─────
+    /*
+         * الـ SQL الجديد بسيط جداً:
+         *   - FULLTEXT فقط للـ filtering والـ base score
+         *   - لا LIKE، لا LOCATE، لا REPLACE، لا CHAR_LENGTH
+         *   - نجلب ctr_score و freshness_score من الأعمدة المُحسوبة
+         *   - الـ re-ranking المعقد يحدث في PHP
+         *
+         * هذا يُقلل query complexity من O(n × ops) إلى O(n × 1)
+         */
+    // $searchSql = "
+    //     SELECT
+    //         si.entry_id,
+    //         si.data_type_id,
+    //         si.data_type_slug,
+    //         si.project_id,
+    //         si.language,
+    //         si.title,
+    //         si.content,
+    //         si.status,
+    //         si.published_at,
+    //         si.ctr_score,
+    //         si.freshness_score,
+    //         si.title_has_numbers,
+    //         si.title_word_count,
+    //         MATCH(title, content) AGAINST(? IN NATURAL LANGUAGE MODE) AS fulltext_score
+    //     FROM search_indices si
+    //     WHERE {$where}
+    //       AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
+    //     ORDER BY fulltext_score DESC
+    //     LIMIT ?
+    //     OFFSET ?
+    // ";
 
     $searchSql = "
-        SELECT
-            si.entry_id, si.data_type_id, si.project_id,
-            si.language, si.title, si.content,
-            si.status, si.published_at,
-            ({$fullRanking}) AS weighted_score
-        FROM search_indices si
-        {$dataTypeJoin}
-        WHERE {$where}
-          AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
-        ORDER BY weighted_score DESC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT
+        si.entry_id,
+        si.data_type_id,
+        si.data_type_slug,
+        si.project_id,
+        si.language,
+        si.title,
+        si.content,
+        si.status,
+        si.published_at,
+        si.ctr_score,
+        si.freshness_score,
+        si.title_has_numbers,
+        si.title_word_count,
+        si.click_count,
+        si.view_count,
+        si.popularity_score,
+        MATCH(title, content) AGAINST(? IN NATURAL LANGUAGE MODE) AS fulltext_score
+    FROM search_indices si
+    WHERE {$where}
+      AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
+    ORDER BY fulltext_score DESC
+    LIMIT ?
+    OFFSET ?
+";
 
-    $rankingBinds     = $this->buildRankingBinds($booleanQuery, $primaryWord);
-    $intentBoostBinds = $this->buildIntentBoostBinds($intent, $confidence);
-    $prefBoostBinds   = $this->buildPreferenceBoostBinds($preference);
+    /*
+         * Offset Strategy:
+         * للصفحة 1: جلب top 100، re-rank، أرجع perPage
+         * للصفحات الأخرى: offset عادي (acceptable للصفحات الأولى فقط)
+         *
+         * للـ scale الحقيقي: cursor-based pagination
+         */
+    $fetchLimit = max(self::DB_FETCH_LIMIT, $dto->perPage * 3);
+    $offset     = max(0, ($dto->page - 1) * $dto->perPage - $fetchLimit + $dto->perPage);
 
     $searchBinds = [
-      ...$rankingBinds,
-      ...$intentBoostBinds,
-      ...$prefBoostBinds,
-      ...$whereBinds,
-      ...$dataTypeBinds,
-      $booleanQuery,
-      $dto->perPage,
-      $offset,
+      $booleanQuery,  // NATURAL LANGUAGE للـ scoring
+      ...$binds,      // WHERE conditions
+      $booleanQuery,  // BOOLEAN MODE للـ filtering
+      $fetchLimit,    // نجلب أكثر من المطلوب للـ re-ranking
+      0,              // offset = 0 للـ page 1 (re-ranking يتولى الـ pagination)
     ];
 
     $rows = DB::select($searchSql, $searchBinds);
-    return ['items' => $rows, 'total' => $total];
-  }
 
-// ─────────────────────────────────────────────────────────────────
-// Preference Boost Builders
-// ─────────────────────────────────────────────────────────────────
-
-  /**
-   * Preference Boost أضعف من Intent Boost عمداً
-   *
-   * Intent Boost:      confidence × 2.5  (يعكس نية البحث الحالي)
-   * Preference Boost:  confidence × 1.5  (يعكس تاريخ المستخدم)
-   *
-   * السبب: نية البحث الحالي أهم من التاريخ
-   * لكن التاريخ يُكسر التعادل بين نتيجتين متساويتين
-   */
-  private function buildPreferenceBoostExpression(UserPreferenceDTO $preference): string
-  {
-    if (!$preference->hasHistory || $preference->preferredType === 'general') {
-      return '0';
+    if (empty($rows)) {
+      return ['items' => [], 'total' => $total];
     }
 
-    $slugs        = EloquentSearchRepository::INTENT_DATA_TYPE_MAP[$preference->preferredType] ?? [];
-    if (empty($slugs)) return '0';
+    // ─── 4. PHP Re-ranking ────────────────────────────────────────
+    $userKeywords = $this->getUserKeywords($dto->userId, $dto->projectId);
 
-    $placeholders = implode(', ', array_fill(0, count($slugs), '?'));
+    $reranked = $this->ranker->rerank(
+      rows: $rows,
+      cleanWords: $cleanWords,
+      phraseQuery: $phraseQuery,
+      intent: $intent,
+      intentConf: $confidence,
+      preference: $preference,
+      userKeywords: $userKeywords,
+    );
 
-    return "
-        CASE
-            WHEN dt.slug IN ({$placeholders})
-            THEN ? * 1.5
-            ELSE 0
-        END
-    ";
-  }
-
-  private function buildPreferenceBoostBinds(UserPreferenceDTO $preference): array
-  {
-    if (!$preference->hasHistory || $preference->preferredType === 'general') {
-      return [];
-    }
-
-    $slugs = EloquentSearchRepository::INTENT_DATA_TYPE_MAP[$preference->preferredType] ?? [];
-    if (empty($slugs)) return [];
-
-    return [...$slugs, $preference->confidence];
-  }
-
-  // ─────────────────────────────────────────────────────────────────
-
-    // ─────────────────────────────────────────────────────────────────
-    // Intent Boost Expression
-    // ─────────────────────────────────────────────────────────────────
-
-  /**
-   * بناء SQL expression لـ boost النتائج حسب النية
-   *
-   * المنطق:
-   *   إذا كانت النية "product" والـ data_type slug يدل على products
-   *   → أضف boost مضروباً في الـ confidence
-   *
-   *   هذا يعني:
-   *   - confidence عالي (0.9) → boost كبير
-   *   - confidence منخفض (0.3) → boost صغير
-   *   - general intent → لا boost
-   *
-   * ملاحظة: إذا كانت النية general → نُرجع 0 دائماً
-   */
-  private function buildIntentBoostExpression(
-    string $intent,
-    float  $confidence
-  ): string {
-    // general = لا boost على الإطلاق
-    if ($intent === 'general' || $confidence < 0.3) {
-      return '0';
-    }
-
-    $slugs = self::INTENT_DATA_TYPE_MAP[$intent] ?? [];
-
-    if (empty($slugs)) {
-      return '0';
-    }
-
-    /*
-         * بناء قائمة الـ slugs كـ placeholders
-         * مثال: 3 slugs → "?, ?, ?"
-         */
-    $placeholders = implode(', ', array_fill(0, count($slugs), '?'));
-
-    /*
-         * الصيغة:
-         *   CASE
-         *     WHEN dt.slug IN (?, ?, ?) THEN ? * 2.5
-         *     ELSE 0
-         *   END
-         *
-         * المضاعف 2.5 = قيمة الـ base boost
-         * × confidence = يُخفف الـ boost إذا كنا غير متأكدين
-         */
-    return "
-            CASE
-                WHEN dt.slug IN ({$placeholders})
-                THEN ? * 2.5
-                ELSE 0
-            END
-        ";
-  }
-
-  /**
-   * Binds لـ Intent Boost Expression
-   *
-   * @return array
-   */
-  private function buildIntentBoostBinds(string $intent, float $confidence): array
-  {
-    if ($intent === 'general' || $confidence < 0.3) {
-      return [];
-    }
-
-    $slugs = self::INTENT_DATA_TYPE_MAP[$intent] ?? [];
-
-    if (empty($slugs)) {
-      return [];
-    }
-
-    // slugs أولاً (للـ IN)، ثم confidence (للضرب)
-    return [...$slugs, $confidence];
-  }
-
-  // ─────────────────────────────────────────────────────────────────
-  // Ranking (لم يتغير)
-  // ─────────────────────────────────────────────────────────────────
-
-  private function buildRankingExpression(): string
-  {
-    $scoreA = "MATCH(title, content) AGAINST(? IN NATURAL LANGUAGE MODE) * 3";
-    $scoreB = "CASE WHEN LOCATE(?, title) > 0 THEN 2.0 ELSE 0 END";
-    $scoreC = "CASE WHEN title LIKE ? THEN 1.5 ELSE 0 END";
-    $scoreD_title   = "COALESCE(1.0 / (NULLIF(LOCATE(?, title), 0) + 1), 0)";
-    $scoreD_content = "COALESCE(1.0 / (NULLIF(LOCATE(?, content), 0) + 1), 0) * 0.5";
-    $scoreE = "
-            (
-                (
-                    CHAR_LENGTH(CONCAT(title, ' ', content))
-                    - CHAR_LENGTH(
-                        REPLACE(
-                            LOWER(CONCAT(title, ' ', content)),
-                            LOWER(?),
-                            ''
-                        )
-                    )
-                ) / NULLIF(CHAR_LENGTH(?), 0)
-            ) * 0.1
-        ";
-
-    return "
-            ({$scoreA}) + ({$scoreB}) + ({$scoreC})
-            + ({$scoreD_title}) + ({$scoreD_content}) + ({$scoreE})
-        ";
-  }
-
-  private function buildRankingBinds(string $naturalQuery, string $primaryWord): array
-  {
+    // ─── 5. Pagination بعد الـ Re-ranking ────────────────────────
+    $pageStart   = ($dto->page - 1) * $dto->perPage;
+    $pagedItems  = array_slice($reranked, $pageStart, $dto->perPage);
     return [
-      $naturalQuery,
-      $primaryWord,
-      '%' . $primaryWord . '%',
-      $primaryWord,
-      $primaryWord,
-      $primaryWord,
-      $primaryWord,
+      'items' => $pagedItems,
+      'total' => $total,
     ];
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // User Keywords (Time-Decayed)
+  // ─────────────────────────────────────────────────────────────────
+
+  private function getUserKeywords(?int $userId, int $projectId): array
+  {
+    if ($userId === null) {
+      return [];
+    }
+
+    static $cache = []; // request-level cache
+
+    $cacheKey = "{$userId}:{$projectId}";
+    if (isset($cache[$cacheKey])) {
+      return $cache[$cacheKey];
+    }
+
+    $rows = DB::table('user_search_logs')
+      ->select('keyword', DB::raw('MAX(searched_at) as last_searched'))
+      // ->select('keyword', DB::raw('COUNT(*) as search_count,(searched_at) as last_searched'))
+      ->where('user_id', $userId)
+      ->where('project_id', $projectId)
+      ->where('searched_at', '>=', now()->subDays(14))
+      ->whereNotNull('keyword')
+      ->whereRaw('CHAR_LENGTH(TRIM(keyword)) >= 2')
+      ->groupBy('keyword')
+      ->orderByDesc('last_searched')
+      ->limit(8)
+      ->get();
+
+    $result = [];
+
+    foreach ($rows as $row) {
+      $daysAgo = now()->diffInDays($row->last_searched);
+      $weight  = exp(-$daysAgo / 7.0);
+
+      $words = preg_split('/\s+/', mb_strtolower(trim($row->keyword)));
+
+      foreach ($words as $word) {
+        if (mb_strlen($word) >= 3 && !is_numeric($word)) {
+          $result[$word] = max($result[$word] ?? 0, round($weight, 4));
+        }
+      }
+    }
+
+    arsort($result);
+    $result = array_slice(
+      array_map(
+        fn($w, $weight) => ['word' => $w, 'weight' => $weight],
+        array_keys($result),
+        array_values($result)
+      ),
+      0,
+      10
+    );
+
+    return $cache[$cacheKey] = $result;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Click Tracking
+  // ─────────────────────────────────────────────────────────────────
+
+  public function incrementClickCount(int $entryId, string $language): void
+  {
+    DB::table('search_indices')
+      ->where('entry_id', $entryId)
+      ->where('language', $language)
+      ->increment('click_count');
+  }
+
+
+
+
+
+
+
+
+
+
+
+  /**
+   * بحث مع دعم كلمات الاستبعاد (BOOLEAN MODE minus)
+   *
+   * @param string[] $excludeTerms  كلمات يجب ألا تظهر في النتائج
+   */
+  public function searchWithExclusions(
+    SearchQueryDTO    $dto,
+    ProcessedKeyword  $processed,
+    UserPreferenceDTO $preference,
+    array             $excludeTerms = []
+  ): array {
+
+    /*
+     * إذا لا يوجد استبعاد → استخدم الـ search العادي
+     */
+    if (empty($excludeTerms)) {
+      return $this->search($dto, $processed, $preference);
+    }
+
+    /*
+     * بناء relaxed queries مع إضافة الاستبعاد لكل منها
+     *
+     * مثال:
+     *   original relaxed: ["+iphone*", "iphone*"]
+     *   مع exclude "15":  ["+iphone* -15", "iphone* -15"]
+     */
+    $excludeSuffix = ' ' . implode(
+      ' ',
+      array_map(
+        fn($t) => '-' . preg_replace('/[+\-><\(\)~*"@]+/', '', $t),
+        $excludeTerms
+      )
+    );
+
+    $modifiedProcessed = $this->injectExclusionsIntoProcessed(
+      $processed,
+      $excludeSuffix
+    );
+
+    return $this->search($dto, $modifiedProcessed, $preference);
+  }
+
+  /**
+   * حقن الـ exclude suffix في كل relaxed queries
+   */
+  private function injectExclusionsIntoProcessed(
+    ProcessedKeyword $processed,
+    string           $excludeSuffix
+  ): ProcessedKeyword {
+
+    $modifiedQueries = array_map(
+      fn($q) => $q . $excludeSuffix,
+      $processed->relaxedQueries
+    );
+
+    return new ProcessedKeyword(
+      original: $processed->original,
+      booleanQuery: $processed->booleanQuery . $excludeSuffix,
+      cleanWords: $processed->cleanWords,
+      primaryWord: $processed->primaryWord,
+      relaxedQueries: $modifiedQueries,
+      expandedGroups: $processed->expandedGroups,
+      intent: $processed->intent,
+      dbExpandedGroups: $processed->dbExpandedGroups,
+      hadDbExpansion: $processed->hadDbExpansion,
+    );
   }
 }

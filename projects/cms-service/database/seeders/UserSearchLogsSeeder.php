@@ -102,7 +102,7 @@ class UserSearchLogsSeeder extends Seeder
             DB::table('user_search_logs')->insert($chunk);
         }
 
-        $this->command->info('UserSearchLogs seeded: ' . count($records));
+        $this->command->info('UserSearchLogs seeded: '.count($records));
     }
 
     // ─────────────────────────────────────────────
@@ -118,15 +118,15 @@ class UserSearchLogsSeeder extends Seeder
         ?string $sessionId = null
     ): array {
         return [
-            'user_id'           => $userId,
-            'project_id'        => $projectId,
-            'keyword'           => $keyword,
-            'language'          => 'en',
-            'detected_intent'   => $intent,
+            'user_id' => $userId,
+            'project_id' => $projectId,
+            'keyword' => $keyword,
+            'language' => 'en',
+            'detected_intent' => $intent,
             'intent_confidence' => $confidence,
-            'results_count'     => $results,
-            'session_id'        => $sessionId,
-            'searched_at'       => $time,
+            'results_count' => $results,
+            'session_id' => $sessionId,
+            'searched_at' => $time,
         ];
     }
 }

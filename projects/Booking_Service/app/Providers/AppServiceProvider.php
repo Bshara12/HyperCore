@@ -25,11 +25,11 @@ class AppServiceProvider extends ServiceProvider
     $this->app->bind(AnalyticsRepositoryInterface::class, EloquentBookingAnalyticsRepository::class);
   }
 
-  /**
-   * Bootstrap any application services.
-   */
-  public function boot(): void
-  {
-    //
-  }
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        //
+    }
 }

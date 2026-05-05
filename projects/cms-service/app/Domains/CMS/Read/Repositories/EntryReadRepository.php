@@ -170,7 +170,7 @@ class EntryReadRepository implements EntryReadRepositoryInterface
     $valuesQuery = DB::table('data_entry_values as v')
       ->join('data_type_fields as f', 'f.id', '=', 'v.data_type_field_id')
       ->where('v.data_entry_id', $entryId)
-      ->where(function($q) use ($language, $fallback) {
+      ->where(function ($q) use ($language, $fallback) {
         $q->whereIn('v.language', [$language, $fallback, "0"])
           ->orWhereNull('v.language'); // Include null language values
       })
@@ -233,9 +233,9 @@ class EntryReadRepository implements EntryReadRepositoryInterface
       })
       ->orderByRaw("language = '$language' DESC")
       ->first();
-
     return [
       'id'     => $entry->id,
+      'slug' => $entry->slug,
       'status' => $entry->status,
       'values' => $mappedValues,
       'seo'    => $seo ? (array) $seo : [],
@@ -275,7 +275,7 @@ class EntryReadRepository implements EntryReadRepositoryInterface
     $values = DB::table('data_entry_values as v')
       ->join('data_type_fields as f', 'f.id', '=', 'v.data_type_field_id')
       ->whereIn('v.data_entry_id', $entries->keys())
-      ->where(function($q) use ($language, $fallback) {
+      ->where(function ($q) use ($language, $fallback) {
         $q->whereIn('v.language', [$language, $fallback, "0"])
           ->orWhereNull('v.language'); // Include null language values
       })
@@ -320,7 +320,7 @@ class EntryReadRepository implements EntryReadRepositoryInterface
             $path = $item->value;
 
             $mediaItems[] = [
-              'url'       =>Storage::disk('supabase')->url($path),
+              'url'       => Storage::disk('supabase')->url($path),
               'name'      => basename($path),
               'extension' => pathinfo($path, PATHINFO_EXTENSION),
             ];
@@ -339,6 +339,7 @@ class EntryReadRepository implements EntryReadRepositoryInterface
 
       $result[] = [
         'id'     => $entry->id,
+        'slug'=>$entry->slug,
         'status' => $entry->status,
         'values' => $mapped,
       ];

@@ -14,9 +14,9 @@ class SuggestionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'q'    => ['required', 'string', 'min:1', 'max:100'],
+            'q' => ['required', 'string', 'min:1', 'max:100'],
             'lang' => ['sometimes', 'string', 'size:2'],
-            'limit'=> ['sometimes', 'integer', 'min:1', 'max:15'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:15'],
         ];
     }
 

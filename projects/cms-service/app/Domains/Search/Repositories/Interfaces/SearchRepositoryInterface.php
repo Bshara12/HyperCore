@@ -15,11 +15,17 @@ interface SearchRepositoryInterface
    * @return array{items: array, total: int}
    */
 
-
   // public function search(SearchQueryDTO $dto): array;
   public function search(
     SearchQueryDTO $dto,
     ProcessedKeyword $processed,
     UserPreferenceDTO $preference   // ← إضافة
+  ): array;
+
+  public function searchWithExclusions(
+    SearchQueryDTO    $dto,
+    ProcessedKeyword  $processed,
+    UserPreferenceDTO $preference,
+    array             $excludeTerms = []
   ): array;
 }

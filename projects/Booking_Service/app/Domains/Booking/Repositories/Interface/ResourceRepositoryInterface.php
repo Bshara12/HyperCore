@@ -4,6 +4,7 @@ namespace App\Domains\Booking\Repositories\Interface;
 
 use App\Domains\Booking\DTOs\ResourceDTO;
 use App\Models\Resource;
+use Illuminate\Database\Eloquent\Collection;
 
 interface ResourceRepositoryInterface
 {
@@ -19,4 +20,5 @@ interface ResourceRepositoryInterface
   public function setAvailabilities(Resource $resource, array $dtos): void;
 
   // ─── Cancellation Policy ──────────────────────────────────────────────────
-  public function setPolicies(Resource $resource, array $dtos): void;}
+  public function setPolicies(Resource $resource, array $dtos): void;
+}

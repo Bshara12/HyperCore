@@ -56,7 +56,7 @@ class EloquentResourceRepository implements ResourceRepositoryInterface
         $resource->is_booked = Booking::where('resource_id', $resource->id)
           ->where('user_id', $userId)
           ->exists();
-          
+
         return $resource;
       });
   }
@@ -76,14 +76,14 @@ class EloquentResourceRepository implements ResourceRepositoryInterface
     $resource->availabilities()->delete();
 
     $rows = array_map(fn(AvailabilityDTO $dto) => [
-      'resource_id'   => $resource->id,
-      'day_of_week'   => $dto->dayOfWeek,
-      'start_time'    => $dto->startTime,
-      'end_time'      => $dto->endTime,
+      'resource_id' => $resource->id,
+      'day_of_week' => $dto->dayOfWeek,
+      'start_time' => $dto->startTime,
+      'end_time' => $dto->endTime,
       'slot_duration' => $dto->slotDuration,
-      'is_active'     => $dto->isActive,
-      'created_at'    => now(),
-      'updated_at'    => now(),
+      'is_active' => $dto->isActive,
+      'created_at' => now(),
+      'updated_at' => now(),
     ], $dtos);
 
     ResourceAvailability::insert($rows);
@@ -96,12 +96,12 @@ class EloquentResourceRepository implements ResourceRepositoryInterface
     $resource->cancellationPolicies()->delete();
 
     $rows = array_map(fn(CancellationPolicyDTO $dto) => [
-      'resource_id'       => $resource->id,
-      'hours_before'      => $dto->hoursBefore,
+      'resource_id' => $resource->id,
+      'hours_before' => $dto->hoursBefore,
       'refund_percentage' => $dto->refundPercentage,
-      'description'       => $dto->description,
-      'created_at'        => now(),
-      'updated_at'        => now(),
+      'description' => $dto->description,
+      'created_at' => now(),
+      'updated_at' => now(),
     ], $dtos);
 
     BookingCancellationPolicy::insert($rows);

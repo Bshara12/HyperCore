@@ -14,15 +14,15 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
     public function logSearch(LogSearchDTO $dto): int
     {
         $log = UserSearchLog::create([
-            'user_id'           => $dto->userId,
-            'project_id'        => $dto->projectId,
-            'keyword'           => $dto->keyword,
-            'language'          => $dto->language,
-            'detected_intent'   => $dto->detectedIntent,
+            'user_id' => $dto->userId,
+            'project_id' => $dto->projectId,
+            'keyword' => $dto->keyword,
+            'language' => $dto->language,
+            'detected_intent' => $dto->detectedIntent,
             'intent_confidence' => $dto->intentConfidence,
-            'results_count'     => $dto->resultsCount,
-            'session_id'        => $dto->sessionId,
-            'searched_at'       => now(),
+            'results_count' => $dto->resultsCount,
+            'session_id' => $dto->sessionId,
+            'searched_at' => now(),
         ]);
 
         return $log->id;
@@ -31,14 +31,14 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
     public function logClick(LogClickDTO $dto): void
     {
         UserClickLog::create([
-            'user_id'         => $dto->userId,
-            'project_id'      => $dto->projectId,
-            'search_log_id'   => $dto->searchLogId,
-            'entry_id'        => $dto->entryId,
-            'data_type_id'    => $dto->dataTypeId,
+            'user_id' => $dto->userId,
+            'project_id' => $dto->projectId,
+            'search_log_id' => $dto->searchLogId,
+            'entry_id' => $dto->entryId,
+            'data_type_id' => $dto->dataTypeId,
             'result_position' => $dto->resultPosition,
-            'session_id'      => $dto->sessionId,
-            'clicked_at'      => now(),
+            'session_id' => $dto->sessionId,
+            'clicked_at' => now(),
         ]);
     }
 
@@ -59,9 +59,9 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
     }
 
     public function getClickCountsByDataTypeForSession(
-        int    $projectId,
+        int $projectId,
         string $sessionId,
-        int    $days = 30
+        int $days = 30
     ): array {
         $rows = DB::table('user_click_logs')
             ->select('data_type_id', DB::raw('COUNT(*) as click_count'))

@@ -23,15 +23,15 @@ class EntryFieldsExtractor
      */
     public function extract(DataEntry $entry, string $language): array
     {
-        $title   = null;
+        $title = null;
         $content = null;
-        $meta    = [];
+        $meta = [];
 
         // entry->values هي علاقة محملة مسبقاً
         foreach ($entry->values as $value) {
-            $field     = $value->field;         // العلاقة مع data_type_fields
+            $field = $value->field;         // العلاقة مع data_type_fields
             $fieldType = strtolower($field->type ?? '');
-            $lang      = $value->language ?? 'en';
+            $lang = $value->language ?? 'en';
 
             // نتجاهل اللغات الأخرى
             if ($lang !== $language) {
@@ -49,7 +49,7 @@ class EntryFieldsExtractor
                 $title = $this->cleanText($rawValue);
             } elseif (in_array($fieldType, self::CONTENT_TYPES, true)) {
                 // الحقول الطويلة تُضاف للمحتوى
-                $content .= ' ' . $this->cleanText($rawValue);
+                $content .= ' '.$this->cleanText($rawValue);
             } else {
                 // باقي الحقول تذهب للـ meta
                 $meta[$field->name] = $rawValue;
@@ -57,9 +57,9 @@ class EntryFieldsExtractor
         }
 
         return [
-            'title'   => $title,
+            'title' => $title,
             'content' => trim($content ?? ''),
-            'meta'    => $meta,
+            'meta' => $meta,
         ];
     }
 
@@ -70,6 +70,7 @@ class EntryFieldsExtractor
     {
         $text = strip_tags($text);
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 }

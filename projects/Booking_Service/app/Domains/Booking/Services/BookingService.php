@@ -5,7 +5,6 @@ namespace App\Domains\Booking\Services;
 use App\Domains\Booking\Actions\Client\CalculateRefundAction;
 use App\Domains\Booking\Actions\Client\CheckAvailabilityAction;
 use App\Domains\Booking\Actions\Client\CheckBookingConflictAction;
-use App\Domains\Booking\Actions\Client\CreateBookingAction;
 use App\Domains\Booking\Actions\Client\CreateBookingRecordAction;
 use App\Domains\Booking\Actions\Client\GetBookingAction;
 use App\Domains\Booking\Actions\Client\ProcessBookingPaymentAction;
@@ -28,10 +27,9 @@ use Illuminate\Support\Facades\DB;
 class BookingService
 {
   public function __construct(
-    private readonly SlotGeneratorService        $slotGenerator,
+    private readonly SlotGeneratorService $slotGenerator,
     private readonly ResourceRepositoryInterface $resourceRepository,
-    private readonly GetResourceBookingsAction   $getResourceBookingsAction,
-
+    private readonly GetResourceBookingsAction $getResourceBookingsAction,
 
     private readonly ValidateBookingTimeAction $validateTime,
     private readonly CheckAvailabilityAction $checkAvailability,
@@ -50,8 +48,9 @@ class BookingService
   {
     $resource = $this->resourceRepository->findById($dto->resourceId);
 
-    throw_if(! $resource,           \Exception::class, 'Resource not found.');
-    throw_if(! $resource->isActive(), \Exception::class, 'Resource is not active.');
+    throw_if(! $resource, \Exception::class, 'Resource not found.');
+    // throw_if(! $resource->isActive(), \Exception::class, 'Resource is not active.');
+    throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is not active.');
 
     $carbon = Carbon::parse($dto->date);
 
@@ -63,9 +62,9 @@ class BookingService
 
     return [
       'resource_id' => $dto->resourceId,
-      'date'        => $carbon->format('Y-m-d'),
-      'day'         => $carbon->format('l'),
-      'slots'       => $this->slotGenerator->generate($resource, $carbon),
+      'date' => $carbon->format('Y-m-d'),
+      'day' => $carbon->format('l'),
+      'slots' => $this->slotGenerator->generate($resource, $carbon),
     ];
   }
 
@@ -84,23 +83,27 @@ class BookingService
       $resource = $this->resourceRepository->findById($dto->resourceId);
 
       throw_if(! $resource, \Exception::class, 'Resource not found');
-      throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
+      // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
+      throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is inactive.');
+
 
       // 🔥 تحقق السعر
       if ($resource->payment_type === 'paid') {
-        if ((float)$dto->amount !== (float)$resource->price) {
+        if ((float) $dto->amount !== (float) $resource->price) {
           throw new \Exception('Invalid booking amount');
         }
       } else {
         // 🔥 مجاني → اجبر السعر = 0
         $dto->amount = 0;
       }
-      
+
       throw_if(! $resource, \Exception::class, 'Resource not found');
-      throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
+      // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
+      throw_if($resource->status !== 'active', \Exception::class, 'Resource inactive');
+
 
       $start = Carbon::parse($dto->startAt);
-      $end   = Carbon::parse($dto->endAt);
+      $end = Carbon::parse($dto->endAt);
 
       // 1. validate time
       $this->validateTime->execute($start, $end);
@@ -172,7 +175,7 @@ class BookingService
       }
 
       $start = Carbon::parse($dto->startAt);
-      $end   = Carbon::parse($dto->endAt);
+      $end = Carbon::parse($dto->endAt);
 
       // ✅ reuse
       $this->validateTime->execute($start, $end);

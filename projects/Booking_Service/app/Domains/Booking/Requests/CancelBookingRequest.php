@@ -9,7 +9,7 @@ class CancelBookingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'booking_id' => 'required|exists:bookings,id'
+            'booking_id' => 'required|exists:bookings,id',
         ];
     }
 }

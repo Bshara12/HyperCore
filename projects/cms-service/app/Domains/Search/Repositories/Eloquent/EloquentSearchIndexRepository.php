@@ -19,11 +19,11 @@ class EloquentSearchIndexRepository implements SearchIndexRepositoryInterface
             // ─── البيانات المراد حفظها أو تحديثها ───────────────────
             [
                 'data_type_id' => $dto->dataTypeId,
-                'project_id'   => $dto->projectId,
-                'title'        => $dto->title,
-                'content'      => $dto->content,
-                'meta'         => $dto->meta ? json_encode($dto->meta) : null,
-                'status'       => $dto->status,
+                'project_id' => $dto->projectId,
+                'title' => $dto->title,
+                'content' => $dto->content,
+                'meta' => $dto->meta ? json_encode($dto->meta) : null,
+                'status' => $dto->status,
                 'published_at' => $dto->publishedAt,
             ]
         );
