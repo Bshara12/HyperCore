@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Auth\Service\AuthServiceClient;
+use App\Http\Controllers\CmsAnalyticsController;
 use App\Http\Controllers\SearchClickController;
 use App\Http\Controllers\DataCollectionController;
 use App\Http\Controllers\DataEntryController;
@@ -364,7 +365,25 @@ Route::middleware(['resolve.project', 'auth.user'])
 Route::post('/wallet/topup', [PaymentController::class, 'topUp'])
   ->middleware(['auth.user', 'permission:wallet.topup']);
 
+// -------------------------
+// CMS Analytics
+// -------------------------
+Route::prefix('cms/analytics')->middleware('auth.user')->group(function () {
 
+  // --- Admin ---
+  Route::prefix('admin')->group(function () {
+    Route::get('/overview', [CmsAnalyticsController::class, 'adminOverview']);
+    Route::get('/projects-growth', [CmsAnalyticsController::class, 'projectsGrowth']);
+  });
+
+  // --- Project Owner ---
+  Route::prefix('projects')->middleware('resolve.project')->group(function () {
+    Route::get('/content', [CmsAnalyticsController::class, 'contentSummary']);
+    Route::get('/content-growth', [CmsAnalyticsController::class, 'contentGrowth']);
+    Route::get('/top-rated', [CmsAnalyticsController::class, 'topRated']);
+    Route::get('/ratings', [CmsAnalyticsController::class, 'ratingsReport']);
+  });
+});
 
 
 // Rate
@@ -385,8 +404,6 @@ Route::get('/search/suggestions', SearchSuggestionController::class)
 Route::get('/search/popular', PopularSearchController::class)
   ->middleware(['resolve.project']);
 
-
-
 // ─── Search Admin / Debug APIs ────────────────────────────────────────────
 Route::prefix('admin/search')
   ->middleware(['auth.user'])
@@ -400,7 +417,6 @@ Route::prefix('admin/search')
     Route::get('/config',         [\App\Http\Controllers\SearchAdminController::class, 'getConfig']);
     Route::post('/config',        [\App\Http\Controllers\SearchAdminController::class, 'setConfig']);
   });
-
 
 
 // routes/api.php - مؤقت للـ debugging فقط
