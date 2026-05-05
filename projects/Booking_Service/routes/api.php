@@ -35,6 +35,7 @@ Route::middleware(['resolve.project', 'auth.user'])
     Route::post('/resources/{resourceId}/slots', [BookingController::class, 'slots']);
 
 
+
     // client
 
     Route::post('/create', [BookingController::class, 'store']);

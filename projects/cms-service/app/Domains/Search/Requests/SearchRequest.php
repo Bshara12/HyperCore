@@ -14,11 +14,11 @@ class SearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'q'              => ['required', 'string', 'min:2', 'max:200'],
-            'lang'           => ['sometimes', 'string', 'max:10'],
+            'q' => ['required', 'string', 'min:2', 'max:200'],
+            'lang' => ['sometimes', 'string', 'max:10'],
             'data_type_slug' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'page'           => ['sometimes', 'integer', 'min:1'],
-            'per_page'       => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ];
     }
 
@@ -26,7 +26,7 @@ class SearchRequest extends FormRequest
     {
         return [
             'q.required' => 'Search keyword is required.',
-            'q.min'      => 'Search keyword must be at least 2 characters.',
+            'q.min' => 'Search keyword must be at least 2 characters.',
         ];
     }
 

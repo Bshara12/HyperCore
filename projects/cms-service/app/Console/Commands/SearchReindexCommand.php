@@ -28,13 +28,14 @@ class SearchReindexCommand extends Command
         $this->displayHeader();
 
         // ─── تحقق من الـ DB connection ───────────────────────────────
-        if (!$this->checkDatabaseConnection()) {
+        if (! $this->checkDatabaseConnection()) {
             return self::FAILURE;
         }
 
         // ─── تأكيد قبل التنفيذ ───────────────────────────────────────
-        if (!$this->option('force') && !$this->confirmReindex()) {
+        if (! $this->option('force') && ! $this->confirmReindex()) {
             $this->info('Reindex cancelled.');
+
             return self::SUCCESS;
         }
 
@@ -50,7 +51,7 @@ class SearchReindexCommand extends Command
         $this->info('Starting reindex...');
         $this->info('');
 
-        $startTime   = microtime(true);
+        $startTime = microtime(true);
         $progressBar = null;
 
         try {
@@ -92,7 +93,7 @@ class SearchReindexCommand extends Command
             }
 
             $this->error('');
-            $this->error('Reindex failed: ' . $e->getMessage());
+            $this->error('Reindex failed: '.$e->getMessage());
 
             if ($this->getOutput()->isVerbose()) {
                 $this->error($e->getTraceAsString());
@@ -119,7 +120,7 @@ class SearchReindexCommand extends Command
             ['Setting', 'Value'],
             [
                 ['Environment', app()->environment()],
-                ['Database',    config('database.connections.' . config('database.default') . '.database')],
+                ['Database',    config('database.connections.'.config('database.default').'.database')],
                 ['Queue',       config('queue.default')],
             ]
         );
@@ -147,8 +148,8 @@ class SearchReindexCommand extends Command
                 ['Total entries processed', number_format($stats['total'])],
                 ['Successfully indexed',    number_format($stats['indexed'])],
                 ['Skipped (no content)',    number_format($stats['skipped'])],
-                ['Time elapsed',            round($elapsedSeconds, 2) . 's'],
-                ['Throughput',              round($stats['total'] / max($elapsedSeconds, 0.01)) . ' entries/sec'],
+                ['Time elapsed',            round($elapsedSeconds, 2).'s'],
+                ['Throughput',              round($stats['total'] / max($elapsedSeconds, 0.01)).' entries/sec'],
             ]
         );
 
@@ -162,9 +163,11 @@ class SearchReindexCommand extends Command
     {
         try {
             DB::connection()->getPdo();
+
             return true;
         } catch (Throwable $e) {
-            $this->error('Cannot connect to database: ' . $e->getMessage());
+            $this->error('Cannot connect to database: '.$e->getMessage());
+
             return false;
         }
     }

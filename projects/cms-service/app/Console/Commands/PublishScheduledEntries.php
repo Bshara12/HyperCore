@@ -24,18 +24,17 @@ class PublishScheduledEntries extends Command
     /**
      * Execute the console command.
      */
-  public function handle()
-{
-    DataEntry::where('status', 'scheduled')
-        ->where('scheduled_at', '<=', now())
-        ->chunk(100, function ($entries) {
-            foreach ($entries as $entry) {
-                $entry->update([
-                    'status' => 'published',
-                    'published_at' => now(),
-                ]);
-            }
-        });
-}
-
+    public function handle()
+    {
+        DataEntry::where('status', 'scheduled')
+            ->where('scheduled_at', '<=', now())
+            ->chunk(100, function ($entries) {
+                foreach ($entries as $entry) {
+                    $entry->update([
+                        'status' => 'published',
+                        'published_at' => now(),
+                    ]);
+                }
+            });
+    }
 }

@@ -17,14 +17,14 @@ use Illuminate\Database\Eloquent\Collection;
 class ResourceService
 {
   public function __construct(
-    private readonly CreateResourceAction        $createAction,
-    private readonly UpdateResourceAction        $updateAction,
-    private readonly SetAvailabilityAction       $availabilityAction,
+    private readonly CreateResourceAction $createAction,
+    private readonly UpdateResourceAction $updateAction,
+    private readonly SetAvailabilityAction $availabilityAction,
     private readonly SetCancellationPolicyAction $policyAction,
     private readonly ShowResourceAction $showAction,
     private readonly IndexResourcesAction $indexAction,
     private readonly DeleteResourceAction $deleteAction,
-    private readonly ResourceRepositoryInterface $repository,
+    // private readonly ResourceRepositoryInterface $repository,
   ) {}
 
   public function listByProject(int $projectId, array $user): Collection

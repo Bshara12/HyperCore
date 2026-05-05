@@ -7,24 +7,26 @@ final class ProcessedKeyword
     public function __construct(
         public readonly string $original,
         public readonly string $booleanQuery,
-        public readonly array  $cleanWords,
+        public readonly array $cleanWords,
         public readonly string $primaryWord,
-        public readonly array  $relaxedQueries,
-        public readonly array  $expandedGroups,
+        public readonly array $relaxedQueries,
+        public readonly array $expandedGroups,     // من SynonymProvider (static map)
+        public readonly array $intent,
 
-        /**
-         * نتيجة كشف النية
+        /*
+         * إضافة جديدة: المجموعات بعد DB synonym expansion
          *
-         * [
-         *   'intent'     => 'product',   // product | article | service | general
-         *   'confidence' => 0.8,         // 0.0 → 1.0
-         *   'scores'     => [            // raw scores لكل نية
-         *     'product' => 0.8,
-         *     'article' => 0.1,
-         *     'service' => 0.1,
+         * الفرق بين expandedGroups و dbExpandedGroups:
+         *   expandedGroups   → من SynonymProvider (static PHP map)
+         *   dbExpandedGroups → من synonym_suggestions table (dynamic, approved)
+         *
+         * مثال dbExpandedGroups:
+         *   [
+         *     "cost"   => ["cost", "price", "fee"],
+         *     "iphone" => ["iphone"],             ← لا مرادفات معتمدة
          *   ]
-         * ]
          */
-        public readonly array  $intent,
+        public readonly array $dbExpandedGroups = [],  // ← جديد
+        public readonly bool $hadDbExpansion = false, // ← جديد
     ) {}
 }

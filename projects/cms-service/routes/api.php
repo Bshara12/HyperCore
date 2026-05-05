@@ -22,6 +22,7 @@ use App\Http\Controllers\RatingController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SearchSuggestionController;
 use App\Http\Controllers\StockController;
+use App\Support\CurrentProject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -97,6 +98,13 @@ Route::middleware('resolve.project')->group(function () {
 });
 
 
+Route::get(
+  '/projects/{project}/data-types/{slug}/entries',
+  [DataTypeEntriesController::class, 'index']
+);
+
+
+
 Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(function () {
 
   /*
@@ -127,10 +135,10 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
     '/entries/{entry:slug}/same-type',
     [EntryDetailController::class, 'showwithsametype']
   );
-  Route::get(
-    '/projects/{project}/data-types/{slug}/entries',
-    [DataTypeEntriesController::class, 'index']
-  );
+  // Route::get(
+  //   '/projects/{project}/data-types/{slug}/entries',
+  //   [DataTypeEntriesController::class, 'index']
+  // );
   Route::post(
     '/entries/{entry:slug}/publish',
     DataEntryPublishController::class
@@ -399,18 +407,32 @@ Route::get('/search/suggestions', SearchSuggestionController::class)
 Route::get('/search/popular', PopularSearchController::class)
   ->middleware(['resolve.project']);
 
+// ─── Search Admin / Debug APIs ────────────────────────────────────────────
+Route::prefix('admin/search')
+  ->middleware(['auth.user'])
+  ->group(function () {
+
+    Route::post('/debug',         [\App\Http\Controllers\SearchAdminController::class, 'debug']);
+    Route::get('/logs',           [\App\Http\Controllers\SearchAdminController::class, 'logs']);
+    Route::get('/problems',       [\App\Http\Controllers\SearchAdminController::class, 'problems']);
+    Route::post('/ai/re-run',     [\App\Http\Controllers\SearchAdminController::class, 'aiReRun']);
+    Route::post('/compare',       [\App\Http\Controllers\SearchAdminController::class, 'compare']);
+    Route::get('/config',         [\App\Http\Controllers\SearchAdminController::class, 'getConfig']);
+    Route::post('/config',        [\App\Http\Controllers\SearchAdminController::class, 'setConfig']);
+  });
+
 
 // routes/api.php - مؤقت للـ debugging فقط
 Route::get('/debug/search-user', function (Request $request) {
-  $user      = $request->attributes->get('auth_user');
-  $projectId = \App\Support\CurrentProject::id();
+  $user = $request->attributes->get('auth_user');
+  $projectId = CurrentProject::id();
 
   return response()->json([
-    'user_raw'       => $user,
-    'user_id'        => $user['id'] ?? $user['data']['id'] ?? null,
+    'user_raw' => $user,
+    'user_id' => $user['id'] ?? $user['data']['id'] ?? null,
     'user_structure' => is_array($user) ? array_keys($user) : gettype($user),
-    'project_id'     => $projectId,
-    'token'          => substr($request->bearerToken() ?? '', 0, 15) . '...',
+    'project_id' => $projectId,
+    'token' => substr($request->bearerToken() ?? '', 0, 15) . '...',
   ]);
 })->middleware(['auth.user', 'resolve.project']);
 

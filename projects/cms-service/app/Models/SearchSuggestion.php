@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class SearchSuggestion extends Model
@@ -21,7 +22,7 @@ class SearchSuggestion extends Model
 
     protected $casts = [
         'last_searched_at' => 'datetime',
-        'score'            => 'float',
+        'score' => 'float',
     ];
 
     /**
@@ -35,15 +36,15 @@ class SearchSuggestion extends Model
     public static function calculateScore(
         int $searchCount,
         int $clickCount,
-        ?\Carbon\Carbon $lastSearchedAt = null
+        ?Carbon $lastSearchedAt = null
     ): float {
-        $searchScore  = log($searchCount + 1, 10);
-        $clickScore   = log($clickCount + 1, 10) * 2.0;
+        $searchScore = log($searchCount + 1, 10);
+        $clickScore = log($clickCount + 1, 10) * 2.0;
 
         // Recency bonus: كلما كان أحدث → bonus أكبر (max 1.0)
         $recencyBonus = 0.0;
         if ($lastSearchedAt) {
-            $daysAgo      = now()->diffInDays($lastSearchedAt);
+            $daysAgo = now()->diffInDays($lastSearchedAt);
             $recencyBonus = max(0, 1.0 - ($daysAgo / 30));
         }
 

@@ -23,7 +23,7 @@ class RecomputePopularSearchesAction
         // جلب كل combinations الـ project+language الموجودة في الـ logs
         $combinations = DB::table('user_search_logs')
             ->select('project_id', 'language')
-            ->when($projectId, fn($q) => $q->where('project_id', $projectId))
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->distinct()
             ->get();
 
@@ -42,21 +42,21 @@ class RecomputePopularSearchesAction
 
                 $results[] = [
                     'project_id' => $combo->project_id,
-                    'language'   => $combo->language,
-                    'stats'      => $stats,
+                    'language' => $combo->language,
+                    'stats' => $stats,
                 ];
 
                 Log::info('PopularSearches recomputed', [
                     'project_id' => $combo->project_id,
-                    'language'   => $combo->language,
-                    'stats'      => $stats,
+                    'language' => $combo->language,
+                    'stats' => $stats,
                 ]);
 
             } catch (\Throwable $e) {
                 Log::error('PopularSearches recompute failed', [
                     'project_id' => $combo->project_id,
-                    'language'   => $combo->language,
-                    'error'      => $e->getMessage(),
+                    'language' => $combo->language,
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -75,8 +75,8 @@ class RecomputePopularSearchesAction
     private function invalidateCacheForProject(int $projectId, string $language): void
     {
         $windows = ['24h', '7d', '30d', 'all'];
-        $types   = ['trending', 'popular', 'both'];
-        $limits  = [5, 10, 15, 20];
+        $types = ['trending', 'popular', 'both'];
+        $limits = [5, 10, 15, 20];
 
         foreach ($windows as $window) {
             foreach ($types as $type) {

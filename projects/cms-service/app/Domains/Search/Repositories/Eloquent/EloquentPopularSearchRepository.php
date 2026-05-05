@@ -3,9 +3,10 @@
 namespace App\Domains\Search\Repositories\Eloquent;
 
 use App\Domains\Search\DTOs\PopularSearchQueryDTO;
-use App\Models\PopularSearch;
 use App\Domains\Search\Repositories\Interfaces\PopularSearchRepositoryInterface;
 use App\Domains\Search\Support\WindowFallbackChain;
+use App\Models\PopularSearch;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class EloquentPopularSearchRepository implements PopularSearchRepositoryInterface
@@ -32,8 +33,8 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
 
         foreach ($chain as $index => $currentWindow) {
             $result = $this->fetchTrendingForWindow(
-                dto:           $dto,
-                currentWindow:        $currentWindow,
+                dto: $dto,
+                currentWindow: $currentWindow,
                 fallbackIndex: $index,
             );
 
@@ -66,8 +67,8 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
 
         foreach ($chain as $index => $currentWindow) {
             $result = $this->fetchPopularForWindow(
-                dto:           $dto,
-                currentWindow:        $currentWindow,
+                dto: $dto,
+                currentWindow: $currentWindow,
                 fallbackIndex: $index,
             );
 
@@ -104,8 +105,8 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
      */
     private function fetchTrendingForWindow(
         PopularSearchQueryDTO $dto,
-        string                $currentWindow,
-        int                   $fallbackIndex
+        string $currentWindow,
+        int $fallbackIndex
     ): array {
         $countColumn = WindowFallbackChain::getCountColumn($currentWindow);
         $scoreColumn = 'trending_score';
@@ -147,8 +148,8 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
             ->toArray();
 
         return [
-            'rows'             => $rows,
-            'window_used'      => $currentWindow,
+            'rows' => $rows,
+            'window_used' => $currentWindow,
             'fallback_applied' => $fallbackIndex > 0,
         ];
     }
@@ -161,8 +162,8 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
      */
     private function fetchPopularForWindow(
         PopularSearchQueryDTO $dto,
-        string                $currentWindow,
-        int                   $fallbackIndex
+        string $currentWindow,
+        int $fallbackIndex
     ): array {
         $countColumn = WindowFallbackChain::getCountColumn($currentWindow);
         $scoreColumn = 'alltime_score';
@@ -191,8 +192,8 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
             ->toArray();
 
         return [
-            'rows'             => $rows,
-            'window_used'      => $currentWindow,
+            'rows' => $rows,
+            'window_used' => $currentWindow,
             'fallback_applied' => $fallbackIndex > 0,
         ];
     }
@@ -205,7 +206,7 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
     {
         $start = microtime(true);
 
-        $stats = DB::select("
+        $stats = DB::select('
             SELECT
                 keyword,
                 LOWER(TRIM(keyword))                                     AS normalized_keyword,
@@ -224,7 +225,7 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
               AND keyword IS NOT NULL
               AND CHAR_LENGTH(TRIM(keyword)) >= 2
             GROUP BY keyword, language
-        ", [$projectId, $language]);
+        ', [$projectId, $language]);
 
         if (empty($stats)) {
             return ['processed' => 0, 'upserted' => 0, 'duration_ms' => 0];
@@ -237,49 +238,49 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
             ->toArray();
 
         $rows = [];
-        $now  = now()->toDateTimeString();
+        $now = now()->toDateTimeString();
 
         foreach ($stats as $row) {
             $lastSearchedAt = $row->last_searched_at
-                ? \Carbon\Carbon::parse($row->last_searched_at)
+                ? Carbon::parse($row->last_searched_at)
                 : null;
 
             $clickCount = (int) ($clickCounts[$row->normalized_keyword] ?? 0);
 
             // ─── حماية من Division by Zero ───────────────────────────
             $trendingScore = PopularSearch::calculateTrendingScore(
-                count24h:       max(0, (int) $row->count_24h),
-                count7d:        max(0, (int) $row->count_7d),
-                count30d:       max(0, (int) $row->count_30d),
+                count24h: max(0, (int) $row->count_24h),
+                count7d: max(0, (int) $row->count_7d),
+                count30d: max(0, (int) $row->count_30d),
                 lastSearchedAt: $lastSearchedAt,
             );
 
             $alltimeScore = PopularSearch::calculateAlltimeScore(
-                countAllTime:   max(0, (int) $row->count_all_time),
-                clickCount:     max(0, $clickCount),
+                countAllTime: max(0, (int) $row->count_all_time),
+                clickCount: max(0, $clickCount),
                 lastSearchedAt: $lastSearchedAt,
             );
 
             // ─── تأكد أن الـ scores ليست NaN أو INF ─────────────────
             $trendingScore = is_finite($trendingScore) ? $trendingScore : 0.0;
-            $alltimeScore  = is_finite($alltimeScore)  ? $alltimeScore  : 0.0;
+            $alltimeScore = is_finite($alltimeScore) ? $alltimeScore : 0.0;
 
             $rows[] = [
-                'project_id'         => $projectId,
-                'keyword'            => $row->keyword,
-                'language'           => $row->language,
+                'project_id' => $projectId,
+                'keyword' => $row->keyword,
+                'language' => $row->language,
                 'normalized_keyword' => $row->normalized_keyword,
-                'count_24h'          => (int) $row->count_24h,
-                'count_7d'           => (int) $row->count_7d,
-                'count_30d'          => (int) $row->count_30d,
-                'count_all_time'     => (int) $row->count_all_time,
-                'click_count'        => $clickCount,
-                'trending_score'     => $trendingScore,
-                'alltime_score'      => $alltimeScore,
-                'last_searched_at'   => $row->last_searched_at,
-                'last_computed_at'   => $now,
-                'created_at'         => $now,
-                'updated_at'         => $now,
+                'count_24h' => (int) $row->count_24h,
+                'count_7d' => (int) $row->count_7d,
+                'count_30d' => (int) $row->count_30d,
+                'count_all_time' => (int) $row->count_all_time,
+                'click_count' => $clickCount,
+                'trending_score' => $trendingScore,
+                'alltime_score' => $alltimeScore,
+                'last_searched_at' => $row->last_searched_at,
+                'last_computed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
         }
 
@@ -296,8 +297,8 @@ class EloquentPopularSearchRepository implements PopularSearchRepositoryInterfac
         }
 
         return [
-            'processed'   => count($stats),
-            'upserted'    => count($rows),
+            'processed' => count($stats),
+            'upserted' => count($rows),
             'duration_ms' => round((microtime(true) - $start) * 1000, 2),
         ];
     }
