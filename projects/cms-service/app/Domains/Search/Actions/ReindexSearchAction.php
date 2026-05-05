@@ -18,7 +18,7 @@ class ReindexSearchAction
 
     public function __construct(
         private SearchIndexRepositoryInterface $repository,
-        private EntryFieldsExtractor           $extractor,
+        private EntryFieldsExtractor $extractor,
     ) {}
 
     /**
@@ -32,7 +32,7 @@ class ReindexSearchAction
         $stats = [
             'indexed' => 0,
             'skipped' => 0,
-            'total'   => 0,
+            'total' => 0,
         ];
 
         // ─── 1. احسب العدد الكلي (للـ progress bar) ─────────────────
@@ -91,6 +91,7 @@ class ReindexSearchAction
 
             if (empty($entryRows)) {
                 $stats['skipped']++;
+
                 continue;
             }
 
@@ -118,8 +119,8 @@ class ReindexSearchAction
     private function buildIndexRows(DataEntry $entry): array
     {
         $languages = $this->resolveSupportedLanguages($entry->project);
-        $rows      = [];
-        $now       = now()->toDateTimeString();
+        $rows = [];
+        $now = now()->toDateTimeString();
 
         foreach ($languages as $language) {
             try {
@@ -131,26 +132,26 @@ class ReindexSearchAction
                 }
 
                 $rows[] = [
-                    'entry_id'     => $entry->id,
+                    'entry_id' => $entry->id,
                     'data_type_id' => $entry->data_type_id,
-                    'project_id'   => $entry->project_id,
-                    'language'     => $language,
-                    'title'        => $extracted['title'],
-                    'content'      => $extracted['content'] ?: null,
-                    'meta'         => !empty($extracted['meta'])
+                    'project_id' => $entry->project_id,
+                    'language' => $language,
+                    'title' => $extracted['title'],
+                    'content' => $extracted['content'] ?: null,
+                    'meta' => ! empty($extracted['meta'])
                         ? json_encode($extracted['meta'], JSON_UNESCAPED_UNICODE)
                         : null,
-                    'status'       => $entry->status,
+                    'status' => $entry->status,
                     'published_at' => $entry->published_at?->toDateTimeString(),
-                    'created_at'   => $now,
-                    'updated_at'   => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
 
             } catch (\Throwable $e) {
                 Log::warning('ReindexSearch: failed to build row', [
                     'entry_id' => $entry->id,
                     'language' => $language,
-                    'error'    => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

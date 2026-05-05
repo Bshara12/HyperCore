@@ -25,10 +25,11 @@ class RecomputePopularSearchesCommand extends Command
             ? (int) $this->option('project')
             : null;
 
-        if (!$this->option('force')) {
-            $scope = $projectId ? "project {$projectId}" : "ALL projects";
-            if (!$this->confirm("Recompute popular searches for {$scope}?")) {
+        if (! $this->option('force')) {
+            $scope = $projectId ? "project {$projectId}" : 'ALL projects';
+            if (! $this->confirm("Recompute popular searches for {$scope}?")) {
                 $this->info('Cancelled.');
+
                 return self::SUCCESS;
             }
         }
@@ -48,12 +49,12 @@ class RecomputePopularSearchesCommand extends Command
 
         $this->table(
             ['Project', 'Language', 'Processed', 'Upserted', 'Duration'],
-            array_map(fn($r) => [
+            array_map(fn ($r) => [
                 $r['project_id'],
                 $r['language'],
                 $r['stats']['processed'],
                 $r['stats']['upserted'],
-                $r['stats']['duration_ms'] . 'ms',
+                $r['stats']['duration_ms'].'ms',
             ], $results)
         );
 

@@ -7,14 +7,15 @@ use Illuminate\Support\Facades\Cache;
 
 class UpdateBookingTimeAction
 {
-  public function execute($booking, $start, $end)
-  {
-    $booking->update([
-      'start_at' => $start,
-      'end_at'   => $end,
-    ]);
-    Cache::forget(CacheKeys::booking($booking->id));
-    Cache::tags(["resource_{$booking->resource_id}_bookings"])->flush();
-    return $booking;
-  }
+    public function execute($booking, $start, $end)
+    {
+        $booking->update([
+            'start_at' => $start,
+            'end_at' => $end,
+        ]);
+        Cache::forget(CacheKeys::booking($booking->id));
+        Cache::tags(["resource_{$booking->resource_id}_bookings"])->flush();
+
+        return $booking;
+    }
 }

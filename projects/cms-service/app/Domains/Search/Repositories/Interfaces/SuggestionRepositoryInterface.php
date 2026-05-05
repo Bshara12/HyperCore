@@ -17,7 +17,7 @@ interface SuggestionRepositoryInterface
      * إنشاء أو تحديث suggestion بعد كل بحث
      */
     public function upsertFromSearch(
-        int    $projectId,
+        int $projectId,
         string $keyword,
         string $language
     ): void;
@@ -26,7 +26,7 @@ interface SuggestionRepositoryInterface
      * زيادة click_count عند الضغط على نتيجة بحث
      */
     public function incrementClickCount(
-        int    $projectId,
+        int $projectId,
         string $keyword,
         string $language
     ): void;

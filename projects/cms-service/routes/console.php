@@ -1,18 +1,15 @@
 <?php
 
+use App\Jobs\UpdatePopularityScoreJob;
+use App\Jobs\UpdateSearchSignalsJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
+
 Artisan::command('inspire', function () {
   $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-
-// Schedule::command('search:reindex --force')
-//   ->dailyAt('02:00')
-//   ->withoutOverlapping()
-//   ->runInBackground()
-//   ->appendOutputTo(storage_path('logs/search-reindex.log'));
 
 app()->booted(function () {
   app(Schedule::class)
@@ -22,6 +19,7 @@ app()->booted(function () {
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/search-reindex.log'));
 });
+
 app()->booted(function () {
   app(Schedule::class)
     ->command('search:recompute-popular --force')
@@ -29,4 +27,27 @@ app()->booted(function () {
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/popular-searches.log'));
+});
+
+app()->booted(function () {
+  app(Schedule::class)
+    ->call(function () {
+      UpdateSearchSignalsJob::dispatch()
+        ->onQueue('search-maintenance');
+    })
+    ->name('update-search-signals')
+    ->hourly()
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/search-signals.log'));
+});
+
+app()->booted(function () {
+  app(Schedule::class)
+    ->call(function () {
+      UpdatePopularityScoreJob::dispatch()
+        ->onQueue('search-tracking');
+    })
+    ->name('update-popularity-score')
+    ->hourly()
+    ->withoutOverlapping();
 });

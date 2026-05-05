@@ -7,86 +7,85 @@ use Illuminate\Support\Facades\Http;
 
 class CMSApiClient
 {
-  use HasProjectHeaders;
+    use HasProjectHeaders;
 
-  protected string $baseUrl;
+    protected string $baseUrl;
 
-  public function __construct()
-  {
-    $this->baseUrl = rtrim(config('services.cms_service.url'), '/');
-  }
-
-  public function resolveProject()
-  {
-    $response = Http::withHeaders(
-      $this->projectHeaders()
-    )->get("{$this->baseUrl}/api/projects/resolve");
-    if ($response->failed()) {
-      $error = $response->json('message')
-        ?? substr($response->body(), 0, 200);
-
-      throw new \Exception("Failed to resolve project in CMS: " . $error);
+    public function __construct()
+    {
+        $this->baseUrl = rtrim(config('services.cms_service.url'), '/');
     }
 
-    return $response->json()['original'];
-  }
+    public function resolveProject()
+    {
+        $response = Http::withHeaders(
+            $this->projectHeaders()
+        )->get("{$this->baseUrl}/api/projects/resolve");
+        if ($response->failed()) {
+            $error = $response->json('message')
+              ?? substr($response->body(), 0, 200);
 
-  public function createCollection(array $data): array
-  {
-    $response = Http::withHeaders(
-      $this->projectHeaders()
-    )->post("{$this->baseUrl}/api/cms/collections", $data);
+            throw new \Exception('Failed to resolve project in CMS: '.$error);
+        }
 
-    if ($response->failed()) {
-      $error = $response->json('message')
-        ?? substr($response->body(), 0, 200);
-
-      throw new \Exception("Failed to create collection in CMS: " . $error);
+        return $response->json()['original'];
     }
 
-    return $response->json();
-  }
+    public function createCollection(array $data): array
+    {
+        $response = Http::withHeaders(
+            $this->projectHeaders()
+        )->post("{$this->baseUrl}/api/cms/collections", $data);
 
-  public function chargeBooking(array $data): array
-  {
-    // dd($data);
-    $response = Http::withHeaders(
-      $this->projectHeaders()
-    )->post("{$this->baseUrl}/api/payments/pay", [
-      'userId'      => $data['user_id'],
-      'userName' => $data['user_name'],
-      'projectId'   => $data['project_id'],
-      'amount'       => $data['amount'],
-      'currency'     => $data['currency'],
-      'gateway'      => $data['gateway'],
-      'paymentType' => 'full',
-      'token'        => $data['token'] ?? null,
-    ]);
+        if ($response->failed()) {
+            $error = $response->json('message')
+              ?? substr($response->body(), 0, 200);
 
-    if ($response->failed()) {
-      $error = $response->json('message')
-        ?? substr($response->body(), 0, 200);
+            throw new \Exception('Failed to create collection in CMS: '.$error);
+        }
 
-      throw new \Exception("Payment failed: " . $error);
+        return $response->json();
     }
 
-    return $response->json();
-  }
+    public function chargeBooking(array $data): array
+    {
+        // dd($data);
+        $response = Http::withHeaders(
+            $this->projectHeaders()
+        )->post("{$this->baseUrl}/api/payments/pay", [
+            'userId' => $data['user_id'],
+            'userName' => $data['user_name'],
+            'projectId' => $data['project_id'],
+            'amount' => $data['amount'],
+            'currency' => $data['currency'],
+            'gateway' => $data['gateway'],
+            'paymentType' => 'full',
+            'token' => $data['token'] ?? null,
+        ]);
 
-  public function refundBooking(array $data): array
-  {
-    $response = Http::withHeaders(
-      $this->projectHeaders()
-    )->post("{$this->baseUrl}/api/payments/refund", [
-      'paymentId' => $data['payment_id'],
-      'amount'    => $data['amount'],
-    ]);
+        if ($response->failed()) {
+            $error = $response->json('message')
+              ?? substr($response->body(), 0, 200);
 
-    if ($response->failed()) {
-      dd($response);
-      throw new \Exception("Refund failed");
+            throw new \Exception('Payment failed: '.$error);
+        }
+
+        return $response->json();
     }
 
-    return $response->json();
-  }
+    public function refundBooking(array $data): array
+    {
+        $response = Http::withHeaders(
+            $this->projectHeaders()
+        )->post("{$this->baseUrl}/api/payments/refund", [
+            'paymentId' => $data['payment_id'],
+            'amount' => $data['amount'],
+        ]);
+
+        if ($response->failed()) {
+            throw new \Exception('Refund failed');
+        }
+
+        return $response->json();
+    }
 }

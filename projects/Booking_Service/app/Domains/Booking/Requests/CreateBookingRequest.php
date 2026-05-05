@@ -10,12 +10,12 @@ class CreateBookingRequest extends FormRequest
     {
         return [
             'resource_id' => 'required|exists:resources,id',
-            'start_at'    => 'required|date',
-            'end_at'      => 'required|date|after:start_at',
-            'amount'      => 'required|numeric|min:0',
-            'currency'    => 'required|string',
-            'gateway'     => 'required|string',
-            'token'       => 'nullable|string',
+            'start_at' => 'required|date',
+            'end_at' => 'required|date|after:start_at',
+            'amount' => 'required|numeric|min:0',
+            'currency' => 'required|string',
+            'gateway' => 'required|string',
+            'token' => 'nullable|string',
         ];
     }
 }

@@ -9,23 +9,23 @@ use Illuminate\Support\Facades\Cache;
 
 class IndexResourcesAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'resource.index';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'resource.index';
+    }
 
-  public function __construct(
-    private readonly ResourceRepositoryInterface $repository,
-  ) {}
+    public function __construct(
+        private readonly ResourceRepositoryInterface $repository,
+    ) {}
 
-  public function execute(int $projectId)
-  {
-    return $this->run(function () use ($projectId) {
-      return Cache::remember(
-        CacheKeys::resources($projectId),
-        CacheKeys::TTL_LONG,
-        fn() => $this->repository->listByProject($projectId)
-      );
-    });
-  }
+    public function execute(int $projectId)
+    {
+        return $this->run(function () use ($projectId) {
+            return Cache::remember(
+                CacheKeys::resources($projectId),
+                CacheKeys::TTL_LONG,
+                fn () => $this->repository->listByProject($projectId)
+            );
+        });
+    }
 }

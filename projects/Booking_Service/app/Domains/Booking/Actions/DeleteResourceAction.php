@@ -10,23 +10,23 @@ use Illuminate\Support\Facades\Cache;
 
 class DeleteResourceAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'resource.delete';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'resource.delete';
+    }
 
-  public function __construct(
-    private readonly ResourceRepositoryInterface $repository,
-  ) {}
+    public function __construct(
+        private readonly ResourceRepositoryInterface $repository,
+    ) {}
 
-  public function execute(Resource $resource)
-  {
-    $this->run(function () use ($resource) {
-      $this->repository->delete($resource);
-      Cache::forget(CacheKeys::resource($resource->id));
-      Cache::forget(CacheKeys::resources($resource->project_id));
+    public function execute(Resource $resource)
+    {
+        $this->run(function () use ($resource) {
+            $this->repository->delete($resource);
+            Cache::forget(CacheKeys::resource($resource->id));
+            Cache::forget(CacheKeys::resources($resource->project_id));
 
-      Cache::tags(["resource_{$resource->id}_bookings"])->flush();
-    });
-  }
+            Cache::tags(["resource_{$resource->id}_bookings"])->flush();
+        });
+    }
 }

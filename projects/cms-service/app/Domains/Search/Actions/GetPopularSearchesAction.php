@@ -5,8 +5,8 @@ namespace App\Domains\Search\Actions;
 use App\Domains\Search\DTOs\PopularSearchItemDTO;
 use App\Domains\Search\DTOs\PopularSearchQueryDTO;
 use App\Domains\Search\DTOs\PopularSearchResultDTO;
-use App\Models\PopularSearch;
 use App\Domains\Search\Repositories\Interfaces\PopularSearchRepositoryInterface;
+use App\Models\PopularSearch;
 use Illuminate\Support\Facades\Cache;
 
 class GetPopularSearchesAction
@@ -22,20 +22,20 @@ class GetPopularSearchesAction
     public function execute(PopularSearchQueryDTO $dto): PopularSearchResultDTO
     {
         $startTime = microtime(true);
-        $cacheKey  = $this->buildCacheKey($dto);
+        $cacheKey = $this->buildCacheKey($dto);
 
         // ─── Cache Check ──────────────────────────────────────────────
         $cached = Cache::get($cacheKey);
 
         if ($cached !== null) {
             return new PopularSearchResultDTO(
-                trending:         $cached['trending'],
-                popular:          $cached['popular'],
-                window:           $dto->window,
+                trending: $cached['trending'],
+                popular: $cached['popular'],
+                window: $dto->window,
                 actualWindowUsed: $cached['actual_window_used'],
-                fallbackApplied:  $cached['fallback_applied'],
-                source:           'cache',
-                tookMs:           (microtime(true) - $startTime) * 1000,
+                fallbackApplied: $cached['fallback_applied'],
+                source: 'cache',
+                tookMs: (microtime(true) - $startTime) * 1000,
             );
         }
 
@@ -71,29 +71,29 @@ class GetPopularSearchesAction
 
         // ─── Cache ───────────────────────────────────────────────────
         $cachePayload = [
-            'trending'          => $trending,
-            'popular'           => $popular,
-            'actual_window_used'=> $actualWindowUsed,
-            'fallback_applied'  => $fallbackApplied,
+            'trending' => $trending,
+            'popular' => $popular,
+            'actual_window_used' => $actualWindowUsed,
+            'fallback_applied' => $fallbackApplied,
         ];
 
         Cache::put($cacheKey, $cachePayload, self::CACHE_TTL_SECONDS);
 
         return new PopularSearchResultDTO(
-            trending:         $trending,
-            popular:          $popular,
-            window:           $dto->window,
+            trending: $trending,
+            popular: $popular,
+            window: $dto->window,
             actualWindowUsed: $actualWindowUsed,
-            fallbackApplied:  $fallbackApplied,
-            source:           'db',
-            tookMs:           (microtime(true) - $startTime) * 1000,
+            fallbackApplied: $fallbackApplied,
+            source: 'db',
+            tookMs: (microtime(true) - $startTime) * 1000,
         );
     }
 
     // ─────────────────────────────────────────────────────────────────
 
     /**
-     * @param  object[] $rows
+     * @param  object[]  $rows
      * @return PopularSearchItemDTO[]
      */
     private function mapRows(array $rows, string $windowUsed): array
@@ -101,14 +101,14 @@ class GetPopularSearchesAction
         return array_map(function (object $row) use ($windowUsed) {
             $trend = PopularSearch::detectTrend(
                 count24h: (int) ($row->count_24h ?? 0),
-                count7d:  (int) ($row->count_7d  ?? 0),
+                count7d: (int) ($row->count_7d ?? 0),
             );
 
             return new PopularSearchItemDTO(
-                keyword:    $row->keyword,
-                count:      (int) $row->count,
-                score:      (float) $row->score,
-                trend:      $trend,
+                keyword: $row->keyword,
+                count: (int) $row->count,
+                score: (float) $row->score,
+                trend: $trend,
                 windowUsed: $windowUsed,
             );
         }, $rows);
@@ -123,7 +123,7 @@ class GetPopularSearchesAction
         $priority = ['24h' => 1, '7d' => 2, '30d' => 3, 'all' => 4];
 
         $trendingPriority = $priority[$trendingWindow] ?? 4;
-        $popularPriority  = $priority[$popularWindow]  ?? 4;
+        $popularPriority = $priority[$popularWindow] ?? 4;
 
         return $trendingPriority >= $popularPriority
             ? $trendingWindow

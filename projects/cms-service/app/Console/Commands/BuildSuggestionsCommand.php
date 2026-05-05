@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 class BuildSuggestionsCommand extends Command
 {
-    protected $signature   = 'search:build-suggestions {--project=* : Project IDs to process}';
+    protected $signature = 'search:build-suggestions {--project=* : Project IDs to process}';
+
     protected $description = 'Build search suggestions table from existing search logs';
 
     public function __construct(
@@ -30,10 +31,11 @@ class BuildSuggestionsCommand extends Command
 
         if (empty($projectIds)) {
             $this->warn('No projects found in user_search_logs.');
+
             return self::SUCCESS;
         }
 
-        $this->info("Building suggestions for " . count($projectIds) . " project(s)...");
+        $this->info('Building suggestions for '.count($projectIds).' project(s)...');
 
         foreach ($projectIds as $projectId) {
             $this->info("Processing project {$projectId}...");
@@ -50,6 +52,7 @@ class BuildSuggestionsCommand extends Command
         }
 
         $this->info('✓ Done.');
+
         return self::SUCCESS;
     }
 }

@@ -11,26 +11,26 @@ use Illuminate\Support\Facades\Cache;
 
 class SetCancellationPolicyAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'resource.setPolicy';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'resource.setPolicy';
+    }
 
-  public function __construct(
-    private readonly ResourceRepositoryInterface $repository,
-  ) {}
+    public function __construct(
+        private readonly ResourceRepositoryInterface $repository,
+    ) {}
 
-  public function execute(Resource $resource, array $policies): void
-  {
-    $dtos = array_map(
-      fn(array $item) => CancellationPolicyDTO::fromArray($item, $resource->id),
-      $policies
-    );
+    public function execute(Resource $resource, array $policies): void
+    {
+        $dtos = array_map(
+            fn (array $item) => CancellationPolicyDTO::fromArray($item, $resource->id),
+            $policies
+        );
 
-    $this->run(function () use ($resource, $dtos) {
-      $this->repository->setPolicies($resource, $dtos);
-      Cache::forget(CacheKeys::resource($resource->id));
-      Cache::forget(CacheKeys::resources($resource->project_id));
-    });
-  }
+        $this->run(function () use ($resource, $dtos) {
+            $this->repository->setPolicies($resource, $dtos);
+            Cache::forget(CacheKeys::resource($resource->id));
+            Cache::forget(CacheKeys::resources($resource->project_id));
+        });
+    }
 }

@@ -4,38 +4,40 @@ namespace App\Domains\Booking\Support;
 
 class CacheKeys
 {
-  const TTL_SHORT  = 300;    // 5 دقائق
-  const TTL_MEDIUM = 3600;   // ساعة
-  const TTL_LONG   = 86400;  // يوم
+    const TTL_SHORT = 300;    // 5 دقائق
 
-  // ============================================
-  // 🔑 Resources
-  // ============================================
-  public static function resources(int $projectId): string
-  {
-    return "project:{$projectId}:resources";
-  }
+    const TTL_MEDIUM = 3600;   // ساعة
 
-  public static function resource(int $resourceId): string
-  {
-    return "resources:{$resourceId}";
-  }
+    const TTL_LONG = 86400;  // يوم
 
-  // ============================================
-  // 🔑 Bookings
-  // ============================================
-  public static function booking(int $bookingId): string
-  {
-    return "bookings:{$bookingId}";
-  }
+    // ============================================
+    // 🔑 Resources
+    // ============================================
+    public static function resources(int $projectId): string
+    {
+        return "project:{$projectId}:resources";
+    }
 
-  public static function resourceBookings(int $resourceId, string $filtersHash): string
-  {
-    return "resources:{$resourceId}:bookings:{$filtersHash}";
-  }
+    public static function resource(int $resourceId): string
+    {
+        return "resources:{$resourceId}";
+    }
 
-  public static function userBookings(int $userId): string
-  {
-    return "user:{$userId}:bookings";
-  }
+    // ============================================
+    // 🔑 Bookings
+    // ============================================
+    public static function booking(int $bookingId): string
+    {
+        return "bookings:{$bookingId}";
+    }
+
+    public static function resourceBookings(int $resourceId, string $filtersHash): string
+    {
+        return "resources:{$resourceId}:bookings:{$filtersHash}";
+    }
+
+    public static function userBookings(int $userId): string
+    {
+        return "user:{$userId}:bookings";
+    }
 }

@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class PopularSearch extends Model
 {
-    protected $table    = 'popular_searches';
+    protected $table = 'popular_searches';
+
     protected $fillable = [
         'project_id', 'keyword', 'language', 'normalized_keyword',
         'count_24h', 'count_7d', 'count_30d', 'count_all_time',
@@ -18,21 +19,21 @@ class PopularSearch extends Model
     protected $casts = [
         'last_searched_at' => 'datetime',
         'last_computed_at' => 'datetime',
-        'trending_score'   => 'float',
-        'alltime_score'    => 'float',
+        'trending_score' => 'float',
+        'alltime_score' => 'float',
     ];
 
     // ─────────────────────────────────────────────────────────────────
 
     public static function calculateTrendingScore(
-        int     $count24h,
-        int     $count7d,
-        int     $count30d,
+        int $count24h,
+        int $count7d,
+        int $count30d,
         ?Carbon $lastSearchedAt = null
     ): float {
         // ─── تأكد من عدم وجود قيم سالبة ─────────────────────────────
         $count24h = max(0, $count24h);
-        $count7d  = max(0, $count7d);
+        $count7d = max(0, $count7d);
         $count30d = max(0, $count30d);
 
         $weightedCount = ($count24h * 4) + ($count7d * 2) + ($count30d * 1);
@@ -62,20 +63,20 @@ class PopularSearch extends Model
     // ─────────────────────────────────────────────────────────────────
 
     public static function calculateAlltimeScore(
-        int     $countAllTime,
-        int     $clickCount,
+        int $countAllTime,
+        int $clickCount,
         ?Carbon $lastSearchedAt = null
     ): float {
         $countAllTime = max(0, $countAllTime);
-        $clickCount   = max(0, $clickCount);
+        $clickCount = max(0, $clickCount);
 
         // log10(0+1) = 0 → لا مشكلة
         $searchScore = log10($countAllTime + 1);
-        $clickScore  = log10($clickCount + 1) * 1.5;
+        $clickScore = log10($clickCount + 1) * 1.5;
 
         $recencyBonus = 0.0;
         if ($lastSearchedAt !== null) {
-            $daysSince    = max(0, now()->diffInDays($lastSearchedAt));
+            $daysSince = max(0, now()->diffInDays($lastSearchedAt));
             $recencyBonus = max(0.0, 1.0 - ($daysSince / 90.0));
         }
 
@@ -89,7 +90,7 @@ class PopularSearch extends Model
     public static function detectTrend(int $count24h, int $count7d): string
     {
         $count24h = max(0, $count24h);
-        $count7d  = max(0, $count7d);
+        $count7d = max(0, $count7d);
 
         if ($count7d === 0) {
             return $count24h > 0 ? 'rising' : 'stable';
@@ -99,10 +100,10 @@ class PopularSearch extends Model
         // max(0.1) يمنع division by near-zero
         $ratio = $count24h / max($dailyAvg7d, 0.1);
 
-        return match(true) {
+        return match (true) {
             $ratio >= 2.0 => 'rising',
             $ratio <= 0.5 => 'falling',
-            default       => 'stable',
+            default => 'stable',
         };
     }
 }

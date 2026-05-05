@@ -15,21 +15,21 @@ final class WindowFallbackChain
 {
     private const CHAINS = [
         '24h' => ['24h', '7d', '30d', 'all'],
-        '7d'  => ['7d', '30d', 'all'],
+        '7d' => ['7d', '30d', 'all'],
         '30d' => ['30d', 'all'],
         'all' => ['all'],
     ];
 
     private const COUNT_COLUMNS = [
         '24h' => 'count_24h',
-        '7d'  => 'count_7d',
+        '7d' => 'count_7d',
         '30d' => 'count_30d',
         'all' => 'count_all_time',
     ];
 
     private const SCORE_COLUMNS = [
         '24h' => 'trending_score',
-        '7d'  => 'trending_score',
+        '7d' => 'trending_score',
         '30d' => 'alltime_score',
         'all' => 'alltime_score',
     ];

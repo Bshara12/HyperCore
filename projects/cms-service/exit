@@ -1,0 +1,18 @@
+[90m= [39m[34;4mIlluminate\Support\Collection[39;24m {#7569
+    [34mall[39m: [
+      {#7567
+        +"[1mid[22m": [35m1[39m,
+        +"[1mpublic_id[22m": [32m"[39m[32ma665b2d1-40a6-42e2-9fde-3be36c0a30df[39m[32m"[39m,
+        +"[1mslug[22m": [32m"[39m[32mpulse360[39m[32m"[39m,
+        +"[1mname[22m": [32m"[39m[32mPulse360[39m[32m"[39m,
+        +"[1mowner_id[22m": [35m1[39m,
+        +"[1msupported_languages[22m": [36mnull[39m,
+        +"[1menabled_modules[22m": [36mnull[39m,
+        +"[1mratings_count[22m": [35m0[39m,
+        +"[1mratings_avg[22m": [32m"[39m[32m0.00[39m[32m"[39m,
+        +"[1mdeleted_at[22m": [36mnull[39m,
+        +"[1mcreated_at[22m": [32m"[39m[32m2026-05-04 08:32:05[39m[32m"[39m,
+        +"[1mupdated_at[22m": [32m"[39m[32m2026-05-04 08:32:05[39m[32m"[39m,
+      },
+    ],
+  }

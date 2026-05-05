@@ -12,7 +12,7 @@ class IndexDataEntryAction
 {
     public function __construct(
         private SearchIndexRepositoryInterface $repository,
-        private EntryFieldsExtractor           $extractor,
+        private EntryFieldsExtractor $extractor,
     ) {}
 
     /**
@@ -23,7 +23,7 @@ class IndexDataEntryAction
         // تأكد من تحميل العلاقات المطلوبة
         $entry->loadMissing(['values', 'values.field', 'project']);
 
-        $project           = $entry->project;
+        $project = $entry->project;
         $supportedLanguages = $this->resolveSupportedLanguages($project);
 
         foreach ($supportedLanguages as $language) {
@@ -40,14 +40,14 @@ class IndexDataEntryAction
             $extracted = $this->extractor->extract($entry, $language);
 
             $dto = new IndexEntryDTO(
-                entryId:     $entry->id,
-                dataTypeId:  $entry->data_type_id,
-                projectId:   $entry->project_id,
-                language:    $language,
-                title:       $extracted['title'],
-                content:     $extracted['content'] ?: null,
-                meta:        $extracted['meta'] ?: null,
-                status:      $entry->status,
+                entryId: $entry->id,
+                dataTypeId: $entry->data_type_id,
+                projectId: $entry->project_id,
+                language: $language,
+                title: $extracted['title'],
+                content: $extracted['content'] ?: null,
+                meta: $extracted['meta'] ?: null,
+                status: $entry->status,
                 publishedAt: $entry->published_at?->toDateTimeString(),
             );
 
@@ -58,7 +58,7 @@ class IndexDataEntryAction
             Log::error('SearchIndex: failed to index entry', [
                 'entry_id' => $entry->id,
                 'language' => $language,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

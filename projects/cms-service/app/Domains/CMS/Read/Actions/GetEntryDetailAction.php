@@ -33,9 +33,9 @@ class GetEntryDetailAction
     if (!$data) {
       return null;
     }
-
     return new EntryDetailDTO(
       id: $data['id'],
+      slug:$data['slug'],
       status: $data['status'],
       values: $data['values'],
       seo: $data['seo']

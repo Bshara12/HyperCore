@@ -17,25 +17,25 @@ class SearchSuggestionController extends Controller
     {
         $projectId = CurrentProject::id();
 
-        if (!$projectId) {
+        if (! $projectId) {
             return response()->json(['message' => 'X-Project-Id header is required.'], 400);
         }
 
-        $user   = $request->attributes->get('auth_user');
+        $user = $request->attributes->get('auth_user');
         $userId = isset($user['id']) ? (int) $user['id'] : null;
 
         $result = $this->suggestionService->getSuggestions(
-            prefix:    $request->prefix(),
+            prefix: $request->prefix(),
             projectId: $projectId,
-            language:  $request->language(),
-            limit:     $request->limit(),
-            userId:    $userId,
+            language: $request->language(),
+            limit: $request->limit(),
+            userId: $userId,
         );
 
         return response()
             ->json($result->toArray())
             ->header('Cache-Control', 'private, max-age=60')  // browser cache 60s
             ->header('X-Suggestion-Source', $result->source)  // للـ debugging
-            ->header('X-Suggestion-Took', round($result->tookMs, 2) . 'ms');
+            ->header('X-Suggestion-Took', round($result->tookMs, 2).'ms');
     }
 }

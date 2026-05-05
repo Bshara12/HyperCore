@@ -11,21 +11,22 @@ use Illuminate\Support\Facades\Cache;
 
 class CreateResourceAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'resource.create';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'resource.create';
+    }
 
-  public function __construct(
-    private readonly ResourceRepositoryInterface $repository,
-  ) {}
+    public function __construct(
+        private readonly ResourceRepositoryInterface $repository,
+    ) {}
 
-  public function execute(ResourceDTO $dto): Resource
-  {
-    return $this->run(function () use ($dto) {
-      $resource = $this->repository->create($dto);
-      Cache::forget(CacheKeys::resources($resource->project_id));
-      return $resource;
-    });
-  }
+    public function execute(ResourceDTO $dto): Resource
+    {
+        return $this->run(function () use ($dto) {
+            $resource = $this->repository->create($dto);
+            Cache::forget(CacheKeys::resources($resource->project_id));
+
+            return $resource;
+        });
+    }
 }
