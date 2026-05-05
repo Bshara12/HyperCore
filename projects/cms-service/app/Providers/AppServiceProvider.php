@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Domains\Auth\Repository\Elequment\ProjectUserRepository;
 use App\Domains\Auth\Repository\Interface\ProjectUserRepositoryInterface;
+use App\Domains\CMS\Analytics\Repositories\AnalyticsRepositoryInterface;
+use App\Domains\CMS\Analytics\Repositories\EloquentCmsAnalyticsRepository;
 use App\Domains\CMS\Read\Repositories\EntryProjectReadRepository;
 use App\Domains\CMS\Read\Repositories\EntryProjectReadRepositoryInterface;
 use App\Domains\CMS\Read\Repositories\EntryReadRepository;
@@ -47,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
     $this->app->bind(DataEntryRepositoryInterface::class, EloquentDataEntryRepository::class);
     $this->app->bind(DataCollectionRepositoryInterface::class, DataCollectionRepositoryEloquent::class);
     $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
+    $this->app->bind(AnalyticsRepositoryInterface::class, EloquentCmsAnalyticsRepository::class);
     $this->app->bind(
       ProjectRepositoryInterface::class,
       EloquentProjectRepository::class

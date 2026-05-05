@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\EcommerceAnalyticsController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PaymentController;
@@ -69,7 +70,6 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix
   Route::post('/payments/refund', [PaymentController::class, 'refund'])
     ->middleware('permission:payment.refund');
 
-
   // Route::post('/payments', [PaymentController::class, 'charge']);
   // الاسترداد — إدارية
   // Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])
@@ -95,23 +95,23 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix
   // Route::post('/offers/{collectionSlug}/subscribe', [OfferController::class, 'subscribe']);
 
 
-    // Wishlist:
-    Route::prefix('wishlists')->group(function () {
-        Route::get('/', [WishlistController::class, 'index']);
-        Route::post('/', [WishlistController::class, 'store']);
-        Route::get('/shared/{shareToken}', [WishlistController::class, 'showSharedWishlist']);
+  // Wishlist:
+  Route::prefix('wishlists')->group(function () {
+    Route::get('/', [WishlistController::class, 'index']);
+    Route::post('/', [WishlistController::class, 'store']);
+    Route::get('/shared/{shareToken}', [WishlistController::class, 'showSharedWishlist']);
 
-        Route::get('/{wishlistId}', [WishlistController::class, 'show']);
-        Route::put('/{wishlistId}', [WishlistController::class, 'update']);
-        Route::delete('/{wishlistId}', [WishlistController::class, 'destroy']);
+    Route::get('/{wishlistId}', [WishlistController::class, 'show']);
+    Route::put('/{wishlistId}', [WishlistController::class, 'update']);
+    Route::delete('/{wishlistId}', [WishlistController::class, 'destroy']);
 
-        Route::post('/{wishlistId}/share-link', [WishlistController::class, 'generateShareLink']);
+    Route::post('/{wishlistId}/share-link', [WishlistController::class, 'generateShareLink']);
 
-        Route::post('/{wishlistId}/items', [WishlistItemController::class, 'store']);
-        Route::delete('/{wishlistId}/items/{itemId}', [WishlistItemController::class, 'destroy']);
-        Route::post('/{wishlistId}/items/reorder', [WishlistItemController::class, 'reorder']);
-        Route::post('/{wishlistId}/items/{itemId}/move-to-cart', [WishlistItemController::class, 'moveToCart']);
-    });
+    Route::post('/{wishlistId}/items', [WishlistItemController::class, 'store']);
+    Route::delete('/{wishlistId}/items/{itemId}', [WishlistItemController::class, 'destroy']);
+    Route::post('/{wishlistId}/items/reorder', [WishlistItemController::class, 'reorder']);
+    Route::post('/{wishlistId}/items/{itemId}/move-to-cart', [WishlistItemController::class, 'moveToCart']);
+  });
 
   Route::patch('/orders/{orderId}/status', [OrderController::class, 'updateStatus'])
     ->middleware('permission:order.updateStatus');
@@ -131,11 +131,19 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix
 
   Route::patch('/admin/return-requests/{id}', [ReturnRequestController::class, 'update'])
     ->middleware('permission:return.update');
-
 });
 
-
+Route::prefix('ecommerce/analytics')
+  ->middleware(['resolve.project', 'auth.user'])
+  ->group(function () {
+    Route::get('/sales', [EcommerceAnalyticsController::class, 'salesSummary']);
+    Route::get('/sales/trend', [EcommerceAnalyticsController::class, 'salesTrend']);
+    Route::get('/products/top', [EcommerceAnalyticsController::class, 'topProducts']);
+    Route::get('/offers', [EcommerceAnalyticsController::class, 'offersAnalytics']);
+    Route::get('/customers/top', [EcommerceAnalyticsController::class, 'topCustomers']);
+    Route::get('/returns', [EcommerceAnalyticsController::class, 'returnsAnalytics']);
+  });
 
 Route::get('/test', function () {
-    return gethostname();
+  return gethostname();
 });

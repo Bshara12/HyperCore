@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domains\E_Commerce\Analytics\Repositories\AnalyticsRepositoryInterface;
+use App\Domains\E_Commerce\Analytics\Repositories\EloquentEcommerceAnalyticsRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Cart\EloquentCartItemRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Cart\EloquentCartRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferPriceRepositoryEloquent;
@@ -45,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
     $this->app->bind(OrderRepositoryInterface::class, EloquentOrderRepository::class);
     $this->app->bind(OrderItemRepositoryInterface::class, EloquentOrderItemRepository::class);
     $this->app->bind(ReturnRequestRepositoryInterface::class, EloquentReturnRequestRepository::class);
-
+    $this->app->bind(AnalyticsRepositoryInterface::class, EloquentEcommerceAnalyticsRepository::class);
     $this->app->bind(WishlistRepositoryInterface::class, WishlistRepository::class);
     $this->app->bind(WishlistItemRepositoryInterface::class, WishlistItemRepository::class);
   }
