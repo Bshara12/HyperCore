@@ -15,7 +15,7 @@ interface UserBehaviorRepositoryInterface
      * جلب إحصائيات نقرات الـ user مجمّعة حسب data_type
      * في آخر N يوم
      *
-     * @return array<int, int>  [data_type_id => click_count]
+     * @return array<int, int> [data_type_id => click_count]
      */
     public function getClickCountsByDataType(
         int $projectId,
@@ -29,8 +29,8 @@ interface UserBehaviorRepositoryInterface
      * @return array<int, int>
      */
     public function getClickCountsByDataTypeForSession(
-        int    $projectId,
+        int $projectId,
         string $sessionId,
-        int    $days = 30
+        int $days = 30
     ): array;
 }

@@ -6,31 +6,31 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-  public function up(): void
-  {
-    Schema::create('resource_availabilities', function (Blueprint $table) {
-      $table->id();
+    public function up(): void
+    {
+        Schema::create('resource_availabilities', function (Blueprint $table) {
+            $table->id();
 
-      $table->foreignId('resource_id')
-        ->constrained('resources')
-        ->cascadeOnDelete();
+            $table->foreignId('resource_id')
+                ->constrained('resources')
+                ->cascadeOnDelete();
 
-      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-      $table->unsignedTinyInteger('day_of_week')->index();
-      $table->time('start_time');
-      $table->time('end_time');
-      $table->unsignedInteger('slot_duration')->nullable(); // مدة كل slot بالدقائق (مثلاً 60)
-      $table->boolean('is_active')->default(true)->index();
+            // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+            $table->unsignedTinyInteger('day_of_week')->index();
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->unsignedInteger('slot_duration')->nullable(); // مدة كل slot بالدقائق (مثلاً 60)
+            $table->boolean('is_active')->default(true)->index();
 
-      $table->timestamps();
+            $table->timestamps();
 
-      $table->index(['resource_id', 'day_of_week']);
-      $table->index(['resource_id', 'is_active']);
-    });
-  }
+            $table->index(['resource_id', 'day_of_week']);
+            $table->index(['resource_id', 'is_active']);
+        });
+    }
 
-  public function down(): void
-  {
-    Schema::dropIfExists('resource_availabilities');
-  }
+    public function down(): void
+    {
+        Schema::dropIfExists('resource_availabilities');
+    }
 };

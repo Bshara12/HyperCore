@@ -18,7 +18,7 @@ class SyncSuggestionAction
      * لأنه لا يجب أن يُبطئ الـ search response
      */
     public function execute(
-        int    $projectId,
+        int $projectId,
         string $keyword,
         string $language
     ): void {
@@ -34,8 +34,8 @@ class SyncSuggestionAction
             // لا نوقف البحث إذا فشل sync الـ suggestions
             Log::warning('SyncSuggestionAction: failed to sync', [
                 'project_id' => $projectId,
-                'keyword'    => $keyword,
-                'error'      => $e->getMessage(),
+                'keyword' => $keyword,
+                'error' => $e->getMessage(),
             ]);
         }
     }

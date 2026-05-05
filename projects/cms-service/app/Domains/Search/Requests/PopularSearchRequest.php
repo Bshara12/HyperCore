@@ -14,15 +14,30 @@ class PopularSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lang'   => ['sometimes', 'string', 'size:2'],
+            'lang' => ['sometimes', 'string', 'size:2'],
             'window' => ['sometimes', 'string', 'in:24h,7d,30d,all'],
-            'type'   => ['sometimes', 'string', 'in:trending,popular,both'],
-            'limit'  => ['sometimes', 'integer', 'min:1', 'max:20'],
+            'type' => ['sometimes', 'string', 'in:trending,popular,both'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:20'],
         ];
     }
 
-    public function language(): string { return $this->input('lang', 'en'); }
-    public function window(): string   { return $this->input('window', '7d'); }
-    public function type(): string     { return $this->input('type', 'both'); }
-    public function limit(): int       { return (int) $this->input('limit', 10); }
+    public function language(): string
+    {
+        return $this->input('lang', 'en');
+    }
+
+    public function window(): string
+    {
+        return $this->input('window', '7d');
+    }
+
+    public function type(): string
+    {
+        return $this->input('type', 'both');
+    }
+
+    public function limit(): int
+    {
+        return (int) $this->input('limit', 10);
+    }
 }

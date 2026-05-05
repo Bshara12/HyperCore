@@ -17,61 +17,61 @@ use Illuminate\Http\JsonResponse;
 
 class BookingController extends Controller
 {
-  public function __construct(
-    private readonly BookingService $service,
-  ) {}
+    public function __construct(
+        private readonly BookingService $service,
+    ) {}
 
-  public function slots(GetSlotsRequest $request, int $resourceId): JsonResponse
-  {
-    try {
-      $dto = GetResourceSlotsDTO::fromRequest($resourceId, $request);
-      $result = $this->service->getAvailableSlots($dto);
+    public function slots(GetSlotsRequest $request, int $resourceId): JsonResponse
+    {
+        try {
+            $dto = GetResourceSlotsDTO::fromRequest($resourceId, $request);
+            $result = $this->service->getAvailableSlots($dto);
 
-      return response()->json(['data' => $result]);
-    } catch (\Exception $e) {
-      return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['data' => $result]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
-  }
 
-  public function resourceBookings(GetResourceBookingsRequest $request, int $resourceId): JsonResponse
-  {
-    $dto = GetResourceBookingsDTO::fromRequest($resourceId, $request);
-    $bookings = $this->service->getResourceBookings($dto);
+    public function resourceBookings(GetResourceBookingsRequest $request, int $resourceId): JsonResponse
+    {
+        $dto = GetResourceBookingsDTO::fromRequest($resourceId, $request);
+        $bookings = $this->service->getResourceBookings($dto);
 
-    return response()->json(['data' => $bookings]);
-  }
+        return response()->json(['data' => $bookings]);
+    }
 
-  // client
-  public function store(CreateBookingRequest $request)
-  {
-    $dto = CreateBookingDTO::fromRequest($request);
+    // client
+    public function store(CreateBookingRequest $request)
+    {
+        $dto = CreateBookingDTO::fromRequest($request);
 
-    $booking = $this->service->create($dto);
+        $booking = $this->service->create($dto);
 
-    return response()->json([
-      'data' => $booking
-    ]);
-  }
+        return response()->json([
+            'data' => $booking,
+        ]);
+    }
 
-  public function cancel(CancelBookingRequest $request)
-  {
-    $dto = CancelBookingDTO::fromRequest($request);
+    public function cancel(CancelBookingRequest $request)
+    {
+        $dto = CancelBookingDTO::fromRequest($request);
 
-    $booking = $this->service->cancel($dto);
+        $booking = $this->service->cancel($dto);
 
-    return response()->json([
-      'data' => $booking
-    ]);
-  }
+        return response()->json([
+            'data' => $booking,
+        ]);
+    }
 
-  public function reschedule(RescheduleBookingRequest $request)
-  {
-    $dto = RescheduleBookingDTO::fromRequest($request);
+    public function reschedule(RescheduleBookingRequest $request)
+    {
+        $dto = RescheduleBookingDTO::fromRequest($request);
 
-    $booking = $this->service->reschedule($dto);
+        $booking = $this->service->reschedule($dto);
 
-    return response()->json([
-      'data' => $booking
-    ]);
-  }
+        return response()->json([
+            'data' => $booking,
+        ]);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Domains\Booking\Actions\Client;
 
 use App\Domains\Booking\Repositories\Interface\BookingRepositoryInterface;
+use Carbon\Carbon;
 
 class CheckAvailabilityAction
 {
@@ -23,11 +24,11 @@ class CheckAvailabilityAction
 
         foreach ($availabilities as $availability) {
 
-            $startTime = \Carbon\Carbon::parse($availability->start_time);
-            $endTime   = \Carbon\Carbon::parse($availability->end_time);
+            $startTime = Carbon::parse($availability->start_time);
+            $endTime = Carbon::parse($availability->end_time);
 
-            $bookingStart = \Carbon\Carbon::parse($start->format('H:i:s'));
-            $bookingEnd   = \Carbon\Carbon::parse($end->format('H:i:s'));
+            $bookingStart = Carbon::parse($start->format('H:i:s'));
+            $bookingEnd = Carbon::parse($end->format('H:i:s'));
 
             if ($bookingStart >= $startTime && $bookingEnd <= $endTime) {
                 return;

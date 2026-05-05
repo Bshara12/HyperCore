@@ -3,8 +3,8 @@
 namespace App\Domains\Search\Repositories\Eloquent;
 
 use App\Domains\Search\DTOs\SuggestionQueryDTO;
-use App\Models\SearchSuggestion;
 use App\Domains\Search\Repositories\Interfaces\SuggestionRepositoryInterface;
+use App\Models\SearchSuggestion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +30,7 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
             ->select('keyword', 'search_count', 'click_count', 'score')
             ->where('project_id', $dto->projectId)
             ->where('language', $dto->language)
-            ->where('normalized_keyword', 'LIKE', $normalizedPrefix . '%')
+            ->where('normalized_keyword', 'LIKE', $normalizedPrefix.'%')
             ->orderByDesc('score')
             ->orderByDesc('search_count')
             ->limit($dto->limit)
@@ -42,12 +42,12 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
     // ─────────────────────────────────────────────────────────────────
 
     public function upsertFromSearch(
-        int    $projectId,
+        int $projectId,
         string $keyword,
         string $language
     ): void {
-        $normalized  = $this->normalize($keyword);
-        $now         = now();
+        $normalized = $this->normalize($keyword);
+        $now = now();
 
         /*
          * INSERT ... ON DUPLICATE KEY UPDATE
@@ -56,7 +56,7 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
          *
          * يستخدم الـ unique index على (project_id, normalized_keyword, language)
          */
-        DB::statement("
+        DB::statement('
             INSERT INTO search_suggestions
                 (project_id, keyword, language, normalized_keyword,
                  search_count, click_count, score, last_searched_at,
@@ -68,7 +68,7 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
                 last_searched_at = VALUES(last_searched_at),
                 score            = ?,
                 updated_at       = VALUES(updated_at)
-        ", [
+        ', [
             // INSERT values
             $projectId,
             $keyword,
@@ -80,18 +80,18 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
             $now,
             // ON DUPLICATE KEY UPDATE score
             // نحسب الـ score الجديد بناءً على القيم المحدَّثة
-            DB::raw("(
+            DB::raw('(
                 LOG10(search_count + 2) +
                 LOG10(click_count + 1) * 2.0 +
                 GREATEST(0, 1.0 - (DATEDIFF(NOW(), last_searched_at) / 30))
-            )"),
+            )'),
         ]);
     }
 
     // ─────────────────────────────────────────────────────────────────
 
     public function incrementClickCount(
-        int    $projectId,
+        int $projectId,
         string $keyword,
         string $language
     ): void {
@@ -103,12 +103,12 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
             ->where('language', $language)
             ->update([
                 'click_count' => DB::raw('click_count + 1'),
-                'score'       => DB::raw("(
+                'score' => DB::raw('(
                     LOG10(search_count + 1) +
                     LOG10(click_count + 2) * 2.0 +
                     GREATEST(0, 1.0 - (DATEDIFF(NOW(), last_searched_at) / 30))
-                )"),
-                'updated_at'  => now(),
+                )'),
+                'updated_at' => now(),
             ]);
     }
 
@@ -127,7 +127,7 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
          * GROUP BY keyword, language
          * ON DUPLICATE KEY UPDATE ...
          */
-        $inserted = DB::statement("
+        $inserted = DB::statement('
             INSERT INTO search_suggestions
                 (project_id, keyword, language, normalized_keyword,
                  search_count, click_count, score, last_searched_at,
@@ -153,7 +153,7 @@ class EloquentSuggestionRepository implements SuggestionRepositoryInterface
                 last_searched_at = VALUES(last_searched_at),
                 score            = VALUES(score),
                 updated_at       = NOW()
-        ", [$projectId]);
+        ', [$projectId]);
 
         $stats['upserted'] = DB::table('search_suggestions')
             ->where('project_id', $projectId)

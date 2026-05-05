@@ -11,22 +11,23 @@ use Illuminate\Support\Facades\Cache;
 
 class UpdateResourceAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'resource.update';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'resource.update';
+    }
 
-  public function __construct(
-    private readonly ResourceRepositoryInterface $repository,
-  ) {}
+    public function __construct(
+        private readonly ResourceRepositoryInterface $repository,
+    ) {}
 
-  public function execute(Resource $resource, ResourceDTO $dto): Resource
-  {
-    return $this->run(function () use ($resource, $dto) {
-      $updated = $this->repository->update($resource, $dto);
-      Cache::forget(CacheKeys::resource($resource->id));
-      Cache::forget(CacheKeys::resources($resource->project_id));
-      return $updated;
-    });
-  }
+    public function execute(Resource $resource, ResourceDTO $dto): Resource
+    {
+        return $this->run(function () use ($resource, $dto) {
+            $updated = $this->repository->update($resource, $dto);
+            Cache::forget(CacheKeys::resource($resource->id));
+            Cache::forget(CacheKeys::resources($resource->project_id));
+
+            return $updated;
+        });
+    }
 }

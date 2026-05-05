@@ -21,7 +21,7 @@ class SearchIndex extends Model
     ];
 
     protected $casts = [
-        'meta'         => 'array',
+        'meta' => 'array',
         'published_at' => 'datetime',
     ];
 

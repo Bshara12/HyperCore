@@ -37,10 +37,10 @@ class GetSuggestionsAction
         // ─── تحقق من الحد الأدنى للطول ──────────────────────────────
         if (mb_strlen(trim($dto->prefix), 'UTF-8') < self::MIN_PREFIX_LENGTH) {
             return new SuggestionResultDTO(
-                prefix:  $dto->prefix,
-                items:   [],
-                source:  'skipped',
-                tookMs:  (microtime(true) - $startTime) * 1000,
+                prefix: $dto->prefix,
+                items: [],
+                source: 'skipped',
+                tookMs: (microtime(true) - $startTime) * 1000,
             );
         }
 
@@ -52,25 +52,25 @@ class GetSuggestionsAction
 
         if ($cached !== null) {
             return new SuggestionResultDTO(
-                prefix:  $dto->prefix,
-                items:   $cached,
-                source:  'cache',
-                tookMs:  (microtime(true) - $startTime) * 1000,
+                prefix: $dto->prefix,
+                items: $cached,
+                source: 'cache',
+                tookMs: (microtime(true) - $startTime) * 1000,
             );
         }
 
         // ─── جلب من DB ───────────────────────────────────────────────
-        $rows  = $this->repository->findByPrefix($dto);
+        $rows = $this->repository->findByPrefix($dto);
         $items = $this->mapToItems($rows, $dto->prefix);
 
         // ─── حفظ في Cache ────────────────────────────────────────────
         Cache::put($cacheKey, $items, self::CACHE_TTL_SECONDS);
 
         return new SuggestionResultDTO(
-            prefix:  $dto->prefix,
-            items:   $items,
-            source:  'db',
-            tookMs:  (microtime(true) - $startTime) * 1000,
+            prefix: $dto->prefix,
+            items: $items,
+            source: 'db',
+            tookMs: (microtime(true) - $startTime) * 1000,
         );
     }
 
@@ -83,10 +83,10 @@ class GetSuggestionsAction
     {
         return array_map(function (object $row) use ($prefix) {
             return new SuggestionItemDTO(
-                keyword:     $row->keyword,
+                keyword: $row->keyword,
                 searchCount: (int) $row->search_count,
-                score:       (float) $row->score,
-                highlight:   $this->highlightPrefix($row->keyword, $prefix),
+                score: (float) $row->score,
+                highlight: $this->highlightPrefix($row->keyword, $prefix),
             );
         }, $rows);
     }
@@ -109,7 +109,7 @@ class GetSuggestionsAction
         }
 
         $highlighted = mb_substr($keyword, 0, $prefixLen, 'UTF-8');
-        $rest        = mb_substr($keyword, $prefixLen, null, 'UTF-8');
+        $rest = mb_substr($keyword, $prefixLen, null, 'UTF-8');
 
         return "**{$highlighted}**{$rest}";
     }

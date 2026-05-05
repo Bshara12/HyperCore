@@ -2,24 +2,27 @@
 
 namespace App\Domains\Booking\DTOs\Client;
 
+use App\Domains\Booking\Requests\CancelBookingRequest;
+use App\Domains\Booking\Requests\RescheduleBookingRequest;
+
 class CancelBookingDTO
 {
-  public function __construct(
-    public int $bookingId,
-    public int $userId,
-  ) {}
+    public function __construct(
+        public int $bookingId,
+        public int $userId,
+    ) {}
 
-  public static function fromRequest($request): self
-  {
-    $user = $request->attributes->get('auth_user');
+    public static function fromRequest(CancelBookingRequest $request): self
+    {
+        $user = $request->attributes->get('auth_user');
 
-    if (!$user) {
-      throw new \Exception('Unauthenticated');
+        if (! $user) {
+            throw new \Exception('Unauthenticated');
+        }
+
+        return new self(
+            bookingId: $request->booking_id,
+            userId: $user['id'],
+        );
     }
-
-    return new self(
-      bookingId: $request->booking_id,
-      userId: $user['id'],
-    );
-  }
 }

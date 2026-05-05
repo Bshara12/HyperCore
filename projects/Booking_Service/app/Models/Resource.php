@@ -6,6 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
+/**
+ * @property int $id
+ * @property int $project_id
+ * @property int $data_entry_id
+ * @property string $name
+ * @property string $type
+ * @property int $capacity
+ * @property string $status
+ * @property string|null $payment_type
+ * @property float|null $price
+ * @property array|null $settings
+ */
+
 class Resource extends Model
 {
   use SoftDeletes;
@@ -23,19 +37,21 @@ class Resource extends Model
   ];
 
   protected $casts = [
-    'capacity'    => 'integer',
-    'price'       => 'float',
-    'settings'    => 'array',
+    'capacity' => 'integer',
+    'price' => 'float',
+    'settings' => 'array',
   ];
 
   // ─── Statuses ─────────────────────────────────────────────────────────────
 
-  const STATUS_ACTIVE   = 'active';
+  const STATUS_ACTIVE = 'active';
+
   const STATUS_INACTIVE = 'inactive';
 
   // ─── Payment Types ────────────────────────────────────────────────────────
 
   const PAYMENT_FREE = 'free';
+
   const PAYMENT_PAID = 'paid';
 
   // ─── Relationships ────────────────────────────────────────────────────────
@@ -64,6 +80,10 @@ class Resource extends Model
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
+/**
+ * @phpstan-impure
+ */
+
   public function isActive(): bool
   {
     return $this->status === self::STATUS_ACTIVE;
@@ -84,6 +104,9 @@ class Resource extends Model
     return $this->payment_type === self::PAYMENT_PAID;
   }
 
+/**
+ * @return \App\Models\ResourceAvailability|null
+ */
   public function availabilityForDay(int $dayOfWeek): ?ResourceAvailability
   {
     return $this->activeAvailabilities()
