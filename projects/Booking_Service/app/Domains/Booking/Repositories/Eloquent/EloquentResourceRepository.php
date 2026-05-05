@@ -6,10 +6,12 @@ use App\Domains\Booking\DTOs\AvailabilityDTO;
 use App\Domains\Booking\DTOs\CancellationPolicyDTO;
 use App\Domains\Booking\DTOs\ResourceDTO;
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Models\Booking;
 use App\Models\BookingCancellationPolicy;
 use App\Models\Resource;
 use App\Models\ResourceAvailability;
 use Illuminate\Database\Eloquent\Collection;
+use Override;
 
 class EloquentResourceRepository implements ResourceRepositoryInterface
 {
@@ -42,6 +44,21 @@ class EloquentResourceRepository implements ResourceRepositoryInterface
   public function delete(Resource $resource): void
   {
     $resource->delete();
+  }
+
+  public function listForUser(int $projectId, int $userId): Collection
+  {
+    return Resource::where('project_id', $projectId)
+      ->where('status', Resource::STATUS_ACTIVE)
+      ->with(['activeAvailabilities', 'cancellationPolicies'])
+      ->get()
+      ->map(function ($resource) use ($userId) {
+        $resource->is_booked = Booking::where('resource_id', $resource->id)
+          ->where('user_id', $userId)
+          ->exists();
+          
+        return $resource;
+      });
   }
 
   public function listByProject(int $projectId): Collection

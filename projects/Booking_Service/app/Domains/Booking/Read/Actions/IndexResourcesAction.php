@@ -18,13 +18,25 @@ class IndexResourcesAction extends Action
     private readonly ResourceRepositoryInterface $repository,
   ) {}
 
-  public function execute(int $projectId)
+  public function execute(int $projectId, array $user)
   {
-    return $this->run(function () use ($projectId) {
+    return $this->run(function () use ($projectId, $user) {
+
+      $cacheKey = $user['roles'][0]['name'] === 'user'
+        ? CacheKeys::resourcesForUser($projectId, $user['id'])
+        : CacheKeys::resources($projectId);
+
       return Cache::remember(
-        CacheKeys::resources($projectId),
+        $cacheKey,
         CacheKeys::TTL_LONG,
-        fn() => $this->repository->listByProject($projectId)
+        function () use ($projectId, $user) {
+
+          if ($user['roles'][0]['name'] === 'user') {
+            return $this->repository->listForUser($projectId, $user['id']);
+          }
+
+          return $this->repository->listByProject($projectId);
+        }
       );
     });
   }

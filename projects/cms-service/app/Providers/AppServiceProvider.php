@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Domains\AI\Providers\AIProviderChain;
+use App\Domains\AI\Providers\GeminiProvider;
+use App\Domains\AI\Providers\OllamaProvider;
+use App\Domains\AI\Providers\OpenRouterProvider;
+use App\Domains\AI\Repositories\Eloquent\EloquentAiConversationRepository;
+use App\Domains\AI\Repositories\Interface\AiConversationRepositoryInterface;
 use App\Domains\Auth\Repository\Elequment\ProjectUserRepository;
 use App\Domains\Auth\Repository\Interface\ProjectUserRepositoryInterface;
 use App\Domains\CMS\Analytics\Repositories\AnalyticsRepositoryInterface;
@@ -50,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
     $this->app->bind(DataCollectionRepositoryInterface::class, DataCollectionRepositoryEloquent::class);
     $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
     $this->app->bind(AnalyticsRepositoryInterface::class, EloquentCmsAnalyticsRepository::class);
+    $this->app->bind(AiConversationRepositoryInterface::class, EloquentAiConversationRepository::class);
     $this->app->bind(
       ProjectRepositoryInterface::class,
       EloquentProjectRepository::class
@@ -104,12 +111,12 @@ class AppServiceProvider extends ServiceProvider
       RatingRepository::class
     );
 
-    // Offers
-    // $this->app->bind(OfferRepositoryInterface::class, EloquentOfferRepository::class);
-    // $this->app->bind(OfferTargetRepositoryInterface::class, EloquentOfferTargetRepository::class);
-    // $this->app->bind(AppliedPriceRepositoryInterface::class, EloquentAppliedPriceRepository::class);
-    // $this->app->bind(OfferWriteRepositoryInterface::class, EloquentOfferWriteRepository::class);
-    // $this->app->bind(OfferTargetWriteRepositoryInterface::class, EloquentOfferTargetWriteRepository::class);
+    $this->app->singleton(AIProviderChain::class, function ($app) {
+      return new AIProviderChain(
+        gemini: $app->make(GeminiProvider::class),
+        openRouter: $app->make(OpenRouterProvider::class),
+      );
+    });
   }
 
   /**

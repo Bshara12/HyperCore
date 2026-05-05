@@ -11,6 +11,11 @@ class CacheKeys
   // ============================================
   // 🔑 Resources
   // ============================================
+  public static function resourcesForUser(int $projectId, int $userId): string
+  {
+    return "project:{$projectId}user:{$userId}:resources";
+  }
+
   public static function resources(int $projectId): string
   {
     return "project:{$projectId}:resources";
