@@ -27,9 +27,9 @@ class ResourceService
     private readonly ResourceRepositoryInterface $repository,
   ) {}
 
-  public function listByProject(int $projectId): Collection
+  public function listByProject(int $projectId, array $user): Collection
   {
-    return $this->indexAction->execute($projectId);
+    return $this->indexAction->execute($projectId, $user);
   }
 
   public function show(int $id): ?Resource

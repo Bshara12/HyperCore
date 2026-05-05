@@ -20,7 +20,10 @@ class ResourceController extends Controller
 
   public function index(Request $request): JsonResponse
   {
-    $resources = $this->service->listByProject($request->project_id);
+    $resources = $this->service->listByProject(
+      $request->project_id,
+      $request->attributes->get('auth_user')
+    );
 
     return response()->json(['data' => $resources]);
   }

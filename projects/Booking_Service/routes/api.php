@@ -13,8 +13,8 @@ Route::middleware(['resolve.project', 'auth.user'])
     Route::get('/resources', [ResourceController::class, 'index']);
     Route::get('/resources/{resource}', [ResourceController::class, 'show']);
 
-    Route::post('/resources', [ResourceController::class, 'store']);
-    // ->middleware('permission:resource.create');
+    Route::post('/resources', [ResourceController::class, 'store'])
+      ->middleware('permission:resource.create');
 
 
     Route::patch('/resources/{resource}', [ResourceController::class, 'update'])

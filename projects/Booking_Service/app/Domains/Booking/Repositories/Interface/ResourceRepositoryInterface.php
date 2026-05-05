@@ -12,6 +12,7 @@ interface ResourceRepositoryInterface
   public function findById(int $id): ?Resource;
   public function update(Resource $resource, ResourceDTO $dto): Resource;
   public function delete(Resource $resource): void;
+  public function listForUser(int $projectId, int $userId): \Illuminate\Database\Eloquent\Collection;
   public function listByProject(int $projectId): \Illuminate\Database\Eloquent\Collection;
 
   // ─── Availability ─────────────────────────────────────────────────────────
