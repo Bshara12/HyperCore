@@ -253,10 +253,51 @@ services:
       RABBITMQ_DEFAULT_PASS: apppass
     networks: [core]
 
+  # ================= NOTIFICATION =================
+
+  notification-app-1:
+    build: ./projects/notification-service
+    volumes:
+      - ./projects/notification-service:/var/www
+    networks: [core]
+    restart: unless-stopped
+
+  notification-app-2:
+    build: ./projects/notification-service
+    volumes:
+      - ./projects/notification-service:/var/www
+    networks: [core]
+    restart: unless-stopped
+
+  notification-nginx:
+    image: nginx:alpine
+    ports:
+      - "8005:80"
+    volumes:
+      - ./projects/notification-service:/var/www
+      - ./projects/notification-service/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - notification-app-1
+      - notification-app-2
+    networks: [core]
+    restart: unless-stopped
+  notification-mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: notification_service
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_ROOT_HOST: "%"
+      
+    volumes:
+      - notification_data:/var/lib/mysql
+    networks: [core]
+  notification-redis:
+    image: redis:alpine
+    networks: [core]
+
 
 networks:
   core:
-
 
 volumes:
   cms_master_data:
@@ -268,3 +309,4 @@ volumes:
   booking_master_data:
   booking_slave_data:
   logging_data:
+  notification_data:
