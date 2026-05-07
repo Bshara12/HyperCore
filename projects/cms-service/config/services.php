@@ -50,6 +50,10 @@ return [
     ],
   ],
 
+  'gemini' => [
+    'api_key' => env('GEMINI_API_KEY'),
+  ],
+
   'rabbitmq' => [
     'host' => env('RABBITMQ_HOST'),
     'port' => env('RABBITMQ_PORT'),

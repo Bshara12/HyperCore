@@ -8,20 +8,17 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface ResourceRepositoryInterface
 {
-    // ─── Resource ─────────────────────────────────────────────────────────────
-    public function create(ResourceDTO $dto): Resource;
+  // ─── Resource ─────────────────────────────────────────────────────────────
+  public function create(ResourceDTO $dto): Resource;
+  public function findById(int $id): ?Resource;
+  public function update(Resource $resource, ResourceDTO $dto): Resource;
+  public function delete(Resource $resource): void;
+  public function listForUser(int $projectId, int $userId): \Illuminate\Database\Eloquent\Collection;
+  public function listByProject(int $projectId): \Illuminate\Database\Eloquent\Collection;
 
-    public function findById(int $id): ?Resource;
+  // ─── Availability ─────────────────────────────────────────────────────────
+  public function setAvailabilities(Resource $resource, array $dtos): void;
 
-    public function update(Resource $resource, ResourceDTO $dto): Resource;
-
-    public function delete(Resource $resource): void;
-
-    public function listByProject(int $projectId): Collection;
-
-    // ─── Availability ─────────────────────────────────────────────────────────
-    public function setAvailabilities(Resource $resource, array $dtos): void;
-
-    // ─── Cancellation Policy ──────────────────────────────────────────────────
-    public function setPolicies(Resource $resource, array $dtos): void;
+  // ─── Cancellation Policy ──────────────────────────────────────────────────
+  public function setPolicies(Resource $resource, array $dtos): void;
 }

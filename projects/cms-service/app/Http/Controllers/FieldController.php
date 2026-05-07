@@ -12,15 +12,15 @@ use App\Models\DataTypeField;
 class FieldController extends Controller
 {
 
-  protected $service;
-  protected $readService;
+  protected FieldService $service;
+  protected DataTypeFieldService $readService;
   public function __construct(FieldService $service, DataTypeFieldService $readService)
   {
     $this->service = $service;
     $this->readService = $readService;
   }
 
-  public function store(CreateFieldRequest $request, DataType $dataType)
+  public function store(CreateFieldRequest $request, int $dataType)
   {
     $dto = CreateFieldDTO::fromRequest($request, $dataType);
     $field = $this->service->create($dto);
