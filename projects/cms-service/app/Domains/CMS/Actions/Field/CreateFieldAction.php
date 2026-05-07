@@ -12,6 +12,7 @@ use App\Models\DataType;
 use App\Models\DataTypeField;
 use App\Models\DataTypeRelation;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class CreateFieldAction extends Action
 {
@@ -59,17 +60,18 @@ class CreateFieldAction extends Action
       abort(422, "Related DataType does not exist.");
     }
 
-    $relationType = match ($settings['relation_type']) {
-      'belongs_to' => 'many_to_one',
-      'has_many' => 'one_to_many',
-      'many_to_many' => 'many_to_many',
-      default => abort(422, "Invalid relation_type for DataTypeRelation."),
-    };
+    // $relationType = match ($settings['relation_type']) {
+    //   'belongs_to' => 'many_to_one',
+    //   'has_many' => 'one_to_many',
+    //   'many_to_many' => 'many_to_many',
+    //   default => abort(422, "Invalid relation_type for DataTypeRelation."),
+    // };
 
     $relation = DataTypeRelation::firstOrCreate([
       'data_type_id' => $dto->data_type_id,
       'related_data_type_id' => $relatedDataType->id,
-      'relation_type' => $relationType,
+      'relation_type' => $dto->settings['relation_type'],
+      'relation_name' => $dto->settings['relation_name'] ?? Str::snake($relatedDataType->name),
     ]);
 
     return $relation->id;

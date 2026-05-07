@@ -1,6 +1,8 @@
 <?php
 
 use App\Domains\Auth\Service\AuthServiceClient;
+use App\Http\Controllers\AIAgentController;
+use App\Http\Controllers\AiConversationController;
 use App\Http\Controllers\CmsAnalyticsController;
 use App\Http\Controllers\SearchClickController;
 use App\Http\Controllers\DataCollectionController;
@@ -293,7 +295,8 @@ Route::prefix('cms')->middleware('resolve.project')->group(function () {
   Route::post(
     '/data-types/{dataType}/fields',
     [FieldController::class, 'store']
-  )->middleware('permission:cms.field.create');
+  );
+  // ->middleware('permission:cms.field.create');
 
   Route::get(
     '/data-types/{dataType}/fields',
@@ -433,8 +436,12 @@ Route::get('/debug/search-user', function (Request $request) {
   ]);
 })->middleware(['auth.user', 'resolve.project']);
 
-
-
+Route::middleware(['auth.user'])->prefix('ai')->group(function () {
+  Route::get('/conversations', [AiConversationController::class, 'index']);
+  Route::post('/conversations', [AiConversationController::class, 'store']);
+  Route::get('/conversations/{id}', [AiConversationController::class, 'show']);
+  Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy']);
+});
 
 
 

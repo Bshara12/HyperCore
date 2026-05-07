@@ -1,14 +1,24 @@
-FROM php:8.2-fpm
+FROM php:8.2-fpm-alpine
 
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libpq-dev \
-    libzip-dev \
-    libonig-dev \
-    libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql zip bcmath
+# تثبيت الحزم الأساسية في Alpine
+RUN apk update && apk add --no-cache \
+  git \
+  unzip \
+  curl \
+  libxml2-dev \
+  libzip-dev \
+  oniguruma-dev \
+  openssl \
+  ca-certificates \
+  autoconf \
+  make \
+  g++ \
+  linux-headers
 
+# تثبيت إضافات PHP
+RUN docker-php-ext-install pdo pdo_mysql zip bcmath
+
+# إضافة Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html

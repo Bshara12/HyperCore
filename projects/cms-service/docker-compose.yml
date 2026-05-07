@@ -6,7 +6,7 @@ services:
     volumes:
       - .:/var/www
     depends_on:
-      - mysql
+      - mysqldocker compose down
       - redis
     ports:
       - "9000:9000"

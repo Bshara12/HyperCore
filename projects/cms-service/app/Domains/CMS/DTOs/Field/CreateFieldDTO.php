@@ -16,13 +16,13 @@ class CreateFieldDTO
     public bool $translatable,
     public array $validation_rules,
     public array $settings,
-    public int $sort_order,
+    public ?int $sort_order = 0,
   ) {}
 
-  public static function fromRequest(CreateFieldRequest $request, DataType $dataType): self
+  public static function fromRequest(CreateFieldRequest $request, int $dataType): self
   {
     return new self(
-      data_type_id: $dataType->id,
+      data_type_id: $dataType,
       name: $request->name,
       type: $request->type,
       required: $request->boolean('required'),

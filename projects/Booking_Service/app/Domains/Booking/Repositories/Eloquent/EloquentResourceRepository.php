@@ -6,87 +6,104 @@ use App\Domains\Booking\DTOs\AvailabilityDTO;
 use App\Domains\Booking\DTOs\CancellationPolicyDTO;
 use App\Domains\Booking\DTOs\ResourceDTO;
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Models\Booking;
 use App\Models\BookingCancellationPolicy;
 use App\Models\Resource;
 use App\Models\ResourceAvailability;
 use Illuminate\Database\Eloquent\Collection;
+use Override;
 
 class EloquentResourceRepository implements ResourceRepositoryInterface
 {
-    // ─── Resource ─────────────────────────────────────────────────────────────
+  // ─── Resource ─────────────────────────────────────────────────────────────
 
-    public function create(ResourceDTO $dto): Resource
-    {
-        return Resource::create($dto->toCreateArray());
+  public function create(ResourceDTO $dto): Resource
+  {
+    return Resource::create($dto->toCreateArray());
+  }
+
+  public function findById(int $id): ?Resource
+  {
+    return Resource::with([
+      'activeAvailabilities',
+      'cancellationPolicies',
+    ])->find($id);
+  }
+
+  public function update(Resource $resource, ResourceDTO $dto): Resource
+  {
+    $data = $dto->toUpdateArray();
+
+    if (! empty($data)) {
+      $resource->update($data);
     }
 
-    public function findById(int $id): ?Resource
-    {
-        return Resource::with([
-            'activeAvailabilities',
-            'cancellationPolicies',
-        ])->find($id);
-    }
+    return $resource->fresh(['activeAvailabilities', 'cancellationPolicies']);
+  }
 
-    public function update(Resource $resource, ResourceDTO $dto): Resource
-    {
-        $data = $dto->toUpdateArray();
+  public function delete(Resource $resource): void
+  {
+    $resource->delete();
+  }
 
-        if (! empty($data)) {
-            $resource->update($data);
-        }
+  public function listForUser(int $projectId, int $userId): Collection
+  {
+    return Resource::where('project_id', $projectId)
+      ->where('status', Resource::STATUS_ACTIVE)
+      ->with(['activeAvailabilities', 'cancellationPolicies'])
+      ->get()
+      ->map(function ($resource) use ($userId) {
+        $resource->is_booked = Booking::where('resource_id', $resource->id)
+          ->where('user_id', $userId)
+          ->exists();
 
-        return $resource->fresh(['activeAvailabilities', 'cancellationPolicies']);
-    }
+        return $resource;
+      });
+  }
 
-    public function delete(Resource $resource): void
-    {
-        $resource->delete();
-    }
+  public function listByProject(int $projectId): Collection
+  {
+    return Resource::where('project_id', $projectId)
+      ->where('status', Resource::STATUS_ACTIVE)
+      ->with(['activeAvailabilities', 'cancellationPolicies'])
+      ->get();
+  }
 
-    public function listByProject(int $projectId): Collection
-    {
-        return Resource::where('project_id', $projectId)
-            ->where('status', Resource::STATUS_ACTIVE)
-            ->with(['activeAvailabilities', 'cancellationPolicies'])
-            ->get();
-    }
+  // ─── Availability ─────────────────────────────────────────────────────────
 
-    // ─── Availability ─────────────────────────────────────────────────────────
+  public function setAvailabilities(Resource $resource, array $dtos): void
+  {
+    $resource->availabilities()->delete();
 
-    public function setAvailabilities(Resource $resource, array $dtos): void
-    {
-        $resource->availabilities()->delete();
+    $rows = array_map(fn(AvailabilityDTO $dto) => [
+      'resource_id' => $resource->id,
+      'day_of_week' => $dto->dayOfWeek,
+      'start_time' => $dto->startTime,
+      'end_time' => $dto->endTime,
+      'slot_duration' => $dto->slotDuration,
+      'is_active' => $dto->isActive,
+      'created_at' => now(),
+      'updated_at' => now(),
+    ], $dtos);
 
-        $rows = array_map(fn (AvailabilityDTO $dto) => [
-            'resource_id' => $resource->id,
-            'day_of_week' => $dto->dayOfWeek,
-            'start_time' => $dto->startTime,
-            'end_time' => $dto->endTime,
-            'slot_duration' => $dto->slotDuration,
-            'is_active' => $dto->isActive,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ], $dtos);
+    ResourceAvailability::insert($rows);
+  }
 
-        ResourceAvailability::insert($rows);
-    }
+  // ─── Cancellation Policy ──────────────────────────────────────────────────
 
-    // ─── Cancellation Policy ──────────────────────────────────────────────────
+  public function setPolicies(Resource $resource, array $dtos): void
+  {
+    $resource->cancellationPolicies()->delete();
 
-    public function setPolicies(Resource $resource, array $dtos): void
-    {
-        $resource->cancellationPolicies()->delete();
+    $rows = array_map(fn(CancellationPolicyDTO $dto) => [
+      'resource_id' => $resource->id,
+      'hours_before' => $dto->hoursBefore,
+      'refund_percentage' => $dto->refundPercentage,
+      'description' => $dto->description,
+      'created_at' => now(),
+      'updated_at' => now(),
+    ], $dtos);
 
-        $rows = array_map(fn (CancellationPolicyDTO $dto) => [
-            'resource_id' => $resource->id,
-            'hours_before' => $dto->hoursBefore,
-            'refund_percentage' => $dto->refundPercentage,
-            'description' => $dto->description,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ], $dtos);
-
-        BookingCancellationPolicy::insert($rows);
-    }
+    BookingCancellationPolicy::insert($rows);
+  }
 }
