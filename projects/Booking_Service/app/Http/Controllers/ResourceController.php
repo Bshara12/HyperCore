@@ -18,18 +18,18 @@ class ResourceController extends Controller
         private readonly ResourceService $service,
     ) {}
 
-<<<<<<< HEAD
+// <<<<<<< HEAD
   public function index(Request $request): JsonResponse
   {
     $resources = $this->service->listByProject(
       $request->project_id,
       $request->attributes->get('auth_user')
     );
-=======
-    public function index(Request $request): JsonResponse
-    {
-        $resources = $this->service->listByProject($request->project_id);
->>>>>>> 0eddb080e6f0449167413ec10947487009b38807
+// =======
+//     public function index(Request $request): JsonResponse
+//     {
+//         $resources = $this->service->listByProject($request->project_id);
+// >>>>>>> 0eddb080e6f0449167413ec10947487009b38807
 
         return response()->json(['data' => $resources]);
     }
