@@ -71,33 +71,110 @@ class KeyboardLayoutFixer
      *   direction:  string|null,
      * }
      */
-    public function fix(string $query): array
-    {
-        $query = trim($query);
+    // public function fix(string $query): array
+    // {
+    //     $query = trim($query);
 
-        if (empty($query)) {
-            return $this->buildResult($query, null, 0.0, null);
-        }
+    //     if (empty($query)) {
+    //         return $this->buildResult($query, null, 0.0, null);
+    //     }
 
-        // ─── 1. كشف نوع الحروف السائدة ───────────────────────────────
-        $analysis = $this->analyzeCharacters($query);
+    //     // ─── 1. كشف نوع الحروف السائدة ───────────────────────────────
+    //     $analysis = $this->analyzeCharacters($query);
 
-        // ─── 2. إذا مختلط → لا نتدخل ────────────────────────────────
-        if ($analysis['mixed']) {
-            return $this->buildResult($query, null, 0.0, null);
-        }
+    //     // ─── 2. إذا مختلط → لا نتدخل ────────────────────────────────
+    //     if ($analysis['mixed']) {
+    //         return $this->buildResult($query, null, 0.0, null);
+    //     }
 
-        // ─── 3. تجربة التحويل في الاتجاه المناسب ─────────────────────
-        if ($analysis['dominantType'] === 'arabic') {
-            return $this->tryArToEn($query, $analysis);
-        }
+    //     // ─── 3. تجربة التحويل في الاتجاه المناسب ─────────────────────
+    //     if ($analysis['dominantType'] === 'arabic') {
+    //         return $this->tryArToEn($query, $analysis);
+    //     }
 
-        if ($analysis['dominantType'] === 'english') {
-            return $this->tryEnToAr($query, $analysis);
-        }
+    //     if ($analysis['dominantType'] === 'english') {
+    //         return $this->tryEnToAr($query, $analysis);
+    //     }
 
+    //     return $this->buildResult($query, null, 0.0, null);
+    // }
+
+    /**
+ * الدالة الرئيسية - مع قرار صارم قبل التحويل
+ *
+ * القاعدة الجديدة:
+ *   إذا query يبدو إنجليزياً معقولاً → لا تُحوِّله
+ *   فقط حوِّل إذا:
+ *     - عربي واضح مكتوب بـ layout إنجليزي (ar_to_en)
+ *     - OR النص إنجليزي لكن vowel ratio < 0.20 (gibberish عالي الاحتمال)
+ */
+public function fix(string $query): array
+{
+    $query = trim($query);
+
+    if (empty($query)) {
         return $this->buildResult($query, null, 0.0, null);
     }
+
+    $analysis = $this->analyzeCharacters($query);
+
+    if ($analysis['mixed']) {
+        return $this->buildResult($query, null, 0.0, null);
+    }
+
+    // ─── عربي → يحاول تحويل لإنجليزي (AR→EN) ────────────────────
+    if ($analysis['dominantType'] === 'arabic') {
+        return $this->tryArToEn($query, $analysis);
+    }
+
+    // ─── إنجليزي → نُقيِّم قبل التحويل ──────────────────────────
+    if ($analysis['dominantType'] === 'english') {
+        /*
+         * هنا كانت المشكلة:
+         * الكود القديم كان يُحوِّل أي نص إنجليزي لعربي
+         * حتى "iphoen" كان يُحوَّل لـ "هحاخثى"
+         *
+         * القاعدة الجديدة:
+         *   إنجليزي + vowel ratio معقول (>= 0.20) → ليس keyboard error
+         *   إنجليزي + vowel ratio منخفض جداً (< 0.20) → ربما عربي بـ EN layout
+         */
+        $vowelRatio = $this->calculateVowelRatio($query);
+
+        if ($vowelRatio >= 0.20) {
+            /*
+             * "iphoen" → vowels: i,o,e = 3/6 = 0.50 ≥ 0.20
+             * → إنجليزي معقول حتى لو فيه typo
+             * → لا تُحوِّل لعربي، هذا typo إنجليزي يحتاج spell correction
+             */
+            return $this->buildResult($query, null, 0.0, null);
+        }
+
+        /*
+         * "kfd" → vowels: 0/3 = 0.0 < 0.20
+         * → محتمل أنه عربي مكتوب بـ EN layout
+         * → نحاول التحويل
+         */
+        return $this->tryEnToAr($query, $analysis);
+    }
+
+    return $this->buildResult($query, null, 0.0, null);
+}
+
+/**
+ * حساب نسبة حروف العلة في النص الإنجليزي
+ */
+private function calculateVowelRatio(string $text): float
+{
+    $letters = preg_replace('/[^a-z]/i', '', mb_strtolower($text, 'UTF-8'));
+    $len     = strlen($letters);
+
+    if ($len === 0) {
+        return 0.0;
+    }
+
+    $vowels = preg_replace('/[^aeiou]/i', '', $letters);
+    return strlen($vowels) / $len;
+}
 
     // ─────────────────────────────────────────────────────────────────
     // Character Analysis
