@@ -34,6 +34,7 @@ services:
     environment:
       MYSQL_DATABASE: cms_service
       MYSQL_ROOT_PASSWORD: secret
+      MYSQL_ROOT_HOST: "%"
     volumes:
       - cms_master_data:/var/lib/mysql
       - ./mysql/cms/master.cnf:/etc/mysql/conf.d/master.cnf
@@ -77,6 +78,7 @@ services:
     environment:
       MYSQL_DATABASE: logging_service
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
     volumes:
       - logging_data:/var/lib/mysql
     networks: [core]
@@ -116,6 +118,7 @@ services:
     environment:
       MYSQL_DATABASE: auth_service
       MYSQL_ROOT_PASSWORD: secret
+      MYSQL_ROOT_HOST: "%"
     volumes:
       - auth_master_data:/var/lib/mysql
       - ./mysql/auth/master.cnf:/etc/mysql/conf.d/master.cnf
@@ -169,6 +172,7 @@ services:
     environment:
       MYSQL_DATABASE: ecommerce_service
       MYSQL_ROOT_PASSWORD: secret
+      MYSQL_ROOT_HOST: "%"
     volumes:
       - ecommerce_master_data:/var/lib/mysql
       - ./mysql/ecommerce/master.cnf:/etc/mysql/conf.d/master.cnf
@@ -222,6 +226,7 @@ services:
     environment:
       MYSQL_DATABASE: booking_service
       MYSQL_ROOT_PASSWORD: secret
+      MYSQL_ROOT_HOST: "%"
     volumes:
       - booking_master_data:/var/lib/mysql
       - ./mysql/booking/master.cnf:/etc/mysql/conf.d/master.cnf
