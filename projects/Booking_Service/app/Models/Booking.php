@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
 
 /**
  * @property int $id
@@ -13,11 +13,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $user_id
  * @property int $project_id
  * @property string $status
- * @property \Carbon\Carbon $start_at
- * @property \Carbon\Carbon $end_at
+ * @property Carbon $start_at
+ * @property Carbon $end_at
  * @property float $amount
  */
-
 class Booking extends Model
 {
     use SoftDeletes;

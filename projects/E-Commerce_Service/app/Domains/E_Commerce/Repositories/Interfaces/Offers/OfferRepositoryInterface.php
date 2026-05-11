@@ -9,27 +9,27 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface OfferRepositoryInterface
 {
-  public function create(int $collectionId, array $data): Offer;
+    public function create(int $collectionId, array $data): Offer;
 
-  public function update(int $collectionId, array $data): Offer;
+    public function update(int $collectionId, array $data): Offer;
 
-  public function findByCollectionId(int $collectionId): Offer;
+    public function findByCollectionId(int $collectionId): Offer;
 
-  public function reEvaluate(int $entryId): void;
+    public function reEvaluate(int $entryId): void;
 
-  public function getOfferDetails($collectionId): Offer;
+    public function getOfferDetails($collectionId): Offer;
 
-  public function getProjectOffers($projectId): Collection;
+    public function getProjectOffers($projectId): Collection;
 
-  public function deleteOfferByCollectionId($collectionId): void;
+    public function deleteOfferByCollectionId($collectionId): void;
 
-  public function getAndActivateDueOffers(Carbon $now);
+    public function getAndActivateDueOffers(Carbon $now);
 
-  public function getAndDeactivateExpiredOffers(Carbon $now);
+    public function getAndDeactivateExpiredOffers(Carbon $now);
 
-  public function subscribe(int $collectionId, SubscribeDTO $dto): void;
+    public function subscribe(int $collectionId, SubscribeDTO $dto): void;
 
-  public function deactivateOffer(int $collectionId): void;
+    public function deactivateOffer(int $collectionId): void;
 
-  public function activateOffer(int $collectionId): void;
+    public function activateOffer(int $collectionId): void;
 }

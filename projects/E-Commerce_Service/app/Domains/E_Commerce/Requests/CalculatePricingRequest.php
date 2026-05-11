@@ -11,7 +11,7 @@ class CalculatePricingRequest extends FormRequest
         return [
             'entry_ids' => 'required|array',
             'entry_ids.*' => 'integer',
-            'code' => 'nullable|string'
+            'code' => 'nullable|string',
         ];
     }
 }

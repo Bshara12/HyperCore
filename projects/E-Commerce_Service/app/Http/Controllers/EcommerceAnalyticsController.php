@@ -9,59 +9,59 @@ use Illuminate\Http\Request;
 
 class EcommerceAnalyticsController extends Controller
 {
-  public function __construct(protected AnalyticsService $service) {}
+    public function __construct(protected AnalyticsService $service) {}
 
-  public function salesSummary(
-    Request $request
-  ): JsonResponse {
-    $dto  = AnalyticsFilterDTO::fromRequest($request);
-    $data = $this->service->getSalesSummary($dto);
+    public function salesSummary(
+        Request $request
+    ): JsonResponse {
+        $dto = AnalyticsFilterDTO::fromRequest($request);
+        $data = $this->service->getSalesSummary($dto);
 
-    return response()->json(['success' => true, 'data' => $data]);
-  }
+        return response()->json(['success' => true, 'data' => $data]);
+    }
 
-  public function salesTrend(
-    Request $request
-  ): JsonResponse {
-    $dto  = AnalyticsFilterDTO::fromRequest($request);
-    $data = $this->service->getSalesTrend($dto);
+    public function salesTrend(
+        Request $request
+    ): JsonResponse {
+        $dto = AnalyticsFilterDTO::fromRequest($request);
+        $data = $this->service->getSalesTrend($dto);
 
-    return response()->json(['success' => true, 'data' => $data]);
-  }
+        return response()->json(['success' => true, 'data' => $data]);
+    }
 
-  public function topProducts(
-    Request $request
-  ): JsonResponse {
-    $dto  = AnalyticsFilterDTO::fromRequest($request);
-    $data = $this->service->getTopProducts($dto);
+    public function topProducts(
+        Request $request
+    ): JsonResponse {
+        $dto = AnalyticsFilterDTO::fromRequest($request);
+        $data = $this->service->getTopProducts($dto);
 
-    return response()->json(['success' => true, 'data' => $data]);
-  }
+        return response()->json(['success' => true, 'data' => $data]);
+    }
 
-  public function offersAnalytics(
-    Request $request
-  ): JsonResponse {
-    $dto  = AnalyticsFilterDTO::fromRequest($request);
-    $data = $this->service->getOffersAnalytics($dto);
+    public function offersAnalytics(
+        Request $request
+    ): JsonResponse {
+        $dto = AnalyticsFilterDTO::fromRequest($request);
+        $data = $this->service->getOffersAnalytics($dto);
 
-    return response()->json(['success' => true, 'data' => $data]);
-  }
+        return response()->json(['success' => true, 'data' => $data]);
+    }
 
-  public function topCustomers(
-    Request $request
-  ): JsonResponse {
-    $dto  = AnalyticsFilterDTO::fromRequest($request);
-    $data = $this->service->getTopCustomers($dto);
+    public function topCustomers(
+        Request $request
+    ): JsonResponse {
+        $dto = AnalyticsFilterDTO::fromRequest($request);
+        $data = $this->service->getTopCustomers($dto);
 
-    return response()->json(['success' => true, 'data' => $data]);
-  }
+        return response()->json(['success' => true, 'data' => $data]);
+    }
 
-  public function returnsAnalytics(
-    Request $request
-  ): JsonResponse {
-    $dto  = AnalyticsFilterDTO::fromRequest($request);
-    $data = $this->service->getReturnsAnalytics($dto);
+    public function returnsAnalytics(
+        Request $request
+    ): JsonResponse {
+        $dto = AnalyticsFilterDTO::fromRequest($request);
+        $data = $this->service->getReturnsAnalytics($dto);
 
-    return response()->json(['success' => true, 'data' => $data]);
-  }
+        return response()->json(['success' => true, 'data' => $data]);
+    }
 }

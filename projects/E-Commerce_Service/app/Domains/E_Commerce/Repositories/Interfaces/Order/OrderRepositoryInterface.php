@@ -6,15 +6,21 @@ use App\Models\Order;
 
 interface OrderRepositoryInterface
 {
-  public function create(array $data): Order;
-  public function findById(int $id): ?Order;
-  public function findByIdForUser(int $id, int $projectId, int $userId): ?Order;
-  public function loadItems(Order $order): Order;
-  public function getUserOrders(int $projectId, int $userId);
-  public function getAllOrders(int $projectId, array $filters = []);
-  public function findDetailedForUser(int $id, int $projectId, int $userId): ?Order;
+    public function create(array $data): Order;
 
-  public function updateItemsStatus(int $orderId, string $status): void;
+    public function findById(int $id): ?Order;
 
-  public function updateStatus(int $id, string $status);
+    public function findByIdForUser(int $id, int $projectId, int $userId): ?Order;
+
+    public function loadItems(Order $order): Order;
+
+    public function getUserOrders(int $projectId, int $userId);
+
+    public function getAllOrders(int $projectId, array $filters = []);
+
+    public function findDetailedForUser(int $id, int $projectId, int $userId): ?Order;
+
+    public function updateItemsStatus(int $orderId, string $status): void;
+
+    public function updateStatus(int $id, string $status);
 }

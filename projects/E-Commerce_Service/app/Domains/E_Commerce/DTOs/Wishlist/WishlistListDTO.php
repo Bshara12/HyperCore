@@ -15,8 +15,7 @@ class WishlistListDTO
         public ?string $share_token,
         public int $items_count,
         public string $created_at,
-    ) {
-    }
+    ) {}
 
     public static function fromModel(Wishlist $wishlist): self
     {

@@ -9,30 +9,30 @@ use Illuminate\Support\ServiceProvider;
 
 class PaymentServiceProvider extends ServiceProvider
 {
-  public function register(): void
-  {
-    $this->mergeConfigFrom(
-      path: base_path('config/payment.php'),
-      key: 'payment',
-    );
+    public function register(): void
+    {
+        $this->mergeConfigFrom(
+            path: base_path('config/payment.php'),
+            key: 'payment',
+        );
 
-    $this->app->bind(PaymentGatewayInterface::class, function () {
+        // $this->app->bind(PaymentGatewayInterface::class, function () {
 
-      $gateway = request('gateway')
-        ?? config('payment.default');
+        //     $gateway = request('gateway')
+        //       ?? config('payment.default');
 
-      return match ($gateway) {
-        'stripe'  => new StripeGateway(),
-        'paypal'  => new PaypalGateway(),
-        default   => throw new \InvalidArgumentException(
-          "Unsupported payment gateway: [{$gateway}]"
-        ),
-      };
-    });
-  }
+        //     return match ($gateway) {
+        //         'stripe' => new StripeGateway,
+        //         'paypal' => new PaypalGateway,
+        //         default => throw new \InvalidArgumentException(
+        //             "Unsupported payment gateway: [{$gateway}]"
+        //         ),
+        //     };
+        // });
+    }
 
-  public function boot(): void
-  {
-    //
-  }
+    public function boot(): void
+    {
+        //
+    }
 }

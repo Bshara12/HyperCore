@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Subscription\Services\UsageResetService;
 use App\Jobs\UpdatePopularityScoreJob;
 use App\Jobs\UpdateSearchSignalsJob;
 use Illuminate\Console\Scheduling\Schedule;
@@ -50,4 +51,54 @@ app()->booted(function () {
     ->name('update-popularity-score')
     ->hourly()
     ->withoutOverlapping();
+});
+
+app()->booted(function () {
+
+  app(Schedule::class)
+
+    ->command('subscriptions:auto-renew')
+
+    ->everyMinute()
+
+    ->withoutOverlapping()
+
+    ->runInBackground()
+
+    ->appendOutputTo(
+      storage_path(
+        'logs/subscription-auto-renew.log'
+      )
+    );
+});
+app()->booted(function () {
+
+  app(Schedule::class)
+
+    ->call(function () {
+
+      app(UsageResetService::class)
+        ->handle();
+    })
+
+    ->name('reset-subscription-usages')
+
+    ->hourly()
+
+    ->withoutOverlapping();
+});
+
+app()->booted(function () {
+
+  app(Schedule::class)
+
+    ->command(
+      'subscriptions:reset-usages'
+    )
+
+    ->hourly()
+
+    ->withoutOverlapping()
+
+    ->runInBackground();
 });

@@ -7,17 +7,16 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-  public function __construct(private ProductService $service) {}
+    public function __construct(private ProductService $service) {}
 
-  public function index(string $dataTypeSlug, Request $request)
-  {
-    return $this->service->getProducts(
-      $dataTypeSlug,
-      $request->code
-    );
-  }
+    public function index(string $dataTypeSlug, Request $request)
+    {
+        return $this->service->getProducts(
+            $dataTypeSlug,
+            $request->code
+        );
+    }
 }
-
 
 // POST /pricing/calculate
 // {

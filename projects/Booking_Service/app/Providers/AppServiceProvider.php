@@ -14,16 +14,16 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-  /**
-   * Register any application services.
-   */
-  public function register(): void
-  {
-    $this->app->bind(ResourceRepositoryInterface::class, EloquentResourceRepository::class);
-    $this->app->bind(BookingRepositoryInterface::class, EloquentBookingRepository::class);
-    $this->app->bind(BookingCancellationPolicyRepositoryInterface::class, EloquentBookingCancellationPolicyRepository::class);
-    $this->app->bind(AnalyticsRepositoryInterface::class, EloquentBookingAnalyticsRepository::class);
-  }
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        $this->app->bind(ResourceRepositoryInterface::class, EloquentResourceRepository::class);
+        $this->app->bind(BookingRepositoryInterface::class, EloquentBookingRepository::class);
+        $this->app->bind(BookingCancellationPolicyRepositoryInterface::class, EloquentBookingCancellationPolicyRepository::class);
+        $this->app->bind(AnalyticsRepositoryInterface::class, EloquentBookingAnalyticsRepository::class);
+    }
 
     /**
      * Bootstrap any application services.

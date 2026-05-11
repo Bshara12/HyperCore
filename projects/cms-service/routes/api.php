@@ -4,6 +4,7 @@ use App\Domains\Auth\Service\AuthServiceClient;
 use App\Http\Controllers\AIAgentController;
 use App\Http\Controllers\AiConversationController;
 use App\Http\Controllers\CmsAnalyticsController;
+use App\Http\Controllers\ContentAccessController;
 use App\Http\Controllers\SearchClickController;
 use App\Http\Controllers\DataCollectionController;
 use App\Http\Controllers\DataEntryController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\EntryDetailController;
 use App\Http\Controllers\EntryVersionController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\PopularSearchController;
 use App\Http\Controllers\ProjectAccessController;
 use App\Http\Controllers\ProjectController;
@@ -22,6 +24,8 @@ use App\Http\Controllers\RatingController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SearchSuggestionController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\SubscriptionFeatureRuleController;
 use App\Support\CurrentProject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -446,6 +450,66 @@ Route::middleware(['auth.user'])->prefix('ai')->group(function () {
 
 
 
+Route::prefix('subscriptions')->group(function () {
+
+  Route::post('/plans', [PlanController::class, 'store']);
+});
+
+Route::post(
+  '/subscriptions',
+  [SubscriptionController::class, 'store']
+)->middleware('auth.user');
+
+Route::post(
+  '/subscriptions/{subscription}/renew',
+  [SubscriptionController::class, 'renew']
+)->middleware('auth.user');
+
+Route::post(
+  '/subscriptions/{subscription}/cancel',
+  [SubscriptionController::class, 'cancel']
+)->middleware('auth.user');
+
+
+Route::post(
+  '/subscription-feature-rules',
+  [SubscriptionFeatureRuleController::class, 'store']
+);
+
+
+Route::post(
+  '/content-access',
+  [ContentAccessController::class, 'store']
+);
+
+Route::put(
+  '/content-access-metadata/{metadata}',
+  [ContentAccessController::class, 'update']
+);
+
+Route::delete(
+  '/content-access/{metadata}',
+  [ContentAccessController::class, 'destroy']
+);
+
+Route::patch(
+  '/content-access/{metadata}/activate',
+  [ContentAccessController::class, 'activate']
+);
+
+Route::get(
+
+  '/content-access',
+
+  [ContentAccessController::class, 'index']
+);
+
+Route::get(
+
+  '/content-access/{id}',
+
+  [ContentAccessController::class, 'show']
+);
 
 // -------------------------
 // Data Entries

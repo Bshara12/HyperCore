@@ -11,24 +11,24 @@ use App\Domains\E_Commerce\DTOs\ReturnRequest\UpdateReturnRequestDTO;
 
 class ReturnRequestService
 {
-  public function __construct(
-    protected CreateReturnRequestAction $createAction,
-    protected UpdateReturnRequestAction $updateAction,
-    protected GetReturnRequestsAction $getaction
-  ) {}
+    public function __construct(
+        protected CreateReturnRequestAction $createAction,
+        protected UpdateReturnRequestAction $updateAction,
+        protected GetReturnRequestsAction $getaction
+    ) {}
 
-  public function create(CreateReturnRequestDTO $dto)
-  {
-    return $this->createAction->execute($dto);
-  }
+    public function create(CreateReturnRequestDTO $dto)
+    {
+        return $this->createAction->execute($dto);
+    }
 
-  public function update(UpdateReturnRequestDTO $dto)
-  {
-    return $this->updateAction->execute($dto);
-  }
+    public function update(UpdateReturnRequestDTO $dto)
+    {
+        return $this->updateAction->execute($dto);
+    }
 
-  public function getAll(GetReturnRequestsDTO $dto)
-  {
-    return $this->getaction->execute($dto);
-  }
+    public function getAll(GetReturnRequestsDTO $dto)
+    {
+        return $this->getaction->execute($dto);
+    }
 }

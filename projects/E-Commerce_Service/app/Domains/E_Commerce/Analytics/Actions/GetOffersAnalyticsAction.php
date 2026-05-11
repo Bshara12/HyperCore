@@ -2,9 +2,9 @@
 
 namespace App\Domains\E_Commerce\Analytics\Actions;
 
-use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\E_Commerce\Analytics\DTOs\AnalyticsFilterDTO;
 use App\Domains\E_Commerce\Analytics\Repositories\AnalyticsRepositoryInterface;
+use App\Domains\E_Commerce\Support\CacheKeys;
 use Illuminate\Support\Facades\Cache;
 
 class GetOffersAnalyticsAction
@@ -18,7 +18,7 @@ class GetOffersAnalyticsAction
         return Cache::remember(
             "analytics:ecommerce:project:{$dto->projectId}:offers:{$dto->from}:{$dto->to}",
             CacheKeys::TTL_SHORT,
-            fn() => $this->repository->getOffersAnalytics($dto)
+            fn () => $this->repository->getOffersAnalytics($dto)
         );
     }
 }

@@ -4,8 +4,6 @@ namespace App\Domains\E_Commerce\Actions\Stock;
 
 use App\Services\CMS\CMSApiClient;
 
-use function PHPUnit\Framework\isNull;
-
 class UpdateStockInCMSAction
 {
   public function __construct(
@@ -14,10 +12,11 @@ class UpdateStockInCMSAction
 
   public function execute(array $items)
   {
+    $arryitem = [];
     foreach ($items as $item) {
 
       // إذا ما عنده stock skip
-      if (!isset($item['count'])||$item['count']==null) {
+      if (! isset($item['count']) || $item['count'] == null) {
         continue;
       }
 
@@ -42,9 +41,7 @@ class UpdateStockInCMSAction
       //     'count' => $newCount
       //   ]
       // ]);
-    $arryitem=[];
-    $arryitem[] = $item;
-    
+      $arryitem[] = $item;
     }
     $this->cms->decrementStock($arryitem);
   }
