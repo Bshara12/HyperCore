@@ -18,7 +18,7 @@ class GetCancellationReportAction
         return Cache::remember(
             "analytics:booking:project:{$dto->projectId}:cancellations:{$dto->period}:{$dto->from}:{$dto->to}",
             CacheKeys::TTL_SHORT,
-            fn() => $this->repository->getCancellationReport($dto)
+            fn () => $this->repository->getCancellationReport($dto)
         );
     }
 }

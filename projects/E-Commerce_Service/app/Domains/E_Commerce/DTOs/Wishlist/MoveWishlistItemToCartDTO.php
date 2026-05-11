@@ -9,8 +9,7 @@ class MoveWishlistItemToCartDTO
         public int $wishlist_item_id,
         public int $project_id,
         public int $user_id,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

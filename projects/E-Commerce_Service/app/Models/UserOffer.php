@@ -6,15 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserOffer extends Model
 {
-  protected $guarded = [];
+    protected $guarded = [];
 
-  protected $casts = [
-    'start_at' => 'datetime',
-    'end_at' => 'datetime',
-  ];
+    protected $casts = [
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+    ];
 
-  public function offer()
-  {
-    return $this->belongsTo(Offer::class);
-  }
+    public function offer()
+    {
+        return $this->belongsTo(Offer::class);
+    }
 }

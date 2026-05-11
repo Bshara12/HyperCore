@@ -8,8 +8,7 @@ class AddWishlistItemDTO
         public int $wishlist_id,
         public int $product_id,
         public ?int $variant_id = null,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

@@ -20,186 +20,185 @@ use App\Domains\Booking\Read\Actions\GetResourceBookingsAction;
 use App\Domains\Booking\Read\DTOs\GetResourceBookingsDTO;
 use App\Domains\Booking\Read\DTOs\GetResourceSlotsDTO;
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Models\Resource;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class BookingService
 {
-  public function __construct(
-    private readonly SlotGeneratorService $slotGenerator,
-    private readonly ResourceRepositoryInterface $resourceRepository,
-    private readonly GetResourceBookingsAction $getResourceBookingsAction,
+    public function __construct(
+        private readonly SlotGeneratorService $slotGenerator,
+        private readonly ResourceRepositoryInterface $resourceRepository,
+        private readonly GetResourceBookingsAction $getResourceBookingsAction,
 
-    private readonly ValidateBookingTimeAction $validateTime,
-    private readonly CheckAvailabilityAction $checkAvailability,
-    private readonly CheckBookingConflictAction $checkConflict,
-    private readonly CreateBookingRecordAction $createRecord,
-    private readonly ProcessBookingPaymentAction $processPayment,
-    private readonly GetBookingAction $getBookingAction,
-    private readonly ValidateCancelableAction $validateCancelable,
-    private readonly CalculateRefundAction $calculateRefund,
-    private readonly ProcessRefundAction $processRefund,
-    private readonly UpdateBookingStatusAction $updateBookingStatus,
-    private readonly UpdateBookingTimeAction $updateBookingTime,
-  ) {}
+        private readonly ValidateBookingTimeAction $validateTime,
+        private readonly CheckAvailabilityAction $checkAvailability,
+        private readonly CheckBookingConflictAction $checkConflict,
+        private readonly CreateBookingRecordAction $createRecord,
+        private readonly ProcessBookingPaymentAction $processPayment,
+        private readonly GetBookingAction $getBookingAction,
+        private readonly ValidateCancelableAction $validateCancelable,
+        private readonly CalculateRefundAction $calculateRefund,
+        private readonly ProcessRefundAction $processRefund,
+        private readonly UpdateBookingStatusAction $updateBookingStatus,
+        private readonly UpdateBookingTimeAction $updateBookingTime,
+    ) {}
 
-  public function getAvailableSlots(GetResourceSlotsDTO $dto): array
-  {
-    $resource = $this->resourceRepository->findById($dto->resourceId);
+    public function getAvailableSlots(GetResourceSlotsDTO $dto): array
+    {
+        $resource = $this->resourceRepository->findById($dto->resourceId);
 
-    throw_if(! $resource, \Exception::class, 'Resource not found.');
-    // throw_if(! $resource->isActive(), \Exception::class, 'Resource is not active.');
-    throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is not active.');
+        throw_if(! $resource, \Exception::class, 'Resource not found.');
+        // throw_if(! $resource->isActive(), \Exception::class, 'Resource is not active.');
+        throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is not active.');
 
-    $carbon = Carbon::parse($dto->date);
+        $carbon = Carbon::parse($dto->date);
 
-    throw_if(
-      $carbon->isPast() && ! $carbon->isToday(),
-      \Exception::class,
-      'Cannot view slots for past dates.'
-    );
+        throw_if(
+            $carbon->isPast() && ! $carbon->isToday(),
+            \Exception::class,
+            'Cannot view slots for past dates.'
+        );
 
-    return [
-      'resource_id' => $dto->resourceId,
-      'date' => $carbon->format('Y-m-d'),
-      'day' => $carbon->format('l'),
-      'slots' => $this->slotGenerator->generate($resource, $carbon),
-    ];
-  }
+        return [
+            'resource_id' => $dto->resourceId,
+            'date' => $carbon->format('Y-m-d'),
+            'day' => $carbon->format('l'),
+            'slots' => $this->slotGenerator->generate($resource, $carbon),
+        ];
+    }
 
-  public function getResourceBookings(GetResourceBookingsDTO $dto): Collection
-  {
-    return $this->getResourceBookingsAction->execute($dto);
-  }
+    public function getResourceBookings(GetResourceBookingsDTO $dto): Collection
+    {
+        return $this->getResourceBookingsAction->execute($dto);
+    }
 
-  // client
+    // client
 
-  public function create(CreateBookingDTO $dto)
-  {
-    return DB::transaction(function () use ($dto) {
+    public function create(CreateBookingDTO $dto)
+    {
+        return DB::transaction(function () use ($dto) {
 
-      // $resource = $this->resourceRepository->findById($dto->resourceId);
-      $resource = $this->resourceRepository->findById($dto->resourceId);
+            // $resource = $this->resourceRepository->findById($dto->resourceId);
+            $resource = $this->resourceRepository->findById($dto->resourceId);
 
-      throw_if(! $resource, \Exception::class, 'Resource not found');
-      // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
-      throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is inactive.');
+            throw_if(! $resource, \Exception::class, 'Resource not found');
+            // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
+            throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is inactive.');
 
+            // 🔥 تحقق السعر
+            if ($resource->payment_type === 'paid') {
+                if ((float) $dto->amount !== (float) $resource->price) {
+                    throw new \Exception('Invalid booking amount');
+                }
+            } else {
+                // 🔥 مجاني → اجبر السعر = 0
+                $dto->amount = 0;
+            }
 
-      // 🔥 تحقق السعر
-      if ($resource->payment_type === 'paid') {
-        if ((float) $dto->amount !== (float) $resource->price) {
-          throw new \Exception('Invalid booking amount');
-        }
-      } else {
-        // 🔥 مجاني → اجبر السعر = 0
-        $dto->amount = 0;
-      }
+            throw_if(! $resource, \Exception::class, 'Resource not found');
+            // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
+            throw_if($resource->status !== 'active', \Exception::class, 'Resource inactive');
 
-      throw_if(! $resource, \Exception::class, 'Resource not found');
-      // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
-      throw_if($resource->status !== 'active', \Exception::class, 'Resource inactive');
+            $start = Carbon::parse($dto->startAt);
+            $end = Carbon::parse($dto->endAt);
 
+            // 1. validate time
+            $this->validateTime->execute($start, $end);
 
-      $start = Carbon::parse($dto->startAt);
-      $end = Carbon::parse($dto->endAt);
+            // 2. availability
+            $this->checkAvailability->execute($dto->resourceId, $start, $end);
 
-      // 1. validate time
-      $this->validateTime->execute($start, $end);
+            // 3. conflict
+            $this->checkConflict->execute(
+                $dto->resourceId,
+                $dto->startAt,
+                $dto->endAt,
+                $resource->capacity,
+                null
+            );
 
-      // 2. availability
-      $this->checkAvailability->execute($dto->resourceId, $start, $end);
+            // 4. create booking
+            $booking = $this->createRecord->execute($dto);
 
-      // 3. conflict
-      $this->checkConflict->execute(
-        $dto->resourceId,
-        $dto->startAt,
-        $dto->endAt,
-        $resource->capacity,
-        null
-      );
+            // 5. payment
+            return $this->processPayment->execute($booking, $dto);
+        });
+    }
 
-      // 4. create booking
-      $booking = $this->createRecord->execute($dto);
+    public function cancel(CancelBookingDTO $dto)
+    {
+        return DB::transaction(function () use ($dto) {
 
-      // 5. payment
-      return $this->processPayment->execute($booking, $dto);
-    });
-  }
+            $booking = $this->getBookingAction->execute($dto->bookingId);
 
-  public function cancel(CancelBookingDTO $dto)
-  {
-    return DB::transaction(function () use ($dto) {
+            // 1. ownership
+            if ($booking->user_id !== $dto->userId) {
+                throw new \Exception('Unauthorized');
+            }
 
-      $booking = $this->getBookingAction->execute($dto->bookingId);
+            // 2. validate
+            $this->validateCancelable->execute($booking);
 
-      // 1. ownership
-      if ($booking->user_id !== $dto->userId) {
-        throw new \Exception('Unauthorized');
-      }
+            // 3. refund calculation
+            $refundAmount = $this->calculateRefund->execute($booking);
 
-      // 2. validate
-      $this->validateCancelable->execute($booking);
+            // 4. refund via CMS
+            if ($refundAmount > 0 && $booking->payment_id) {
+                $this->processRefund->execute($booking, $refundAmount);
+            }
 
-      // 3. refund calculation
-      $refundAmount = $this->calculateRefund->execute($booking);
+            // 5. update
+            return $this->updateBookingStatus->execute(
+                $booking,
+                $refundAmount
+            );
+        });
+    }
 
-      // 4. refund via CMS
-      if ($refundAmount > 0 && $booking->payment_id) {
-        $this->processRefund->execute($booking, $refundAmount);
-      }
+    public function reschedule(RescheduleBookingDTO $dto)
+    {
+        return DB::transaction(function () use ($dto) {
 
-      // 5. update
-      return $this->updateBookingStatus->execute(
-        $booking,
-        $refundAmount
-      );
-    });
-  }
+            $booking = $this->getBookingAction->execute($dto->bookingId);
 
-  public function reschedule(RescheduleBookingDTO $dto)
-  {
-    return DB::transaction(function () use ($dto) {
+            // ownership
+            if ($booking->user_id !== $dto->userId) {
+                throw new \Exception('Unauthorized');
+            }
 
-      $booking = $this->getBookingAction->execute($dto->bookingId);
+            // status check
+            if ($booking->status !== 'confirmed') {
+                throw new \Exception('Only confirmed bookings can be rescheduled');
+            }
 
-      // ownership
-      if ($booking->user_id !== $dto->userId) {
-        throw new \Exception('Unauthorized');
-      }
+            $start = Carbon::parse($dto->startAt);
+            $end = Carbon::parse($dto->endAt);
 
-      // status check
-      if ($booking->status !== 'confirmed') {
-        throw new \Exception('Only confirmed bookings can be rescheduled');
-      }
+            // ✅ reuse
+            $this->validateTime->execute($start, $end);
 
-      $start = Carbon::parse($dto->startAt);
-      $end = Carbon::parse($dto->endAt);
+            $this->checkAvailability->execute(
+                $booking->resource_id,
+                $start,
+                $end
+            );
 
-      // ✅ reuse
-      $this->validateTime->execute($start, $end);
+            $this->checkConflict->execute(
+                $booking->resource_id,
+                $dto->startAt,
+                $dto->endAt,
+                $booking->resource->capacity,
+                $booking->id // 🔥 ignore itself
+            );
 
-      $this->checkAvailability->execute(
-        $booking->resource_id,
-        $start,
-        $end
-      );
-
-      $this->checkConflict->execute(
-        $booking->resource_id,
-        $dto->startAt,
-        $dto->endAt,
-        $booking->resource->capacity,
-        $booking->id // 🔥 ignore itself
-      );
-
-      // update
-      return $this->updateBookingTime->execute(
-        $booking,
-        $dto->startAt,
-        $dto->endAt
-      );
-    });
-  }
+            // update
+            return $this->updateBookingTime->execute(
+                $booking,
+                $dto->startAt,
+                $dto->endAt
+            );
+        });
+    }
 }

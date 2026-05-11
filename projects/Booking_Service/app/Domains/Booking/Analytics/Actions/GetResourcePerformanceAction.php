@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Cache;
 
 class GetResourcePerformanceAction
 {
-  public function __construct(
-    private AnalyticsRepositoryInterface $repository
-  ) {}
+    public function __construct(
+        private AnalyticsRepositoryInterface $repository
+    ) {}
 
-  public function execute(AnalyticsFilterDTO $dto): array
-  {
-    return Cache::remember(
-      "analytics:booking:project:{$dto->projectId}:resource_performance:{$dto->from}:{$dto->to}",
-      CacheKeys::TTL_SHORT,
-      fn() => $this->repository->getResourcePerformance($dto)
-    );
-  }
+    public function execute(AnalyticsFilterDTO $dto): array
+    {
+        return Cache::remember(
+            "analytics:booking:project:{$dto->projectId}:resource_performance:{$dto->from}:{$dto->to}",
+            CacheKeys::TTL_SHORT,
+            fn () => $this->repository->getResourcePerformance($dto)
+        );
+    }
 }

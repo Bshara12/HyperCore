@@ -3,7 +3,6 @@
 namespace App\Domains\E_Commerce\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateWishlistRequest extends FormRequest
 {

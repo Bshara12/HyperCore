@@ -14,8 +14,7 @@ class WishlistItemDTO
         public ?array $product_snapshot,
         public string $created_at,
         public string $updated_at,
-    ) {
-    }
+    ) {}
 
     public static function fromModel(WishlistItem $item): self
     {

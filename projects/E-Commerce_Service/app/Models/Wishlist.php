@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Auth\User;
 
 class Wishlist extends Model
 {
@@ -73,5 +72,6 @@ class Wishlist extends Model
             ->where('variant_id', $variantId)
             ->exists();
     }
+
     protected $guarded = [];
 }

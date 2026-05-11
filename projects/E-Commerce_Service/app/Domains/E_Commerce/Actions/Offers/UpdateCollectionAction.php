@@ -7,19 +7,19 @@ use App\Services\CMS\CMSApiClient;
 
 class UpdateCollectionAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'offer.updateCollcetion';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'offer.updateCollcetion';
+    }
 
-  public function __construct(
-    protected CMSApiClient $cms,
-  ) {}
+    public function __construct(
+        protected CMSApiClient $cms,
+    ) {}
 
-  public function execute($dto)
-  {
-    return $this->run(function () use ($dto) {
-      return $this->cms->updateCollection($dto->collectionSlug, $dto->collectionData);
-    });
-  }
+    public function execute($dto)
+    {
+        return $this->run(function () use ($dto) {
+            return $this->cms->updateCollection($dto->collectionSlug, $dto->collectionData);
+        });
+    }
 }

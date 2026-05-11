@@ -2,11 +2,9 @@
 
 namespace App\Domains\E_Commerce\Repositories\Eloquent\Wishlist;
 
-
 use App\Domains\E_Commerce\Repositories\Interfaces\Wishlist\WishlistRepositoryInterface;
 use App\Models\Wishlist;
 use Illuminate\Database\Eloquent\Collection;
-
 
 class WishlistRepository implements WishlistRepositoryInterface
 {
@@ -126,5 +124,4 @@ class WishlistRepository implements WishlistRepositoryInterface
             ->with(['items'])
             ->first();
     }
-
 }

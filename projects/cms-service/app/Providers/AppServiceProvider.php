@@ -40,6 +40,14 @@ use App\Domains\CMS\Repositories\Interface\RatingRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\SeoEntryRepository;
 use App\Domains\Payment\Repositories\EloquentPaymentRepository;
 use App\Domains\Payment\Repositories\PaymentRepositoryInterface;
+use App\Domains\Subscription\Repositories\Eloquent\EloquentSubscriptionAccessRuleRepository;
+use App\Domains\Subscription\Repositories\Eloquent\EloquentSubscriptionFeatureRuleRepository;
+use App\Domains\Subscription\Repositories\Eloquent\EloquentSubscriptionPlanRepository;
+use App\Domains\Subscription\Repositories\Eloquent\EloquentSubscriptionRepository;
+use App\Domains\Subscription\Repositories\Interface\SubscriptionAccessRuleRepositoryInterface;
+use App\Domains\Subscription\Repositories\Interface\SubscriptionFeatureRuleRepositoryInterface;
+use App\Domains\Subscription\Repositories\Interface\SubscriptionPlanRepositoryInterface;
+use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
@@ -117,6 +125,31 @@ class AppServiceProvider extends ServiceProvider
         openRouter: $app->make(OpenRouterProvider::class),
       );
     });
+
+    $this->app->bind(
+      SubscriptionPlanRepositoryInterface::class,
+      EloquentSubscriptionPlanRepository::class
+    );
+    $this->app->bind(
+      SubscriptionRepositoryInterface::class,
+      EloquentSubscriptionRepository::class
+    );
+    $this->app->bind(
+      SubscriptionFeatureRuleRepositoryInterface::class,
+      EloquentSubscriptionFeatureRuleRepository::class
+    );
+    $this->app->bind(
+
+      SubscriptionAccessRuleRepositoryInterface::class,
+
+      EloquentSubscriptionAccessRuleRepository::class
+    );
+
+
+    $this->app->bind(
+      \App\Domains\Subscription\Repositories\Interface\ContentAccessMetadataRepositoryInterface::class,
+      \App\Domains\Subscription\Repositories\Eloquent\EloquentContentAccessMetadataRepository::class
+    );
   }
 
   /**

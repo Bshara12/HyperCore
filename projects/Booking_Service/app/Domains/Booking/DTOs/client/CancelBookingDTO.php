@@ -3,7 +3,6 @@
 namespace App\Domains\Booking\DTOs\Client;
 
 use App\Domains\Booking\Requests\CancelBookingRequest;
-use App\Domains\Booking\Requests\RescheduleBookingRequest;
 
 class CancelBookingDTO
 {

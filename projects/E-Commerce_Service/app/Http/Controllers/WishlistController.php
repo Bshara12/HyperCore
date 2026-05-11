@@ -7,7 +7,6 @@ use App\Domains\E_Commerce\DTOs\Wishlist\WishlistListDTO;
 use App\Domains\E_Commerce\Requests\StoreWishlistRequest;
 use App\Domains\E_Commerce\Requests\UpdateWishlistRequest;
 use App\Domains\E_Commerce\Services\WishlistService;
-use App\Http\Controllers\Controller;
 use App\Services\Auth\AuthApiClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,8 +16,7 @@ class WishlistController extends Controller
     public function __construct(
         protected WishlistService $wishlistService,
         protected AuthApiClient $authApiClient,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -32,10 +30,10 @@ class WishlistController extends Controller
 
         return response()->json([
             'message' => 'Wishlists fetched successfully.',
-            'data' => $wishlists
+            'data' => $wishlists,
             // 'data' => $user['id']
-                // ->map(fn ($wishlist) => WishlistListDTO::fromModel($wishlist)->toArray())
-                // ->toArray(),
+            // ->map(fn ($wishlist) => WishlistListDTO::fromModel($wishlist)->toArray())
+            // ->toArray(),
         ]);
     }
 

@@ -11,8 +11,7 @@ class CreateWishlistDTO
         public string $visibility = 'private',
         public bool $is_default = false,
         public bool $is_shareable = false,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

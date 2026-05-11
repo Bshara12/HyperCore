@@ -11,119 +11,119 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateReturnRequestAction
 {
-  public function __construct(
-    protected ReturnRequestRepositoryInterface $repo,
-    protected OrderItemRepositoryInterface $orderItemRepo,
-    private OrderRepositoryInterface $orderRepo,
-  ) {}
+    public function __construct(
+        protected ReturnRequestRepositoryInterface $repo,
+        protected OrderItemRepositoryInterface $orderItemRepo,
+        private OrderRepositoryInterface $orderRepo,
+    ) {}
 
-  // public function execute(UpdateReturnRequestDTO $dto)
-  // {
-  //   return DB::transaction(function () use ($dto) {
+    // public function execute(UpdateReturnRequestDTO $dto)
+    // {
+    //   return DB::transaction(function () use ($dto) {
 
-  //     $request = $this->repo->findById($dto->id);
+    //     $request = $this->repo->findById($dto->id);
 
-  //     if (!$request || $request->status !== 'pending') {
-  //       throw new \Exception('Invalid request');
-  //     }
+    //     if (!$request || $request->status !== 'pending') {
+    //       throw new \Exception('Invalid request');
+    //     }
 
-  //     $this->repo->update($request, [
-  //       'status' => $dto->status
-  //     ]);
+    //     $this->repo->update($request, [
+    //       'status' => $dto->status
+    //     ]);
 
-  //     if ($dto->status === 'approved') {
-  //       $this->orderItemRepo->updateStatus(
-  //         $request->order_item_id,
-  //         'returned'
-  //       );
-  //     }
+    //     if ($dto->status === 'approved') {
+    //       $this->orderItemRepo->updateStatus(
+    //         $request->order_item_id,
+    //         'returned'
+    //       );
+    //     }
 
-  //     return $request;
-  //   });
-  // }
+    //     return $request;
+    //   });
+    // }
 
-  public function execute(UpdateReturnRequestDTO $dto)
-  {
-    return DB::transaction(function () use ($dto) {
+    public function execute(UpdateReturnRequestDTO $dto)
+    {
+        return DB::transaction(function () use ($dto) {
 
-      $request = $this->repo->findById($dto->id);
+            $request = $this->repo->findById($dto->id);
 
-      if (!$request || $request->status !== 'pending') {
-        throw new \Exception('Invalid request');
-      }
+            if (! $request || $request->status !== 'pending') {
+                throw new \Exception('Invalid request');
+            }
 
-      // 🔥 تحديث الطلب
-      $this->repo->update($request, [
-        'status' => $dto->status
-      ]);
+            // 🔥 تحديث الطلب
+            $this->repo->update($request, [
+                'status' => $dto->status,
+            ]);
 
-      // if ($dto->status === 'approved') {
+            // if ($dto->status === 'approved') {
 
-      //   // ✅ 1. تحديث order_item
-      //   $this->orderItemRepo->updateStatus(
-      //     $request->order_item_id,
-      //     'returned'
-      //   );
+            //   // ✅ 1. تحديث order_item
+            //   $this->orderItemRepo->updateStatus(
+            //     $request->order_item_id,
+            //     'returned'
+            //   );
 
-      //   // ✅ 2. جلب كل عناصر الطلب
-      //   $items = $this->orderItemRepo->findByOrderId($request->order_id);
+            //   // ✅ 2. جلب كل عناصر الطلب
+            //   $items = $this->orderItemRepo->findByOrderId($request->order_id);
 
-      //   $totalItems = count($items);
-      //   $returnedItems = collect($items)
-      //     ->where('status', 'returned')
-      //     ->count();
+            //   $totalItems = count($items);
+            //   $returnedItems = collect($items)
+            //     ->where('status', 'returned')
+            //     ->count();
 
-      //   // ✅ 3. تحديد حالة الطلب
-      //   if ($returnedItems === $totalItems) {
-      //     $newStatus = 'returned';
-      //   } else {
-      //     $newStatus = 'partially_returned';
-      //   }
+            //   // ✅ 3. تحديد حالة الطلب
+            //   if ($returnedItems === $totalItems) {
+            //     $newStatus = 'returned';
+            //   } else {
+            //     $newStatus = 'partially_returned';
+            //   }
 
-      //   // ✅ 4. تحديث order
-      //   $this->orderItemRepo->updateStatus(
-      //     $request->order_id,
-      //     $newStatus
-      //   );
-      // }
+            //   // ✅ 4. تحديث order
+            //   $this->orderItemRepo->updateStatus(
+            //     $request->order_id,
+            //     $newStatus
+            //   );
+            // }
 
+            if ($dto->status === 'approved') {
 
-      if ($dto->status === 'approved') {
+                // ✅ 1. حدث item واحد فقط
+                $this->orderItemRepo->updateStatus(
+                    $request->order_item_id,
+                    'returned'
+                );
 
-        // ✅ 1. حدث item واحد فقط
-        $this->orderItemRepo->updateStatus(
-          $request->order_item_id,
-          'returned'
-        );
+                // ✅ 2. جيب كل عناصر الطلب
+                $items = $this->orderItemRepo->findByOrderId($request->order_id);
 
-        // ✅ 2. جيب كل عناصر الطلب
-        $items = $this->orderItemRepo->findByOrderId($request->order_id);
+                $totalItems = $items->count();
+                $returnedItems = $items->where('status', 'returned')->count();
 
-        $totalItems = $items->count();
-        $returnedItems = $items->where('status', 'returned')->count();
+                // ✅ 3. حدد حالة الطلب
+                if ($returnedItems === $totalItems) {
+                    $newStatus = 'returned';
+                } else {
+                    $newStatus = 'partially_returned';
+                }
 
-        // ✅ 3. حدد حالة الطلب
-        if ($returnedItems === $totalItems) {
-          $newStatus = 'returned';
-        } else {
-          $newStatus = 'partially_returned';
-        }
+                // ✅ 4. حدث order فقط (مو items!)
+                $this->orderRepo->updateStatus(
+                    $request->order_id,
+                    $newStatus
+                );
+            }
 
-        // ✅ 4. حدث order فقط (مو items!)
-        $this->orderRepo->updateStatus(
-          $request->order_id,
-          $newStatus
-        );
-      }
+            event(new SystemLogEvent(
+                module: 'ecommerce',
+                eventType: 'update_return_request',
+                userId: null,
+                entityType: 'return_request',
+                entityId: $dto->id
+            ));
 
-      event(new SystemLogEvent(
-        module: 'ecommerce',
-        eventType: 'update_return_request',
-        userId: null,
-        entityType: 'return_request',
-        entityId: $dto->id
-      ));
-      return $request;
-    });
-  }
+            return $request;
+        });
+    }
 }

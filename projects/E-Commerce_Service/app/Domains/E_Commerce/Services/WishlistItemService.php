@@ -16,8 +16,7 @@ class WishlistItemService
         protected WishlistItemRepositoryInterface $wishlistItemRepository,
         protected CMSApiClient $cmsApiClient,
         protected CartService $cartService,
-    ) {
-    }
+    ) {}
 
     // protected function getProductFromCMS(int $productId): ?array
     // {
@@ -121,7 +120,7 @@ class WishlistItemService
                         'item_id' => $item->product_id,
                         'variant_id' => $item->variant_id,
                         'quantity' => 1,
-                    ]
+                    ],
                 ]
             );
 
