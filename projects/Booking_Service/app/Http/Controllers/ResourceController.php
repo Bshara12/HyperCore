@@ -14,83 +14,88 @@ use Illuminate\Http\Request;
 
 class ResourceController extends Controller
 {
-    public function __construct(
-        private readonly ResourceService $service,
-    ) {}
+  public function __construct(
+    private readonly ResourceService $service,
+  ) {}
 
-    // <<<<<<< HEAD
-    public function index(Request $request): JsonResponse
-    {
-        $resources = $this->service->listByProject(
-            $request->project_id,
-            $request->attributes->get('auth_user')
-        );
-        // =======
-        //     public function index(Request $request): JsonResponse
-        //     {
-        //         $resources = $this->service->listByProject($request->project_id);
-        // >>>>>>> 0eddb080e6f0449167413ec10947487009b38807
+  // <<<<<<< HEAD
+  // public function index(Request $request): JsonResponse
+  // {
+  //     $resources = $this->service->listByProject(
+  //         $request->project_id,
+  //         $request->attributes->get('auth_user')
+  //     );
+  // =======
+  //     public function index(Request $request): JsonResponse
+  //     {
+  //         $resources = $this->service->listByProject($request->project_id);
+  // >>>>>>> 0eddb080e6f0449167413ec10947487009b38807
+  public function index(Request $request): JsonResponse
+  {
+    $resources = $this->service->listByProject(
+      $request->project_id,
+      $request->attributes->get('auth_user')
+    );
+    return response()->json(['data' => $resources]);
+  }
 
-        return response()->json(['data' => $resources]);
+  public function show(int $id): JsonResponse
+  {
+    $resource = $this->service->show($id);
+
+    if (! $resource) {
+      return response()->json(['message' => 'Resource not found.'], 404);
     }
 
-    public function show(int $id): JsonResponse
-    {
-        $resource = $this->service->show($id);
+    return response()->json(['data' => $resource]);
+  }
 
-        if (! $resource) {
-            return response()->json(['message' => 'Resource not found.'], 404);
-        }
+  public function store(CreateResourceRequest $request): JsonResponse
+  {
+    $dto = ResourceDTO::fromCreateRequest($request);
+    $resource = $this->service->create($dto);
 
-        return response()->json(['data' => $resource]);
-    }
+    return response()->json([
+      'message' => 'Resource created successfully.',
+      'data' => $resource,
+    ], 201);
+  }
 
-    public function store(CreateResourceRequest $request): JsonResponse
-    {
-        $dto = ResourceDTO::fromCreateRequest($request);
-        $resource = $this->service->create($dto);
+  public function update(UpdateResourceRequest $request, Resource $resource): JsonResponse
+  {
+    $dto = ResourceDTO::fromUpdateRequest($request);
+    $resource = $this->service->update($resource, $dto);
 
-        return response()->json([
-            'message' => 'Resource created successfully.',
-            'data' => $resource,
-        ], 201);
-    }
+    return response()->json([
+      'message' => 'Resource updated successfully.',
+      'data' => $resource,
+    ]);
+  }
 
-    public function update(UpdateResourceRequest $request, Resource $resource): JsonResponse
-    {
-        $dto = ResourceDTO::fromUpdateRequest($request);
-        $resource = $this->service->update($resource, $dto);
+  public function destroy(Resource $resource): JsonResponse
+  {
+    $this->service->delete($resource);
 
-        return response()->json([
-            'message' => 'Resource updated successfully.',
-            'data' => $resource,
-        ]);
-    }
+    return response()->json(['message' => 'Resource deleted successfully.']);
+  }
 
-    public function destroy(Resource $resource): JsonResponse
-    {
-        $this->service->delete($resource);
+  public function setAvailability(SetAvailabilityRequest $request, Resource $resource): JsonResponse
+  {
+    $this->service->setAvailability($resource, $request->availabilities);
 
-        return response()->json(['message' => 'Resource deleted successfully.']);
-    }
+    return response()->json([
+      'message' => 'Availability updated successfully.',
+      'data' => $resource->fresh(['activeAvailabilities']),
+    ]);
+  }
 
-    public function setAvailability(SetAvailabilityRequest $request, Resource $resource): JsonResponse
-    {
-        $this->service->setAvailability($resource, $request->availabilities);
+  public function setPolicy(SetCancellationPolicyRequest $request, Resource $resource): JsonResponse
+  {
+    $this->service->setPolicy($resource, $request->policies);
 
-        return response()->json([
-            'message' => 'Availability updated successfully.',
-            'data' => $resource->fresh(['activeAvailabilities']),
-        ]);
-    }
-
-    public function setPolicy(SetCancellationPolicyRequest $request, Resource $resource): JsonResponse
-    {
-        $this->service->setPolicy($resource, $request->policies);
-
-        return response()->json([
-            'message' => 'Cancellation policy updated successfully.',
-            'data' => $resource->fresh(['cancellationPolicies']),
-        ]);
-    }
+    return response()->json([
+      'message' => 'Cancellation policy updated successfully.',
+      'data' => $resource->fresh(['cancellationPolicies']),
+    ]);
+  }
 }

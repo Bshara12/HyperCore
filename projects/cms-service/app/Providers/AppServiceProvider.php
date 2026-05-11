@@ -121,8 +121,7 @@ class AppServiceProvider extends ServiceProvider
 
     $this->app->singleton(AIProviderChain::class, function ($app) {
       return new AIProviderChain(
-        gemini: $app->make(GeminiProvider::class),
-        openRouter: $app->make(OpenRouterProvider::class),
+        openRouter: $app->make(OpenRouterProvider::class)
       );
     });
 
