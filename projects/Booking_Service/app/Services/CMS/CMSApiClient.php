@@ -49,7 +49,6 @@ class CMSApiClient
 
     public function chargeBooking(array $data): array
     {
-        // dd($data);
         $response = Http::withHeaders(
             $this->projectHeaders()
         )->post("{$this->baseUrl}/api/payments/pay", [

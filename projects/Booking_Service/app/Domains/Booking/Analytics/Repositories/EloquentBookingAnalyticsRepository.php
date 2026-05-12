@@ -136,7 +136,7 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
                 COALESCE(SUM(CASE WHEN b.status NOT IN ('cancelled') THEN b.amount ELSE 0 END), 0) as total_revenue,
                 COALESCE(SUM(CASE WHEN b.status = 'cancelled' THEN b.refund_amount ELSE 0 END), 0) as total_refunded,
                 COALESCE(ROUND(AVG(CASE WHEN b.status NOT IN ('cancelled')
-                    THEN TIMESTAMPDIFF(MINUTE, b.start_at, b.end_at) END), 2), 0) as avg_duration_minutes
+                    THEN TIMESTAMPDIFF('MINUTE', b.start_at, b.end_at) END), 2), 0) as avg_duration_minutes
             ")
       ->groupBy('r.id', 'r.name', 'r.type', 'r.capacity', 'r.payment_type', 'r.price')
       ->orderByRaw('total_bookings DESC')
@@ -153,7 +153,7 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
       ->where('is_active', true)
       ->selectRaw("
                 resource_id,
-                SUM(TIMESTAMPDIFF(HOUR, start_time, end_time)) as daily_hours
+                SUM(TIMESTAMPDIFF('HOUR', start_time, end_time)) as daily_hours
             ")
       ->groupBy('resource_id')
       ->pluck('daily_hours', 'resource_id');
@@ -167,7 +167,7 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
       ->whereNull('deleted_at')
       ->selectRaw("
                 resource_id,
-                COALESCE(SUM(TIMESTAMPDIFF(HOUR, start_at, end_at)), 0) as booked_hours
+                COALESCE(SUM(TIMESTAMPDIFF('HOUR', start_at, end_at)), 0) as booked_hours
             ")
       ->groupBy('resource_id')
       ->pluck('booked_hours', 'resource_id');
@@ -182,7 +182,7 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
 
         $occupancyRate = $totalAvailableHours > 0
           ? round(($totalBookedHours / $totalAvailableHours) * 100, 2)
-          : 0;
+          : 0.0;
 
         $totalBookings = (int) $r->total_bookings;
 
@@ -324,19 +324,19 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
 
     // أكثر الأيام حجزاً (0=Sunday...6=Saturday)
     $byDayOfWeek = DB::table('bookings')
-    ->where('project_id', $dto->projectId)
-    ->whereBetween('start_at', [$from, $to])
-    ->whereNotIn('status', ['cancelled'])
-    ->whereNull('deleted_at')
-    ->selectRaw("
+      ->where('project_id', $dto->projectId)
+      ->whereBetween('start_at', [$from, $to])
+      ->whereNotIn('status', ['cancelled'])
+      ->whereNull('deleted_at')
+      ->selectRaw("
         (DAYOFWEEK(start_at) - 1)     as day_of_week,
         DAYNAME(start_at)             as day_name,
         COUNT(*)                      as bookings_count,
         COALESCE(SUM(amount), 0)      as revenue
     ")
-    ->groupByRaw("(DAYOFWEEK(start_at) - 1), DAYNAME(start_at)")
-    ->orderByRaw('bookings_count DESC')
-    ->get();
+      ->groupByRaw("(DAYOFWEEK(start_at) - 1), DAYNAME(start_at)")
+      ->orderByRaw('bookings_count DESC')
+      ->get();
 
     // أكثر الساعات حجزاً
     $byHour = DB::table('bookings')
@@ -378,7 +378,7 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
       ->selectRaw("
                 r.id                                                            as resource_id,
                 r.name,
-                ROUND(AVG(TIMESTAMPDIFF(HOUR, b.created_at, b.start_at)), 2)   as avg_lead_time_hours
+                ROUND(AVG(TIMESTAMPDIFF('HOUR', b.created_at, b.start_at)), 2)   as avg_lead_time_hours
             ")
       ->groupBy('r.id', 'r.name')
       ->orderByRaw('avg_lead_time_hours ASC')

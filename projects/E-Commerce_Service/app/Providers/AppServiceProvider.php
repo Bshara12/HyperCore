@@ -7,7 +7,7 @@ use App\Domains\E_Commerce\Analytics\Repositories\EloquentEcommerceAnalyticsRepo
 use App\Domains\E_Commerce\Repositories\Eloquent\Cart\EloquentCartItemRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Cart\EloquentCartRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferPriceRepositoryEloquent;
-use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferRepositorEloquent;
+use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferRepositoryEloquent;
 use App\Domains\E_Commerce\Repositories\Eloquent\Order\EloquentOrderItemRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Order\EloquentOrderRepository;
 
@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
    */
   public function register(): void
   {
-    $this->app->bind(OfferRepositoryInterface::class, OfferRepositorEloquent::class);
+    $this->app->bind(OfferRepositoryInterface::class, OfferRepositoryEloquent::class);
     $this->app->bind(OfferPriceRepositoryInterface::class, OfferPriceRepositoryEloquent::class);
     $this->app->bind(CartRepositoryInterface::class, EloquentCartRepository::class);
     $this->app->bind(CartItemRepositoryInterface::class, EloquentCartItemRepository::class);

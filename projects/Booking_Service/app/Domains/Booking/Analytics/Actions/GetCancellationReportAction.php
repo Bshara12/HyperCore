@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Cache;
 
 class GetCancellationReportAction
 {
-    public function __construct(
-        private AnalyticsRepositoryInterface $repository
-    ) {}
+  public function __construct(
+    private AnalyticsRepositoryInterface $repository
+  ) {}
 
-    public function execute(AnalyticsFilterDTO $dto): array
-    {
-        return Cache::remember(
-            "analytics:booking:project:{$dto->projectId}:cancellations:{$dto->period}:{$dto->from}:{$dto->to}",
-            CacheKeys::TTL_SHORT,
-            fn() => $this->repository->getCancellationReport($dto)
-        );
-    }
+  public function execute(AnalyticsFilterDTO $dto): array
+  {
+    return Cache::remember(
+      "analytics:booking:project:{$dto->projectId}:cancellations:{$dto->period}:{$dto->from}:{$dto->to}",
+      CacheKeys::TTL_SHORT,
+      fn() => $this->repository->getCancellationReport($dto)
+    );
+  }
 }

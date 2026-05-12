@@ -45,14 +45,11 @@ Route::middleware(['resolve.project', 'auth.user'])
 
 Route::prefix('booking/analytics')
   ->middleware(['resolve.project', 'auth.user'])
+  ->name('analytics.') // أضف هذا السطر هنا
   ->group(function () {
-    Route::get('/overview', [BookingAnalyticsController::class, 'overview']);
-    Route::get('/trend', [BookingAnalyticsController::class, 'trend']);
-    Route::get('/resources', [BookingAnalyticsController::class, 'resourcePerformance']);
-    Route::get('/cancellations', [BookingAnalyticsController::class, 'cancellations']);
-    Route::get('/peak-times', [BookingAnalyticsController::class, 'peakTimes']);
+    Route::get('/overview', [BookingAnalyticsController::class, 'overview'])->name('overview');
+    Route::get('/trend', [BookingAnalyticsController::class, 'trend'])->name('trend');
+    Route::get('/resources', [BookingAnalyticsController::class, 'resourcePerformance'])->name('resources');
+    Route::get('/cancellations', [BookingAnalyticsController::class, 'cancellations'])->name('cancellations');
+    Route::get('/peak-times', [BookingAnalyticsController::class, 'peakTimes'])->name('peak-times');
   });
-
-Route::get('/test', function () {
-  return gethostname();
-});

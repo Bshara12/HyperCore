@@ -10,7 +10,6 @@ use App\Domains\Booking\Actions\UpdateResourceAction;
 use App\Domains\Booking\DTOs\ResourceDTO;
 use App\Domains\Booking\Read\Actions\IndexResourcesAction;
 use App\Domains\Booking\Read\Actions\ShowResourceAction;
-use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
 use App\Models\Resource;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -24,7 +23,6 @@ class ResourceService
     private readonly ShowResourceAction $showAction,
     private readonly IndexResourcesAction $indexAction,
     private readonly DeleteResourceAction $deleteAction,
-    // private readonly ResourceRepositoryInterface $repository,
   ) {}
 
   public function listByProject(int $projectId, array $user): Collection
