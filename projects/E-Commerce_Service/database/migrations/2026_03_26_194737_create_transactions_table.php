@@ -6,37 +6,37 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-  public function up(): void
-  {
-    Schema::create('transactions', function (Blueprint $table) {
-      $table->id();
+    public function up(): void
+    {
+        Schema::create('transactions', function (Blueprint $table) {
+            $table->id();
 
-      $table->foreignId('payment_id')
-        ->constrained('payments')
-        ->cascadeOnDelete();
+            $table->foreignId('payment_id')
+                ->constrained('payments')
+                ->cascadeOnDelete();
 
-      $table->string('gateway_transaction_id')->index();
+            $table->string('gateway_transaction_id')->index();
 
-      $table->enum('type', ['charge', 'refund'])->index();
+            $table->enum('type', ['charge', 'refund'])->index();
 
-      $table->decimal('amount', 12, 2);
-      $table->char('currency', 3)->default('USD');
+            $table->decimal('amount', 12, 2);
+            $table->char('currency', 3)->default('USD');
 
-      $table->enum('status', [
-        'pending',
-        'success',
-        'failed',
-      ])->default('pending')->index();
+            $table->enum('status', [
+                'pending',
+                'success',
+                'failed',
+            ])->default('pending')->index();
 
-      $table->json('gateway_response')->nullable();
-      $table->timestamp('processed_at')->nullable();
+            $table->json('gateway_response')->nullable();
+            $table->timestamp('processed_at')->nullable();
 
-      $table->timestamps();
-    });
-  }
+            $table->timestamps();
+        });
+    }
 
-  public function down(): void
-  {
-    Schema::dropIfExists('transactions');
-  }
+    public function down(): void
+    {
+        Schema::dropIfExists('transactions');
+    }
 };

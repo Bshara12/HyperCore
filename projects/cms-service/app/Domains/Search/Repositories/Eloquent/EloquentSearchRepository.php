@@ -34,7 +34,6 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     ProcessedKeyword  $processed,
     UserPreferenceDTO $preference
   ): array {
-
     foreach ($processed->relaxedQueries as $step => $query) {
       $result = $this->executeSearch($dto, $processed, $query, $preference);
       if ($result['total'] > 0) {
@@ -71,7 +70,34 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     // ─── 1. بناء WHERE conditions ─────────────────────────────────
     $where      = 'si.project_id = ? AND si.language = ? AND si.status = ?';
     $binds      = [$dto->projectId, $dto->language, 'published'];
+    // $binds = [1, 'en', 'published'];
+    $excludeTerms = [];
 
+    preg_match_all('/-([^\s]+)/', $booleanQuery, $matches);
+
+    $excludeTerms = $matches[1] ?? [];
+
+    $excludeLikeConditions = [];
+    $excludeLikeBinds      = [];
+
+    foreach ($excludeTerms as $term) {
+
+      $cleanTerm = trim($term);
+
+      if ($cleanTerm === '') {
+        continue;
+      }
+
+      $excludeLikeConditions[] =
+        "CONCAT_WS(' ', si.title, si.content) NOT LIKE ?";
+
+      $excludeLikeBinds[] = '%' . $cleanTerm . '%';
+    }
+
+
+    if (!empty($excludeLikeConditions)) {
+      $where .= ' AND ' . implode(' AND ', $excludeLikeConditions);
+    }
     /*
          * Intent Filtering بدون JOIN:
          * نستخدم data_type_slug المخزون في search_indices مباشرة
@@ -98,14 +124,20 @@ class EloquentSearchRepository implements SearchRepositoryInterface
          * لكن الأبسط والأكثر موثوقية: count مع LIMIT على الـ FULLTEXT
          */
     $countSql = "
-            SELECT COUNT(*) AS total
-            FROM search_indices si
-            WHERE {$where}
-              AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
-            LIMIT 10000
-        ";
-
-    $countRow = DB::selectOne($countSql, [...$binds, $booleanQuery]);
+    SELECT COUNT(*) AS total
+    FROM search_indices si
+    WHERE {$where}
+      AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
+    LIMIT 10000
+";
+    // dd("countSql", $countSql);
+    // $binds = [1, 'en', 'published'];
+    $countBinds = [
+      ...$binds,
+      ...$excludeLikeBinds,
+      $booleanQuery,
+    ];
+    $countRow = DB::selectOne($countSql, $countBinds);
     $total    = (int) ($countRow->total ?? 0);
 
     if ($total === 0) {
@@ -145,7 +177,6 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     //     LIMIT ?
     //     OFFSET ?
     // ";
-
     $searchSql = "
     SELECT
         si.entry_id,
@@ -173,6 +204,7 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     OFFSET ?
 ";
 
+
     /*
          * Offset Strategy:
          * للصفحة 1: جلب top 100، re-rank، أرجع perPage
@@ -183,16 +215,25 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     $fetchLimit = max(self::DB_FETCH_LIMIT, $dto->perPage * 3);
     $offset     = max(0, ($dto->page - 1) * $dto->perPage - $fetchLimit + $dto->perPage);
 
+    // $searchBinds = [
+    //   $booleanQuery,  // NATURAL LANGUAGE للـ scoring
+    //   ...$binds,      // WHERE conditions
+    //   $booleanQuery,  // BOOLEAN MODE للـ filtering
+    //   $fetchLimit,    // نجلب أكثر من المطلوب للـ re-ranking
+    //   0,              // offset = 0 للـ page 1 (re-ranking يتولى الـ pagination)
+    // ];
+
+
     $searchBinds = [
-      $booleanQuery,  // NATURAL LANGUAGE للـ scoring
-      ...$binds,      // WHERE conditions
-      $booleanQuery,  // BOOLEAN MODE للـ filtering
-      $fetchLimit,    // نجلب أكثر من المطلوب للـ re-ranking
-      0,              // offset = 0 للـ page 1 (re-ranking يتولى الـ pagination)
+      $booleanQuery,       // أول AGAINST
+      ...$binds,           // where الأساسي
+      ...$excludeLikeBinds, // NOT LIKE
+      $booleanQuery,       // ثاني AGAINST
+      $fetchLimit,
+      0,
     ];
 
     $rows = DB::select($searchSql, $searchBinds);
-
     if (empty($rows)) {
       return ['items' => [], 'total' => $total];
     }
@@ -213,6 +254,8 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     // ─── 5. Pagination بعد الـ Re-ranking ────────────────────────
     $pageStart   = ($dto->page - 1) * $dto->perPage;
     $pagedItems  = array_slice($reranked, $pageStart, $dto->perPage);
+
+
     return [
       'items' => $pagedItems,
       'total' => $total,
@@ -311,7 +354,6 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     UserPreferenceDTO $preference,
     array             $excludeTerms = []
   ): array {
-
     /*
      * إذا لا يوجد استبعاد → استخدم الـ search العادي
      */
@@ -326,6 +368,9 @@ class EloquentSearchRepository implements SearchRepositoryInterface
      *   original relaxed: ["+iphone*", "iphone*"]
      *   مع exclude "15":  ["+iphone* -15", "iphone* -15"]
      */
+
+
+
     $excludeSuffix = ' ' . implode(
       ' ',
       array_map(
@@ -333,7 +378,6 @@ class EloquentSearchRepository implements SearchRepositoryInterface
         $excludeTerms
       )
     );
-
     $modifiedProcessed = $this->injectExclusionsIntoProcessed(
       $processed,
       $excludeSuffix

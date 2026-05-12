@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Payment extends Model
 {
@@ -22,15 +22,18 @@ class Payment extends Model
   ];
 
   protected $casts = [
-    'amount'   => 'float'
+    'amount' => 'float',
   ];
 
   // ─── Statuses ───────────────────────────────────────────────────────────
 
-  const STATUS_PENDING   = 'pending';
-  const STATUS_PAID      = 'paid';
-  const STATUS_FAILED    = 'failed';
-  const STATUS_REFUNDED  = 'refunded';
+  const STATUS_PENDING = 'pending';
+
+  const STATUS_PAID = 'paid';
+
+  const STATUS_FAILED = 'failed';
+
+  const STATUS_REFUNDED = 'refunded';
 
   // ─── Relationships ───────────────────────────────────────────────────────
 
@@ -49,12 +52,14 @@ class Payment extends Model
   public function isRefunded(): bool
   {
     return in_array($this->status, [
-      self::STATUS_REFUNDED
+      self::STATUS_REFUNDED,
     ]);
   }
 
   public function latestTransaction(): ?Transaction
   {
+    /** @var Transaction|null */
+
     return $this->transactions()->latest()->first();
   }
 }

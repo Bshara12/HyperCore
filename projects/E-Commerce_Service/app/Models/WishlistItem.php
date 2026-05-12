@@ -54,5 +54,6 @@ class WishlistItem extends Model
   {
     return ! is_null($this->variant_id);
   }
+
   protected $guarded = [];
 }

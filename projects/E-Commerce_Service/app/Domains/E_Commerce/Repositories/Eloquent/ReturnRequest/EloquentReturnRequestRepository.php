@@ -7,35 +7,36 @@ use App\Models\return_requests;
 
 class EloquentReturnRequestRepository implements ReturnRequestRepositoryInterface
 {
-  public function create(array $data)
-  {
-    return return_requests::create($data);
-  }
+    public function create(array $data)
+    {
+        return return_requests::create($data);
+    }
 
-  public function findById(int $id)
-  {
-    return return_requests::find($id);
-  }
+    public function findById(int $id)
+    {
+        return return_requests::find($id);
+    }
 
-  public function findPendingByItem(int $orderItemId)
-  {
-    return return_requests::where('order_item_id', $orderItemId)
-      ->where('status', 'pending')
-      ->first();
-  }
+    public function findPendingByItem(int $orderItemId)
+    {
+        return return_requests::where('order_item_id', $orderItemId)
+            ->where('status', 'pending')
+            ->first();
+    }
 
-  public function update($model, array $data)
-  {
-    $model->update($data);
-    return $model;
-  }
+    public function update($model, array $data)
+    {
+        $model->update($data);
 
-  public function getByProject(int $projectId)
-  {
-    return return_requests::query()
-      ->where('project_id', $projectId)
-      ->with(['orderItem']) // إذا بدك تفاصيل العنصر
-      ->latest()
-      ->paginate(10);
-  }
+        return $model;
+    }
+
+    public function getByProject(int $projectId)
+    {
+        return return_requests::query()
+            ->where('project_id', $projectId)
+            ->with(['orderItem']) // إذا بدك تفاصيل العنصر
+            ->latest()
+            ->paginate(10);
+    }
 }

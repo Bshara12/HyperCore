@@ -10,53 +10,53 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 abstract class Action
 {
-  use CircuitBreakerAware;
+    use CircuitBreakerAware;
 
-  abstract protected function circuitServiceName(): string;
+    abstract protected function circuitServiceName(): string;
 
-  protected function run(callable $callback)
-  {
-    return $this->runThroughCircuitBreaker(function () use ($callback) {
+    protected function run(callable $callback)
+    {
+        return $this->runThroughCircuitBreaker(function () use ($callback) {
 
-      try {
+            try {
 
-        return retry(
-          3,
-          function () use ($callback) {
-            return DB::transaction(function () use ($callback) {
-              return $callback();
-            });
-          },
-          100,
-          function ($exception) {
+                return retry(
+                    3,
+                    function () use ($callback) {
+                        return DB::transaction(function () use ($callback) {
+                            return $callback();
+                        });
+                    },
+                    100,
+                    function ($exception) {
 
-            if ($exception instanceof ValidationException) {
-              return false;
+                        if ($exception instanceof ValidationException) {
+                            return false;
+                        }
+
+                        if ($exception instanceof HttpException && $exception->getStatusCode() === 422) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                );
+            } catch (Exception $e) {
+
+                if (
+                    $e instanceof ValidationException ||
+                    ($e instanceof HttpException && $e->getStatusCode() === 422)
+                ) {
+                    throw $e;
+                }
+
+                throw new Exception(
+                    $e->getMessage(),
+                    // "The operation failed after 3 attempts: " . $e->getMessage(),
+                    $e->getCode(),
+                    $e
+                );
             }
-
-            if ($exception instanceof HttpException && $exception->getStatusCode() === 422) {
-              return false;
-            }
-
-            return true;
-          }
-        );
-      } catch (Exception $e) {
-
-        if (
-          $e instanceof ValidationException ||
-          ($e instanceof HttpException && $e->getStatusCode() === 422)
-        ) {
-          throw $e;
-        }
-
-        throw new Exception(
-          $e->getMessage(),
-          // "The operation failed after 3 attempts: " . $e->getMessage(),
-          $e->getCode(),
-          $e
-        );
-      }
-    });
-  }
+        });
+    }
 }

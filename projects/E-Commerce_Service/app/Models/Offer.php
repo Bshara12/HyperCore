@@ -8,9 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Offer extends Model
 {
-  use HasFactory;
-  use SoftDeletes;
-  
+  use HasFactory, SoftDeletes;
+
   protected $guarded = [];
 
   protected $casts = [

@@ -7,7 +7,6 @@ use App\Domains\E_Commerce\Requests\AddWishlistItemRequest;
 use App\Domains\E_Commerce\Requests\ReorderWishlistItemsRequest;
 use App\Domains\E_Commerce\Services\WishlistItemService;
 use App\Domains\E_Commerce\Services\WishlistService;
-use App\Http\Controllers\Controller;
 use App\Services\Auth\AuthApiClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,8 +17,7 @@ class WishlistItemController extends Controller
         protected WishlistService $wishlistService,
         protected WishlistItemService $wishlistItemService,
         protected AuthApiClient $authApiClient,
-    ) {
-    }
+    ) {}
 
     public function store(
         AddWishlistItemRequest $request,
@@ -135,7 +133,7 @@ class WishlistItemController extends Controller
         );
 
         return response()->json([
-            'message' => 'Item moved to cart successfully.'
+            'message' => 'Item moved to cart successfully.',
         ]);
     }
 }

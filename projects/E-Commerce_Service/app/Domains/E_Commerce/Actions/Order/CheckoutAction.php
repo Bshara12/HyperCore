@@ -10,201 +10,199 @@ use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterfac
 use App\Domains\E_Commerce\Support\CacheKeys;
 use App\Domains\Payment\DTOs\PaymentDTO;
 use App\Domains\Payment\Services\PaymentService;
-use Illuminate\Support\Facades\Cache;
 use App\Events\SystemLogEvent;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutAction
 {
-  public function __construct(
-    protected CartRepositoryInterface $cartRepo,
-    protected CalculateCartPricingAction $pricingAction,
-    protected OrderRepositoryInterface $orderRepo,
-    protected OrderItemRepositoryInterface $orderItemRepo,
-    protected PaymentService $paymentService,
-    protected UpdateStockInCMSAction $updateStockAction,
-  ) {}
+    public function __construct(
+        protected CartRepositoryInterface $cartRepo,
+        protected CalculateCartPricingAction $pricingAction,
+        protected OrderRepositoryInterface $orderRepo,
+        protected OrderItemRepositoryInterface $orderItemRepo,
+        protected PaymentService $paymentService,
+        protected UpdateStockInCMSAction $updateStockAction,
+    ) {}
 
-  // public function execute(CheckoutDTO $dto)
-  // {
-  //   return DB::transaction(function () use ($dto) {
+    // public function execute(CheckoutDTO $dto)
+    // {
+    //   return DB::transaction(function () use ($dto) {
 
-  //     // 1. cart
-  //     $cart = $this->cartRepo->loadItems(
-  //       $this->cartRepo->findById($dto->cart_id)
-  //     );
+    //     // 1. cart
+    //     $cart = $this->cartRepo->loadItems(
+    //       $this->cartRepo->findById($dto->cart_id)
+    //     );
 
-  //     if (!$cart || $cart->items->isEmpty()) {
-  //       throw new \Exception('Cart is empty');
-  //     }
+    //     if (!$cart || $cart->items->isEmpty()) {
+    //       throw new \Exception('Cart is empty');
+    //     }
 
-  //     if ($cart->user_id !== $dto->user_id) {
-  //       throw new \Exception('Unauthorized cart');
-  //     }
+    //     if ($cart->user_id !== $dto->user_id) {
+    //       throw new \Exception('Unauthorized cart');
+    //     }
 
-  //     // 2. pricing
-  //     $pricing = $this->pricingAction->execute($cart);
+    //     // 2. pricing
+    //     $pricing = $this->pricingAction->execute($cart);
 
-  //     // 3. payment
-  //     $paymentStatus = 'pending';
+    //     // 3. payment
+    //     $paymentStatus = 'pending';
 
-  //     if ($dto->payment_method === 'online') {
+    //     if ($dto->payment_method === 'online') {
 
-  //       $payment = $this->paymentService->processPayment(
-  //         new PaymentDTO(
-  //           userId: $dto->user_id,
-  //           userName: $dto->user_name,
-  //           projectId: $dto->project_id,
-  //           amount: $pricing['total'],
-  //           currency: 'USD',
-  //           gateway: $dto->gateway,
-  //           paymentType: $dto->payment_type
-  //         )
-  //       );
+    //       $payment = $this->paymentService->processPayment(
+    //         new PaymentDTO(
+    //           userId: $dto->user_id,
+    //           userName: $dto->user_name,
+    //           projectId: $dto->project_id,
+    //           amount: $pricing['total'],
+    //           currency: 'USD',
+    //           gateway: $dto->gateway,
+    //           paymentType: $dto->payment_type
+    //         )
+    //       );
 
-  //       if (!in_array($payment['status'], ['paid', 'pending'])) {
-  //         throw new \Exception('Payment failed');
-  //       }
+    //       if (!in_array($payment['status'], ['paid', 'pending'])) {
+    //         throw new \Exception('Payment failed');
+    //       }
 
-  //       $paymentStatus = $payment['status'];
-  //     }
+    //       $paymentStatus = $payment['status'];
+    //     }
 
-  //     // 4. create order
-  //     $order = $this->orderRepo->create([
-  //       'project_id' => $dto->project_id,
-  //       'user_id' => $dto->user_id,
-  //       'total_price' => $pricing['total'],
-  //       'status' => $dto->payment_method === 'cod' ? 'pending' : $paymentStatus,
-  //       'address' => $dto->address,
-  //     ]);
+    //     // 4. create order
+    //     $order = $this->orderRepo->create([
+    //       'project_id' => $dto->project_id,
+    //       'user_id' => $dto->user_id,
+    //       'total_price' => $pricing['total'],
+    //       'status' => $dto->payment_method === 'cod' ? 'pending' : $paymentStatus,
+    //       'address' => $dto->address,
+    //     ]);
 
-  //     // 5. items
-  //     foreach ($pricing['items'] as $item) {
-  //       $this->orderItemRepo->create([
-  //         'order_id' => $order->id,
-  //         'product_id' => $item['product_id'],
-  //         'quantity' => $item['quantity'],
-  //         'price' => $item['price'],
-  //         'total' => $item['total'],
-  //         'status' => 'pending',
-  //       ]);
-  //     }
+    //     // 5. items
+    //     foreach ($pricing['items'] as $item) {
+    //       $this->orderItemRepo->create([
+    //         'order_id' => $order->id,
+    //         'product_id' => $item['product_id'],
+    //         'quantity' => $item['quantity'],
+    //         'price' => $item['price'],
+    //         'total' => $item['total'],
+    //         'status' => 'pending',
+    //       ]);
+    //     }
 
-  //     // 6. delete cart
-  //     $this->cartRepo->delete($cart->id);
+    //     // 6. delete cart
+    //     $this->cartRepo->delete($cart->id);
 
-  //     return $this->orderRepo->loadItems($order);
-  //   });
-  // }
-  public function execute(CheckoutDTO $dto)
-  {
-    return DB::transaction(function () use ($dto) {
+    //     return $this->orderRepo->loadItems($order);
+    //   });
+    // }
+    public function execute(CheckoutDTO $dto)
+    {
+        return DB::transaction(function () use ($dto) {
 
-      // 1. cart
-      $cart = $this->cartRepo->loadItems(
-        $this->cartRepo->findById($dto->cart_id)
-      );
-
-      if (!$cart || $cart->items->isEmpty()) {
-        throw new \Exception('Cart is empty');
-      }
-
-      if ($cart->user_id !== $dto->user_id) {
-        throw new \Exception('Unauthorized cart');
-      }
-
-      // 2. pricing (هون لازم يكون فيه entries من CMS)
-      $pricing = $this->pricingAction->execute($cart);
-
-      // ✅ 3. تحقق من stock قبل الدفع
-      foreach ($pricing['items'] as $item) {
-
-        if (isset($item['count'])) {
-
-          if ($item['quantity'] > $item['count']) {
-            throw new \Exception(
-              "Product {$item['title']} only has {$item['count']} left"
+            // 1. cart
+            $cart = $this->cartRepo->loadItems(
+                $this->cartRepo->findById($dto->cart_id)
             );
-          }
-        }
-      }
 
-      // 4. payment
-      $paymentStatus = 'pending';
+            if (! $cart || $cart->items->isEmpty()) {
+                throw new \Exception('Cart is empty');
+            }
 
-      if ($dto->payment_method === 'online') {
+            if ($cart->user_id !== $dto->user_id) {
+                throw new \Exception('Unauthorized cart');
+            }
 
-        $payment = $this->paymentService->processPayment(
-          new PaymentDTO(
-            userId: $dto->user_id,
-            userName: $dto->user_name,
-            projectId: $dto->project_id,
-            amount: $pricing['total'],
-            currency: 'USD',
-            gateway: $dto->gateway,
-            paymentType: $dto->payment_type
-          )
-        );
+            // 2. pricing (هون لازم يكون فيه entries من CMS)
+            $pricing = $this->pricingAction->execute($cart);
 
-        if (!in_array($payment['status'], ['paid', 'pending'])) {
-          throw new \Exception('Payment failed');
-        }
+            // ✅ 3. تحقق من stock قبل الدفع
+            foreach ($pricing['items'] as $item) {
 
-        $paymentStatus = $payment['status'];
-      }
+                if (isset($item['count'])) {
 
-      // ✅ 5. إعادة التحقق + خصم الكمية (CRITICAL 🔥)
-      $this->updateStockAction->execute($pricing['items']);
+                    if ($item['quantity'] > $item['count']) {
+                        throw new \Exception(
+                            "Product {$item['title']} only has {$item['count']} left"
+                        );
+                    }
+                }
+            }
 
-      // 6. create order
-      $order = $this->orderRepo->create([
-        'project_id' => $dto->project_id,
-        'user_id' => $dto->user_id,
-        'total_price' => $pricing['total'],
-        'status' => $dto->payment_method === 'cod' ? 'pending' : $paymentStatus,
-        'address' => $dto->address,
-      ]);
+            // 4. payment
+            $paymentStatus = 'pending';
 
-      // 7. items
-      foreach ($pricing['items'] as $item) {
-        $this->orderItemRepo->create([
-          'order_id' => $order->id,
-          'product_id' => $item['product_id'],
-          'quantity' => $item['quantity'],
-          'price' => $item['price'],
-          'total' => $item['total'],
-          'status' => 'pending',
-        ]);
-      }
+            if ($dto->payment_method === 'online') {
 
-      // 8. delete cart
-      $this->cartRepo->delete($cart->id);
-      // ✅ بعد الـ Checkout:
-      // 1. السلة انحذفت — امسح الـ Cache
-      Cache::forget(CacheKeys::cart($dto->user_id, $dto->project_id));
+                $payment = $this->paymentService->processPayment(
+                    new PaymentDTO(
+                        userId: $dto->user_id,
+                        userName: $dto->user_name,
+                        projectId: $dto->project_id,
+                        amount: $pricing['total'],
+                        currency: 'USD',
+                        gateway: $dto->gateway,
+                        paymentType: $dto->payment_type
+                    )
+                );
 
-      // 2. Order جديد أنشئ — امسح قائمة orders المستخدم
-      Cache::forget(CacheKeys::userOrders($dto->user_id, $dto->project_id));
+                if (! in_array($payment['status'], ['paid', 'pending'])) {
+                    throw new \Exception('Payment failed');
+                }
 
-      // 3. الـ Stock تغير — امسح الـ stock cache
-      foreach ($pricing['items'] as $item) {
-        Cache::forget("stock:ids:" . md5($item['product_id']));
-      }
+                $paymentStatus = $payment['status'];
+            }
 
-      // 4. امسح admin orders cache
-      Cache::tags(['admin_orders'])->flush();
+            // ✅ 5. إعادة التحقق + خصم الكمية (CRITICAL 🔥)
+            $this->updateStockAction->execute($pricing['items']);
 
+            // 6. create order
+            $order = $this->orderRepo->create([
+                'project_id' => $dto->project_id,
+                'user_id' => $dto->user_id,
+                'total_price' => $pricing['total'],
+                'status' => $dto->payment_method === 'cod' ? 'pending' : $paymentStatus,
+                'address' => $dto->address,
+            ]);
 
-      event(new SystemLogEvent(
-        module: 'ecommerce',
-        eventType: 'create_order',
-        userId:$dto->user_id,
-        entityType: 'order',
-        entityId: $order->id??null
-      ));
+            // 7. items
+            foreach ($pricing['items'] as $item) {
+                $this->orderItemRepo->create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'total' => $item['total'],
+                    'status' => 'pending',
+                ]);
+            }
 
+            // 8. delete cart
+            $this->cartRepo->delete($cart->id);
+            // ✅ بعد الـ Checkout:
+            // 1. السلة انحذفت — امسح الـ Cache
+            Cache::forget(CacheKeys::cart($dto->user_id, $dto->project_id));
 
-      return $this->orderRepo->loadItems($order);
-    });
-  }
+            // 2. Order جديد أنشئ — امسح قائمة orders المستخدم
+            Cache::forget(CacheKeys::userOrders($dto->user_id, $dto->project_id));
+
+            // 3. الـ Stock تغير — امسح الـ stock cache
+            foreach ($pricing['items'] as $item) {
+                Cache::forget('stock:ids:'.md5($item['product_id']));
+            }
+
+            // 4. امسح admin orders cache
+            Cache::tags(['admin_orders'])->flush();
+
+            event(new SystemLogEvent(
+                module: 'ecommerce',
+                eventType: 'create_order',
+                userId: $dto->user_id,
+                entityType: 'order',
+                entityId: $order->id ?? null
+            ));
+
+            return $this->orderRepo->loadItems($order);
+        });
+    }
 }

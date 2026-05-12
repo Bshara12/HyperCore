@@ -8,16 +8,16 @@ use Illuminate\Support\Facades\Cache;
 
 class ListOrdersAction
 {
-  public function __construct(
-    protected OrderRepositoryInterface $orderRepo
-  ) {}
+    public function __construct(
+        protected OrderRepositoryInterface $orderRepo
+    ) {}
 
-  public function execute(int $projectId, int $userId)
-  {
-    return Cache::remember(
-      CacheKeys::userOrders($userId, $projectId),
-      CacheKeys::TTL_MEDIUM,
-      fn() => $this->orderRepo->getUserOrders($projectId, $userId)
-    );
-  }
+    public function execute(int $projectId, int $userId)
+    {
+        return Cache::remember(
+            CacheKeys::userOrders($userId, $projectId),
+            CacheKeys::TTL_MEDIUM,
+            fn () => $this->orderRepo->getUserOrders($projectId, $userId)
+        );
+    }
 }

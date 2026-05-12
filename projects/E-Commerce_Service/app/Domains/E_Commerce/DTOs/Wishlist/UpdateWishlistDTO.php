@@ -9,8 +9,7 @@ class UpdateWishlistDTO
         public ?string $visibility = null,
         public ?bool $is_default = null,
         public ?bool $is_shareable = null,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

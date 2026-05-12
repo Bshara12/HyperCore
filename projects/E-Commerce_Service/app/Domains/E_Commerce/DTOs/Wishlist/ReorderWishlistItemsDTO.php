@@ -7,8 +7,7 @@ class ReorderWishlistItemsDTO
     public function __construct(
         public int $wishlist_id,
         public array $items,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {
