@@ -8,25 +8,25 @@ use Illuminate\Support\Facades\Cache;
 
 class GetOrderDetailsAction
 {
-  public function __construct(
-    protected OrderRepositoryInterface $orderRepo
-  ) {}
+    public function __construct(
+        protected OrderRepositoryInterface $orderRepo
+    ) {}
 
-  public function execute(int $orderId, int $projectId, int $userId)
-  {
-    return Cache::remember(
-      CacheKeys::order($orderId, $userId),
-      CacheKeys::TTL_MEDIUM,
-      function () use ($orderId, $projectId, $userId) {
+    public function execute(int $orderId, int $projectId, int $userId)
+    {
+        return Cache::remember(
+            CacheKeys::order($orderId, $userId),
+            CacheKeys::TTL_MEDIUM,
+            function () use ($orderId, $projectId, $userId) {
 
-        $order = $this->orderRepo->findDetailedForUser($orderId, $projectId, $userId);
+                $order = $this->orderRepo->findDetailedForUser($orderId, $projectId, $userId);
 
-        if (!$order) {
-          throw new \Exception('Order not found');
-        }
+                if (! $order) {
+                    throw new \Exception('Order not found');
+                }
 
-        return $order;
-      }
-    );
-  }
+                return $order;
+            }
+        );
+    }
 }

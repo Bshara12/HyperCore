@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ResourceService
 {
+<<<<<<< HEAD
   public function __construct(
     private readonly CreateResourceAction $createAction,
     private readonly UpdateResourceAction $updateAction,
@@ -24,39 +25,51 @@ class ResourceService
     private readonly IndexResourcesAction $indexAction,
     private readonly DeleteResourceAction $deleteAction,
   ) {}
+=======
+    public function __construct(
+        private readonly CreateResourceAction $createAction,
+        private readonly UpdateResourceAction $updateAction,
+        private readonly SetAvailabilityAction $availabilityAction,
+        private readonly SetCancellationPolicyAction $policyAction,
+        private readonly ShowResourceAction $showAction,
+        private readonly IndexResourcesAction $indexAction,
+        private readonly DeleteResourceAction $deleteAction,
+        // private readonly ResourceRepositoryInterface $repository,
+    ) {}
+>>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 
-  public function listByProject(int $projectId, array $user): Collection
-  {
-    return $this->indexAction->execute($projectId, $user);
-  }
+    public function listByProject(int $projectId, array $user): Collection
+    {
+        return $this->indexAction->execute($projectId, $user);
+    }
 
-  public function show(int $id): ?Resource
-  {
-    return $this->showAction->execute($id);
-  }
+    public function show(int $id): ?Resource
+    {
+        return $this->showAction->execute($id);
+    }
 
-  public function create(ResourceDTO $dto): Resource
-  {
-    return $this->createAction->execute($dto);
-  }
+    public function create(ResourceDTO $dto): Resource
+    {
+        return $this->createAction->execute($dto);
+    }
 
-  public function update(Resource $resource, ResourceDTO $dto): Resource
-  {
-    return $this->updateAction->execute($resource, $dto);
-  }
+    public function update(Resource $resource, ResourceDTO $dto): Resource
+    {
+        return $this->updateAction->execute($resource, $dto);
+    }
 
-  public function delete(Resource $resource): void
-  {
-    $this->deleteAction->execute($resource);
-  }
+    public function delete(Resource $resource): void
+    {
+        $this->deleteAction->execute($resource);
+    }
 
-  public function setAvailability(Resource $resource, array $availabilities): void
-  {
-    $this->availabilityAction->execute($resource, $availabilities);
-  }
+    public function setAvailability(Resource $resource, array $availabilities): void
+    {
+        $this->availabilityAction->execute($resource, $availabilities);
+    }
 
-  public function setPolicy(Resource $resource, array $policies): void
-  {
-    $this->policyAction->execute($resource, $policies);
-  }
+    public function setPolicy(Resource $resource, array $policies): void
+    {
+        $this->policyAction->execute($resource, $policies);
+    }
 }

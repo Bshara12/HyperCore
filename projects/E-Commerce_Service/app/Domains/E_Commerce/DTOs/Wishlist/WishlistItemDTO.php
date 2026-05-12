@@ -6,15 +6,15 @@ use App\Models\WishlistItem;
 
 class WishlistItemDTO
 {
-  public function __construct(
-    public int $id,
-    public int $product_id,
-    public ?int $variant_id,
-    public int $sort_order,
-    public ?array $product_snapshot,
-    public string $created_at,
-    public string $updated_at,
-  ) {}
+    public function __construct(
+        public int $id,
+        public int $product_id,
+        public ?int $variant_id,
+        public int $sort_order,
+        public ?array $product_snapshot,
+        public string $created_at,
+        public string $updated_at,
+    ) {}
 
   public static function fromModel(WishlistItem $item): self
   {

@@ -43,13 +43,17 @@ class PricingService
       ->pluck('entry')
       ->toArray();
 
-    return $this->pricing->execute($entries, $code);
+    return $this->pricing->execute($entries);
+    // return $this->pricing->execute($entries, $code);
   }
+
   // test
   public function fromDataType(string $dataTypeSlug, ?string $code = null): array
   {
     $entries = $this->cms->getEntriesByDataType($dataTypeSlug);
 
-    return $this->pricing->execute($entries, $code);
+    return $this->pricing->execute($entries);
+    // return $this->pricing->execute($entries, $code);
+
   }
 }

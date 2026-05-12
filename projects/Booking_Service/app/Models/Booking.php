@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+<<<<<<< HEAD
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+=======
+use Carbon\Carbon;
+>>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
 
 /**
  * @property int $id
@@ -14,11 +17,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $user_id
  * @property int $project_id
  * @property string $status
- * @property \Carbon\Carbon $start_at
- * @property \Carbon\Carbon $end_at
+ * @property Carbon $start_at
+ * @property Carbon $end_at
  * @property float $amount
  */
-
 class Booking extends Model
 {
     use HasFactory, SoftDeletes;

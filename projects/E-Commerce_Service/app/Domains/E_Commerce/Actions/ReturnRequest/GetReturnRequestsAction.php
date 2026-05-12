@@ -7,12 +7,12 @@ use App\Domains\E_Commerce\Repositories\Interfaces\ReturnRequest\ReturnRequestRe
 
 class GetReturnRequestsAction
 {
-  public function __construct(
-    protected ReturnRequestRepositoryInterface $repo
-  ) {}
+    public function __construct(
+        protected ReturnRequestRepositoryInterface $repo
+    ) {}
 
-  public function execute(GetReturnRequestsDTO $dto)
-  {
-    return $this->repo->getByProject($dto->project_id);
-  }
+    public function execute(GetReturnRequestsDTO $dto)
+    {
+        return $this->repo->getByProject($dto->project_id);
+    }
 }

@@ -7,26 +7,27 @@ use Illuminate\Console\Command;
 
 class ProcessOffersSchedule extends Command
 {
-  protected $signature = 'offers:process-schedule';
-  protected $description = 'Activate or deactivate offers based on schedule';
+    protected $signature = 'offers:process-schedule';
 
-  public function handle(OfferService $service)
-  {
-    $result = $service->run();
+    protected $description = 'Activate or deactivate offers based on schedule';
 
-    $activatedCount = count($result['activated']);
-    $deactivatedCount = count($result['deactivated']);
+    public function handle(OfferService $service)
+    {
+        $result = $service->run();
 
-    $this->info("Activated offers affected entries: {$activatedCount}, Deactivated offers affected entries: {$deactivatedCount}");
+        $activatedCount = count($result['activated']);
+        $deactivatedCount = count($result['deactivated']);
 
-    $changedEntries = array_merge($result['activated'], $result['deactivated']);
+        $this->info("Activated offers affected entries: {$activatedCount}, Deactivated offers affected entries: {$deactivatedCount}");
 
-    if (!empty($changedEntries)) {
-      $this->info("Entries sent for re-evaluation: " . implode(', ', $changedEntries));
+        $changedEntries = array_merge($result['activated'], $result['deactivated']);
 
-      $this->call('offers:re-evaluate', ['entries' => $changedEntries]);
+        if (! empty($changedEntries)) {
+            $this->info('Entries sent for re-evaluation: '.implode(', ', $changedEntries));
+
+            $this->call('offers:re-evaluate', ['entries' => $changedEntries]);
+        }
+
+        return Command::SUCCESS;
     }
-
-    return Command::SUCCESS;
-  }
 }

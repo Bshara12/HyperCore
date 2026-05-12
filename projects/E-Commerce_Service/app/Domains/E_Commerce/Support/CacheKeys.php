@@ -4,51 +4,53 @@ namespace App\Domains\E_Commerce\Support;
 
 class CacheKeys
 {
-  const TTL_SHORT  = 300;    // 5 دقائق
-  const TTL_MEDIUM = 3600;   // ساعة
-  const TTL_LONG   = 86400;  // يوم
+    const TTL_SHORT = 300;    // 5 دقائق
 
-  // ============================================
-  // 🔑 Offers (E-Commerce)
-  // ============================================
-  public static function offers(int $projectId): string
-  {
-    return "project:{$projectId}:offers";
-  }
+    const TTL_MEDIUM = 3600;   // ساعة
 
-  public static function offer(int $collectionId): string
-  {
-    return "offers:collection:{$collectionId}";
-  }
+    const TTL_LONG = 86400;  // يوم
 
-  public static function offerBySlug(string $slug): string
-  {
-    return "offers:slug:{$slug}";
-  }
+    // ============================================
+    // 🔑 Offers (E-Commerce)
+    // ============================================
+    public static function offers(int $projectId): string
+    {
+        return "project:{$projectId}:offers";
+    }
 
-  // ============================================
-  // 🔑 Cart
-  // ============================================
-  public static function cart(int $userId, int $projectId): string
-  {
-    return "user:{$userId}:project:{$projectId}:cart";
-  }
+    public static function offer(int $collectionId): string
+    {
+        return "offers:collection:{$collectionId}";
+    }
 
-  // ============================================
-  // 🔑 Orders
-  // ============================================
-  public static function userOrders(int $userId, int $projectId): string
-  {
-    return "user:{$userId}:project:{$projectId}:orders";
-  }
+    public static function offerBySlug(string $slug): string
+    {
+        return "offers:slug:{$slug}";
+    }
 
-  public static function order(int $orderId, int $userId): string
-  {
-    return "user:{$userId}:orders:{$orderId}";
-  }
+    // ============================================
+    // 🔑 Cart
+    // ============================================
+    public static function cart(int $userId, int $projectId): string
+    {
+        return "user:{$userId}:project:{$projectId}:cart";
+    }
 
-  public static function adminOrders(int $projectId, string $filtersHash): string
-  {
-    return "project:{$projectId}:admin:orders:{$filtersHash}";
-  }
+    // ============================================
+    // 🔑 Orders
+    // ============================================
+    public static function userOrders(int $userId, int $projectId): string
+    {
+        return "user:{$userId}:project:{$projectId}:orders";
+    }
+
+    public static function order(int $orderId, int $userId): string
+    {
+        return "user:{$userId}:orders:{$orderId}";
+    }
+
+    public static function adminOrders(int $projectId, string $filtersHash): string
+    {
+        return "project:{$projectId}:admin:orders:{$filtersHash}";
+    }
 }

@@ -42,7 +42,7 @@ class UpdateOrderStatusAction
 
       $order = $this->orderRepo->findById($dto->order_id);
 
-      if (!$order || $order->project_id !== $dto->project_id) {
+      if (! $order || $order->project_id !== $dto->project_id) {
         throw new \Exception('Order not found');
       }
 
@@ -53,7 +53,7 @@ class UpdateOrderStatusAction
 
       // 🔥 تحديث order
       $order->update([
-        'status' => $dto->status
+        'status' => $dto->status,
       ]);
 
       // 🔥 تحديث كل items (هون المطلوب)
@@ -66,10 +66,11 @@ class UpdateOrderStatusAction
       // ✅ امسح كل الـ admin cache لأن الـ status تغير
       // نستخدم tags هنا لأننا ما نعرف كل الـ filter combinations
       Cache::tags(['admin_orders'])->flush();
-      
+
       return $order;
     });
   }
+
   private function validateTransition(string $current, string $new)
   {
     $allowed = [
@@ -80,7 +81,7 @@ class UpdateOrderStatusAction
       'cancelled' => [],
     ];
 
-    if (!in_array($new, $allowed[$current] ?? [])) {
+    if (! in_array($new, $allowed[$current] ?? [])) {
       throw new \Exception("Invalid status transition from $current to $new");
     }
   }

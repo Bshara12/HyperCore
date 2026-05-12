@@ -10,26 +10,20 @@ use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferPriceRepositoryEloq
 use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferRepositoryEloquent;
 use App\Domains\E_Commerce\Repositories\Eloquent\Order\EloquentOrderItemRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Order\EloquentOrderRepository;
-
+use App\Domains\E_Commerce\Repositories\Eloquent\ReturnRequest\EloquentReturnRequestRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Wishlist\WishlistItemRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Wishlist\WishlistRepository;
-
-use App\Domains\E_Commerce\Repositories\Eloquent\ReturnRequest\EloquentReturnRequestRepository;
-
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferPriceRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
-use App\Domains\Payment\Repositories\EloquentPaymentRepository;
-use App\Domains\Payment\Repositories\PaymentRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Order\OrderRepositoryInterface;
-
+use App\Domains\E_Commerce\Repositories\Interfaces\ReturnRequest\ReturnRequestRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Wishlist\WishlistItemRepositoryInterface;
 use App\Domains\E_Commerce\Repositories\Interfaces\Wishlist\WishlistRepositoryInterface;
-
-use App\Domains\E_Commerce\Repositories\Interfaces\ReturnRequest\ReturnRequestRepositoryInterface;
-
+use App\Domains\Payment\Repositories\EloquentPaymentRepository;
+use App\Domains\Payment\Repositories\PaymentRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -43,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
     $this->app->bind(OfferPriceRepositoryInterface::class, OfferPriceRepositoryEloquent::class);
     $this->app->bind(CartRepositoryInterface::class, EloquentCartRepository::class);
     $this->app->bind(CartItemRepositoryInterface::class, EloquentCartItemRepository::class);
-    $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
+    // $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
     $this->app->bind(OrderRepositoryInterface::class, EloquentOrderRepository::class);
     $this->app->bind(OrderItemRepositoryInterface::class, EloquentOrderItemRepository::class);
     $this->app->bind(ReturnRequestRepositoryInterface::class, EloquentReturnRequestRepository::class);

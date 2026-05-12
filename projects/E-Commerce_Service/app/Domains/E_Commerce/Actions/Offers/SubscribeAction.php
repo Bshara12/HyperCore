@@ -22,6 +22,7 @@ class SubscribeAction extends Action
   {
     $this->run(function () use ($dto) {
       $collectionId = $this->cms->getCollectionBySlug($dto->collectionSlug)['id'];
+      // return $this->repository->subscribe($collectionId, $dto);
       $this->repository->subscribe($collectionId, $dto);
     });
   }

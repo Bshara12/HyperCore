@@ -5,16 +5,15 @@ namespace App\Domains\E_Commerce\Services;
 use App\Domains\E_Commerce\Repositories\Interfaces\Wishlist\WishlistRepositoryInterface;
 use App\Models\Wishlist;
 use DomainException;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class WishlistService
 {
     public function __construct(
         protected WishlistRepositoryInterface $wishlistRepository,
-    ) {
-    }
+    ) {}
 
     protected function validateWishlistOwnership(
         ?int $userId,
