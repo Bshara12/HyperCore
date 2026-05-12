@@ -16,13 +16,13 @@ use App\Http\Controllers\ReturnRequestController;
 use Illuminate\Support\Facades\Route;
 
 
-Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix('ecommerce')->group(function () {
+Route::middleware(['resolve.project', 'auth.user'])->prefix('ecommerce')->group(function () {
 
   // -------------------------
   // Offers
   // -------------------------
-  Route::post('/offers', [OfferController::class, 'store'])
-    ->middleware('permission:offer.create');
+  Route::post('/offers', [OfferController::class, 'store']);
+    // ->middleware('permission:offer.create');
 
   Route::patch('/offers/{collectionSlug}', [OfferController::class, 'update'])
     ->middleware('permission:offer.update');

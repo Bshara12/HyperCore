@@ -13,10 +13,6 @@ class AiConversationController extends Controller
     private AiConversationService $service
   ) {}
 
-  /**
-   * GET /ai/conversations
-   * قائمة كل محادثات المستخدم
-   */
   public function index(Request $request): JsonResponse
   {
     $userId  = $this->getAuthUserId($request);
@@ -26,21 +22,6 @@ class AiConversationController extends Controller
     return $this->successResponse($result);
   }
 
-  /**
-   * POST /ai/conversations
-   *
-   * الـ endpoint الموحد — يتعامل مع:
-   * 1. محادثة جديدة     (conversation_id = null, action = "chat")
-   * 2. متابعة محادثة    (conversation_id = 5,    action = "chat")
-   * 3. إنشاء مشروع     (conversation_id = 5,    action = "provision")
-   *
-   * Body:
-   * {
-   *   "content": "نص الرسالة",
-   *   "conversation_id": null | 5,
-   *   "action": "chat" | "provision"
-   * }
-   */
   public function store(Request $request): JsonResponse
   {
     $request->validate([
@@ -61,10 +42,6 @@ class AiConversationController extends Controller
     }
   }
 
-  /**
-   * GET /ai/conversations/{id}
-   * جلب محادثة مع كل رسائلها
-   */
   public function show(Request $request, int $id): JsonResponse
   {
     $userId = $this->getAuthUserId($request);
@@ -77,9 +54,6 @@ class AiConversationController extends Controller
     }
   }
 
-  /**
-   * DELETE /ai/conversations/{id}
-   */
   public function destroy(Request $request, int $id): JsonResponse
   {
     $userId = $this->getAuthUserId($request);

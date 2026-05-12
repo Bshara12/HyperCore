@@ -68,8 +68,7 @@ class OfferPriceRepositoryEloquent implements OfferPriceRepositoryInterface
     if (!$offer) return collect();
 
     return OfferPrice::whereIn('entry_id', $entryIds)
-      ->where('offer_id', $offer->id)
-      ->where('is_code_price', true)
+      ->where('applied_offer_id', $offer->id) // تم التعديل هنا من offer_id      ->where('is_code_price', true)
       ->where('is_applied', true)
       ->get()
       ->keyBy('entry_id');
@@ -94,7 +93,7 @@ class OfferPriceRepositoryEloquent implements OfferPriceRepositoryInterface
 
   public function getUserPrices(array $entryIds)
   {
-      $userId = request()->attributes->get('auth_user')['id'];
+    $userId = request()->attributes->get('auth_user')['id'];
     // $userId = authUser()['id'];
 
     return OfferPrice::query()

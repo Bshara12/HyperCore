@@ -8,9 +8,9 @@ class GetResourceBookingsDTO
 {
     public function __construct(
         public readonly int $resourceId,
-        public readonly ?string $status,
-        public readonly ?string $from,
-        public readonly ?string $to,
+        public readonly ?string $status = null,
+        public readonly ?string $from = null,
+        public readonly ?string $to = null,
     ) {}
 
     public static function fromRequest(int $resourceId, GetResourceBookingsRequest $request): self

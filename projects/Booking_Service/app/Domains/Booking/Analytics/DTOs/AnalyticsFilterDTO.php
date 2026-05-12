@@ -2,7 +2,6 @@
 
 namespace App\Domains\Booking\Analytics\DTOs;
 
-use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
 use Illuminate\Http\Request;
 
 class AnalyticsFilterDTO

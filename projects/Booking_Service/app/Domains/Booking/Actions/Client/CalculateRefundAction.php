@@ -5,28 +5,6 @@ namespace App\Domains\Booking\Actions\Client;
 use App\Domains\Booking\Repositories\Interface\BookingCancellationPolicyRepositoryInterface;
 use Carbon\Carbon;
 
-// class CalculateRefundAction
-// {
-//   public function execute($booking): float
-//   {
-//     $now = now();
-//     $start = \Carbon\Carbon::parse($booking->start_at);
-
-//     $hours = $now->diffInHours($start, false);
-
-//     // مثال policy:
-//     if ($hours >= 24) {
-//       return $booking->amount; // full
-//     }
-
-//     if ($hours >= 1) {
-//       return $booking->amount * 0.5; // 50%
-//     }
-
-//     return 0; // no refund
-//   }
-// }
-
 class CalculateRefundAction
 {
     public function __construct(

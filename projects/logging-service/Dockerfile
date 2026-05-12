@@ -15,6 +15,13 @@ RUN apk update && apk add --no-cache \
   g++ \
   linux-headers
 
+# تثبيت أداة التغطية PCOV وتفعيلها قسرياً
+# لاحظ أننا حددنا المسار هنا ليناسب مشروعك /var/www/html
+RUN pecl install pcov && \
+  docker-php-ext-enable pcov && \
+  echo "pcov.enabled=1" >> /usr/local/etc/php/conf.d/docker-php-ext-pcov.ini && \
+  echo "pcov.directory=/var/www/html" >> /usr/local/etc/php/conf.d/docker-php-ext-pcov.ini
+
 # تثبيت إضافات PHP
 RUN docker-php-ext-install pdo pdo_mysql zip bcmath
 
@@ -25,6 +32,7 @@ WORKDIR /var/www/html
 
 COPY . /var/www/html
 
+# إزالة --no-dev لضمان وجود Pest وأدوات الاختبار
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
