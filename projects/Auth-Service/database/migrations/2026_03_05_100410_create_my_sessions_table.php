@@ -32,13 +32,11 @@ return new class extends Migration
             $table->dateTime('expires_at');
             $table->dateTime('revoked_at')->nullable();
 
-
             // timestamps
             $table->timestamps();
 
             // $table->timestamp('created_at')->useCurrent();
             // $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
-
 
             // indexes
             $table->index('user_id');

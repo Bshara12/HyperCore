@@ -16,16 +16,17 @@ class JwtMiddleware
     {
         $this->jwtService = $jwtService;
     }
+
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $header = $request->header('Authorization');
 
-        if (!$header || !str_starts_with($header, 'Bearer ')) {
+        if (! $header || ! str_starts_with($header, 'Bearer ')) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -33,12 +34,12 @@ class JwtMiddleware
 
         $decoded = $this->jwtService->validateToken($token);
 
-        if (!$decoded) {
+        if (! $decoded) {
             return response()->json(['message' => 'Invalid or expired token'], 401);
         }
         $sessionId = $decoded->sid ?? null;
 
-        if (!$sessionId) {
+        if (! $sessionId) {
             return response()->json(['message' => 'Invalid session'], 401);
         }
 
@@ -46,7 +47,7 @@ class JwtMiddleware
             ->where('id', $sessionId)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return response()->json(['message' => 'Session not found'], 401);
         }
 
@@ -62,7 +63,7 @@ class JwtMiddleware
 
         // نخزن الـ payload داخل request
         $request->attributes->set('jwt_payload', $decoded);
-        //added
+        // added
         $request->attributes->set('auth_session_id', $sessionId);
         $request->attributes->set('auth_user_id', $decoded->sub);
 

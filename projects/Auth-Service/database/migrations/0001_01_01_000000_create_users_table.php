@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamp('otp_expires_at')->nullable();
             $table->unsignedInteger('failed_attempts')->default(0);
             $table->timestamp('locked_until')->nullable();
-            
+
             $table->timestamps();
         });
 

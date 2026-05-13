@@ -8,6 +8,7 @@ use App\Domains\CMS\Read\Actions\GetEntryDetailAction;
 use App\Domains\CMS\Read\Actions\GetEntryWithRelationsAction;
 use App\Domains\CMS\Read\Actions\GetProjectEntriesAction;
 use App\Domains\CMS\Read\Actions\GetProjectEntriesTreeAction;
+use App\Domains\CMS\Read\DTOs\GetEntryDetailDTO;
 use App\Models\DataEntry;
 
 class EntryReadService
@@ -22,9 +23,16 @@ class EntryReadService
 
   ) {}
 
-  public function getDetail(int $entryId, ?string $lang)
-  {
-    return $this->getEntryDetailAction->execute($entryId, $lang);
+  // public function getDetail(int $entryId, ?string $lang)
+  // {
+  //   return $this->getEntryDetailAction->execute($entryId, $lang);
+  // }
+
+  public function getDetail(
+    GetEntryDetailDTO $dto
+  ) {
+    return $this->getEntryDetailAction
+      ->execute($dto);
   }
   public function getWithRelations(int $entryId, ?string $lang)
   {
@@ -82,7 +90,7 @@ class EntryReadService
   }
   public function showMany($ids)
   {
-    return DataEntry::with(['values','values.field'])
+    return DataEntry::with(['values', 'values.field'])
       ->whereIn('id', $ids)
       ->get();
   }

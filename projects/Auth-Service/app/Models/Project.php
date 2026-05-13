@@ -11,10 +11,11 @@ class Project extends Model
         'name',
         'slug',
         'is_active',
-        'settings'
+        'settings',
     ];
 
-    public function users() {
+    public function users()
+    {
         return $this->belongsToMany(User::class)
             ->withPivot('role_id')
             ->withTimestamps();

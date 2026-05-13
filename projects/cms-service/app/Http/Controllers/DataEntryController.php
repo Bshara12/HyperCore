@@ -39,9 +39,7 @@ class DataEntryController extends Controller
     } elseif (is_object($authUser) && isset($authUser->id)) {
       $userId = (int) $authUser->id;
     }
-
-    $userId = $userId ?? auth()->id();
-
+    
     $values = $request->input('values', []);
     // dd($values);
     $files = $request->filesInput();
@@ -84,7 +82,7 @@ class DataEntryController extends Controller
 
     $entry = $this->service->create(
       projectId: $request->projectId(),
-      dataTypeId: $dataType->id,
+      dataType: $dataType,
       slug: $request->input('slug'),
       dto: $dto,
       userId: $userId
@@ -96,7 +94,7 @@ class DataEntryController extends Controller
 
   public function update(DataEntryRequest $request, DataType $dataType, $entryslug)
   {
-    $entry = DataEntry::query()->where('slug',$entryslug)->first();
+    $entry = DataEntry::query()->where('slug', $entryslug)->first();
     $authUser = $request->attributes->get('auth_user');
     $userId = null;
     if (is_array($authUser) && isset($authUser['id'])) {
@@ -105,14 +103,16 @@ class DataEntryController extends Controller
       $userId = (int) $authUser->id;
     }
 
-    $userId = $userId ?? auth()->id();
+    // $userId = $userId ?? auth()->id();
+    $user = $request->attributes->get('auth_user');
+    $userId = $user->id;
     $dto = CreateDataEntryDto::fromRequest($request);
     $entry = $this->service->update(
       $request,
       dto: $dto,
       userId: $userId
     );
-    
+
 
     return response()->json([
       'message' => 'Data updated successfully',
@@ -144,10 +144,12 @@ class DataEntryController extends Controller
     return response()->json(['message' => 'Data deleted successfully']);
   }
 
-  public function restore(int $versionId)
+  public function restore(Request $request,int $versionId)
   {
+    $user = $request->attributes->get('auth_user');
+    $userId = $user->id;
     $this->versionRestoreService
-      ->restore($versionId, auth()->id());
+      ->restore($versionId, $userId);
 
     return response()->json([
       'message' => 'Version restored successfully'

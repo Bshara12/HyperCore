@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Read\Actions;
 
 use App\Domains\CMS\Read\Repositories\EntryTypeReadRepository;
 use App\Domains\CMS\Read\Repositories\EntryReadRepository;
+use App\Domains\CMS\Read\Services\EntryVisibilityService;
 use App\Domains\CMS\Support\LanguageResolver;
 
 // class GetEntriesBySameTypeAction
@@ -57,7 +58,8 @@ class GetEntriesBySameTypeAction
   public function __construct(
     private EntryTypeReadRepository $typeRepository,
     private EntryReadRepository $entryRepository,
-    private LanguageResolver $languageResolver
+    private LanguageResolver $languageResolver,
+    private EntryVisibilityService $visibilityService
   ) {}
 
   public function execute(
@@ -101,11 +103,25 @@ class GetEntriesBySameTypeAction
     // $entryIds = collect($entriesCollection)->pluck('id')->toArray();
     $entryIds = $entriesCollection->pluck('id')->toArray();
 
+    // $entries = $this->entryRepository
+    //   ->findPublishedManyWithValues(
+    //     $entryIds,
+    //     $language,
+    //     $fallback
+    //   );
     $entries = $this->entryRepository
       ->findPublishedManyWithValues(
         $entryIds,
         $language,
         $fallback
+      );
+
+    $entries = $this->visibilityService
+      ->filterVisible(
+        entries: $entries,
+        userId: request()
+          ->attributes
+          ->get('auth_user')['id'] ?? null
       );
 
     return [

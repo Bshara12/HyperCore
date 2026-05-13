@@ -17,8 +17,11 @@ use Illuminate\Support\Facades\DB;
 class AuthController extends Controller
 {
     protected $authService;
+
     protected $jwtService;
+
     protected $sessions;
+
     public function __construct(AuthService $authService, JwtService $jwtService, SessionService $sessionService)
     {
         $this->authService = $authService;
@@ -26,7 +29,8 @@ class AuthController extends Controller
         $this->sessions = $sessionService;
     }
 
-    public function register(RegisterRequest $registerRequest) {
+    public function register(RegisterRequest $registerRequest)
+    {
         $data = $registerRequest->only(['name', 'email', 'password']);
         $data['ip'] = $registerRequest->ip();
         $data['agent'] = $registerRequest->userAgent();
@@ -34,31 +38,32 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Register, Done',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ], 201);
     }
 
-    public function verifyOTP(VerifyOTPRequest $verifyOTPRequest) {
+    public function verifyOTP(VerifyOTPRequest $verifyOTPRequest)
+    {
         $user = User::find($verifyOTPRequest->user_id);
-        if(!$user) {
+        if (! $user) {
             return response()->json([
-                'message' => 'User Not Found'
+                'message' => 'User Not Found',
             ], 404);
         }
 
-        if(!$this->authService->verifyOTP($user, $verifyOTPRequest->otp)) {
+        if (! $this->authService->verifyOTP($user, $verifyOTPRequest->otp)) {
             return response()->json([
-                'message' => 'Invalid OTP'
-            ],422);
+                'message' => 'Invalid OTP',
+            ], 422);
         }
 
-        //Create Session:
+        // Create Session:
         $sessionId = $this->sessions->create(
-                userId: $user->id,
-                ip: $verifyOTPRequest->ip(),
-                userAgent: $verifyOTPRequest->userAgent()
-            );
-        //create jwt access token
+            userId: $user->id,
+            ip: $verifyOTPRequest->ip(),
+            userAgent: $verifyOTPRequest->userAgent()
+        );
+        // create jwt access token
         $token = $this->jwtService->generateToken($user, $sessionId);
 
         return response()->json([
@@ -66,51 +71,57 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'expires_in' => config('jwt.ttl') * 60,
-            'user' => $user
+            'user' => $user,
         ]);
     }
 
-    public function resendOTP(Request $request) {
+    public function resendOTP(Request $request)
+    {
         $user = User::find($request->user_id);
 
-        if(!$user) {
+        if (! $user) {
             return response()->json([
-                'message' => 'User Not Found'
+                'message' => 'User Not Found',
             ], 404);
         }
 
-        if($user->is_verified) {
+        if ($user->is_verified) {
             return response()->json([
-                'message' => 'Account Already Verified'
+                'message' => 'Account Already Verified',
             ], 400);
         }
 
         $this->authService->generateOTP($user);
 
-
         return response()->json([
-            'message' => 'OTP Resent'
+            'message' => 'OTP Resent',
         ]);
     }
 
-    public function login(LoginRequest $loginRequest) {
+    public function login(LoginRequest $loginRequest)
+    {
         $res = $this->authService->attemptLogin($loginRequest->identifier, $loginRequest->password);
-        if(!$res['success']) return response()->json(['message' => $res['message']], 401);
+        if (! $res['success']) {
+            return response()->json(['message' => $res['message']], 401);
+        }
 
         $user = $res['user'];
-        if(!$user->is_verified) return response()->json(['message' => 'Account Not Verified!'], 403);
+        if (! $user->is_verified) {
+            return response()->json(['message' => 'Account Not Verified!'], 403);
+        }
 
-        //Create Session:
+        // Create Session:
         $sessionId = $this->sessions->create(
-                userId: $user->id,
-                ip: $loginRequest->ip(),
-                userAgent: $loginRequest->userAgent()
-            );
+            userId: $user->id,
+            ip: $loginRequest->ip(),
+            userAgent: $loginRequest->userAgent()
+        );
+
         return response()->json([
-            'access_token'  => $this->jwtService->generateToken($user, $sessionId),
+            'access_token' => $this->jwtService->generateToken($user, $sessionId),
             'refresh_token' => $this->jwtService->generateRefreshToken($user, $sessionId),
-            'token_type'    => 'Bearer',
-            'user' => $user
+            'token_type' => 'Bearer',
+            'user' => $user,
         ], 200);
     }
 
@@ -120,7 +131,7 @@ class AuthController extends Controller
 
         $decoded = $jwtService->validateToken($refreshToken);
 
-        if (!$decoded || $decoded->type !== 'refresh') {
+        if (! $decoded || $decoded->type !== 'refresh') {
             return response()->json(['message' => 'Invalid refresh token'], 401);
         }
 
@@ -129,7 +140,7 @@ class AuthController extends Controller
             ->where('revoked', false)
             ->first();
 
-        if (!$record || now()->gt($record->expires_at)) {
+        if (! $record || now()->gt($record->expires_at)) {
             return response()->json(['message' => 'Refresh token expired'], 401);
         }
 
@@ -144,7 +155,7 @@ class AuthController extends Controller
     {
         $header = $request->header('Authorization');
 
-        if (!$header || !str_starts_with($header, 'Bearer ')) {
+        if (! $header || ! str_starts_with($header, 'Bearer ')) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -154,7 +165,7 @@ class AuthController extends Controller
         $this->authService->logoutService($token, $decoded);
 
         return response()->json([
-            'message' => 'Logged out successfully'
+            'message' => 'Logged out successfully',
         ]);
     }
 
@@ -162,7 +173,7 @@ class AuthController extends Controller
     {
         $token = $request->bearerToken();
         $decode = $this->jwtService->validateToken($token);
-        if(!$decode) {
+        if (! $decode) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
         $user = User::find($decode->sub);
@@ -171,11 +182,11 @@ class AuthController extends Controller
         $this->authService->changePassword($data);
 
         return response()->json([
-            'message' => 'Password changed successfully'
+            'message' => 'Password changed successfully',
         ]);
     }
 
-    function getByIds(GetUsersByIdsRequest $request)
+    public function getByIds(GetUsersByIdsRequest $request)
     {
         $users = $this->authService->getUsersByIds(
             $request->validated('ids')
@@ -183,7 +194,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Users fetched successfully.',
-            'data' => $users
+            'data' => $users,
         ]);
     }
 }

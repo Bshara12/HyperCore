@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('project_invitations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('project_id');//->constrained()->cascadeOnDelete();
-            $table->foreignId('role_id');//->constrained()->cascadeOnDelete();
+            $table->foreignId('project_id'); // ->constrained()->cascadeOnDelete();
+            $table->foreignId('role_id'); // ->constrained()->cascadeOnDelete();
             $table->string('email')->unique();
             $table->string('otp_code')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
