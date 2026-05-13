@@ -8,6 +8,7 @@ use App\Exceptions\SubscriptionFeatureMissingException;
 use App\Domains\Subscription\DTOs\Rule\AuthorizeEventDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionAccessRuleRepositoryInterface;
+use App\Exceptions\FeatureMissingException;
 
 class AuthorizeEventAction
 {
@@ -45,8 +46,11 @@ class AuthorizeEventAction
       );
     if (!$subscription) {
 
+      // throw new SubscriptionRequiredException(
+      //   'Active subscription required.'
+      // );
       throw new SubscriptionRequiredException(
-        'Active subscription required.'
+        requiredPlan: $rule->required_feature
       );
     }
 
@@ -76,11 +80,8 @@ class AuthorizeEventAction
 
     if (!$hasFeature) {
 
-      throw new SubscriptionFeatureMissingException(
-        sprintf(
-          'Feature [%s] required.',
-          $rule->required_feature
-        )
+      throw new FeatureMissingException(
+        $rule->required_feature
       );
     }
   }

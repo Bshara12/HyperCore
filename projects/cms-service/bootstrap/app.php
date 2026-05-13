@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\SubscriptionException;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -32,6 +33,21 @@ return Application::configure(basePath: dirname(__DIR__))
         ], 404);
       }
     });
+    $exceptions->render(
+      function (
+        SubscriptionException $e,
+        Illuminate\Http\Request $request
+      ) {
+
+        return response()->json([
+
+          'message' => $e->getMessage(),
+
+          'context' => $e->context(),
+
+        ], 403);
+      }
+    );
   })->withCommands([
     \App\Console\Commands\SearchReindexCommand::class,
   ])
