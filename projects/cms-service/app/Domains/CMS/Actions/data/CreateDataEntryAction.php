@@ -2,16 +2,10 @@
 
 namespace App\Domains\CMS\Actions\Data;
 
-use App\Domains\CMS\DTOs\Data\CreateDataEntryDto;
 use App\Domains\CMS\Repositories\Interface\DataEntryRepositoryInterface;
-use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
-use App\Domains\CMS\Repositories\Interface\DataEntryRelationRepository;
-use App\Domains\CMS\Repositories\Interface\SeoEntryRepository;
-use App\Domains\CMS\Services\SeoGeneratorService;
-use App\Domains\CMS\States\DataEntryStateResolver;
-use App\Events\EntryChanged;
+use App\Domains\Subscription\Services\DomainEventService;
 use App\Events\SystemLogEvent;
-use Illuminate\Support\Facades\DB;
+use App\Models\DataType;
 
 // class CreateDataEntryAction
 // {
@@ -95,27 +89,51 @@ use Illuminate\Support\Facades\DB;
 class CreateDataEntryAction
 {
   public function __construct(
-    private DataEntryRepositoryInterface $entries
+    private DataEntryRepositoryInterface $entries,
+    private DomainEventService $domainEventService
+
   ) {}
 
   public function execute(
     int $projectId,
-    int $dataTypeId,
+    DataType $dataType,
     string $slug,
     ?int $userId
   ) {
 
- event(new SystemLogEvent(
-     module: 'cms',
-     eventType: 'create_data',
-     userId: $userId,
-     entityType: 'data',
-     entityId:null
- ));
+
+
+    /*
+        |--------------------------------------------------------------------------
+        | Subscription Usage Engine
+        |--------------------------------------------------------------------------
+        */
+
+    $this->domainEventService
+      ->dispatch(
+
+        userId: $userId,
+
+        projectId: $projectId,
+
+        eventKey: sprintf(
+          '%s.create',
+          $dataType->slug
+        )
+      );
+
+
+    event(new SystemLogEvent(
+      module: 'cms',
+      eventType: 'create_data',
+      userId: $userId,
+      entityType: 'data',
+      entityId: null
+    ));
 
     return $this->entries->create([
       'project_id' => $projectId,
-      'data_type_id' => $dataTypeId,
+      'data_type_id' => $dataType->id,
       'slug' => $slug,
       'status' => 'draft',
       'created_by' => $userId

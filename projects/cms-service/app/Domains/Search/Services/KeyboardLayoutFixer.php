@@ -94,9 +94,41 @@ class KeyboardLayoutFixer
   // الدالة الرئيسية (لم تتغير)
   // ─────────────────────────────────────────────────────────────────
 
+  // public function fix(string $query): array
+  // {
+  //   $query = trim($query);
+  //   if (empty($query)) {
+  //     return $this->buildResult($query, null, 0.0, null);
+  //   }
+
+  //   $analysis = $this->analyzeCharacters($query);
+
+  //   if ($analysis['mixed']) {
+  //     return $this->buildResult($query, null, 0.0, null);
+  //   }
+
+  //   if ($analysis['dominantType'] === 'arabic') {
+  //     return $this->tryArToEn($query, $analysis);
+  //   }
+
+  //   if ($analysis['dominantType'] === 'english') {
+  //     $vowelRatio = $this->calculateVowelRatio($query);
+  //     // if ($vowelRatio >= 0.20) {
+  //     //   return $this->buildResult($query, null, 0.0, null);
+  //     // }
+  //     return $this->tryEnToAr($query, $analysis);
+  //   }
+
+  //   return $this->buildResult($query, null, 0.0, null);
+  // }
+
+
+
+
   public function fix(string $query): array
   {
     $query = trim($query);
+
     if (empty($query)) {
       return $this->buildResult($query, null, 0.0, null);
     }
@@ -113,14 +145,23 @@ class KeyboardLayoutFixer
 
     if ($analysis['dominantType'] === 'english') {
       $vowelRatio = $this->calculateVowelRatio($query);
-      // if ($vowelRatio >= 0.20) {
-      //   return $this->buildResult($query, null, 0.0, null);
-      // }
+
+      // ✅ FIX #2: إعادة الـ guard الذي كان محذوفاً
+      // إذا vowel ratio طبيعي (>= 0.20) → ليس keyboard mismatch
+      // "iphoen" vowelRatio=0.50 → لا تُحوّل لعربي
+      // "kfd" vowelRatio=0.0 → ربما عربي بـ EN layout → حاول
+      if ($vowelRatio >= 0.20) {
+        return $this->buildResult($query, null, 0.0, null);
+      }
+
       return $this->tryEnToAr($query, $analysis);
     }
 
     return $this->buildResult($query, null, 0.0, null);
   }
+
+
+
 
     // ─────────────────────────────────────────────────────────────────
     // ✅ NEW METHOD: كشف Arabic keyboard layout مكتوب بـ Arabic chars
@@ -320,7 +361,7 @@ class KeyboardLayoutFixer
 
   private function buildResult(string $original, ?string $fixed, float $confidence, ?string $direction): array
   {
-    
+
     return [
       'original'   => $original,
       'fixed'      => $fixed,

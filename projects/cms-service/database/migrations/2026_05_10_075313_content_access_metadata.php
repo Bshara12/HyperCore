@@ -56,15 +56,15 @@ return new class extends Migration
       $table->boolean('is_active')
         ->default(true);
 
-      $table->index([
-        'content_type',
-        'content_id'
-      ]);
-      $table->unique([
-        'project_id',
-        'content_type',
-        'content_id'
-      ]);
+      $table->index(
+        ['content_type', 'content_id'],
+        'cam_content_idx'
+      );
+
+      $table->unique(
+        ['project_id', 'content_type', 'content_id'],
+        'cam_project_content_unique'
+      );
     });
   }
 

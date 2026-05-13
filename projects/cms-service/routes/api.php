@@ -105,7 +105,7 @@ Route::middleware('resolve.project')->group(function () {
 Route::get(
   '/projects/{project}/data-types/{slug}/entries',
   [DataTypeEntriesController::class, 'index']
-);
+)->middleware(['auth.user']);
 
 
 
@@ -158,7 +158,7 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
   Route::post(
     '/data-types/{dataType:slug}/entries',
     [DataEntryController::class, 'store']
-  );
+  )->middleware(['auth.user', 'resolve.project']);
 
   // -------------------------
   // Collections

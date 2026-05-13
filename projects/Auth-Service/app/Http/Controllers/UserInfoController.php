@@ -13,10 +13,10 @@ class UserInfoController extends Controller
 
         $user = User::with('projects')->find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
-                'error' => 'User not found'
-            ],404);
+                'error' => 'User not found',
+            ], 404);
         }
 
         return response()->json([
@@ -27,16 +27,14 @@ class UserInfoController extends Controller
 
             'projects' => $user->projects->map(function ($project) {
 
-
                 $role = Role::find($project->pivot->role_id);
 
                 return [
                     'project_id' => $project->id,
-                    'role' => $role?->name
+                    'role' => $role?->name,
                 ];
 
-            })
-
+            }),
 
         ]);
     }
