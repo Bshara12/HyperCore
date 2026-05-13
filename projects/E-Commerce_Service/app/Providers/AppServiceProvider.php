@@ -7,7 +7,7 @@ use App\Domains\E_Commerce\Analytics\Repositories\EloquentEcommerceAnalyticsRepo
 use App\Domains\E_Commerce\Repositories\Eloquent\Cart\EloquentCartItemRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Cart\EloquentCartRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferPriceRepositoryEloquent;
-use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferRepositorEloquent;
+use App\Domains\E_Commerce\Repositories\Eloquent\Offers\OfferRepositoryEloquent;
 use App\Domains\E_Commerce\Repositories\Eloquent\Order\EloquentOrderItemRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\Order\EloquentOrderRepository;
 use App\Domains\E_Commerce\Repositories\Eloquent\ReturnRequest\EloquentReturnRequestRepository;
@@ -28,29 +28,29 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        $this->app->bind(OfferRepositoryInterface::class, OfferRepositorEloquent::class);
-        $this->app->bind(OfferPriceRepositoryInterface::class, OfferPriceRepositoryEloquent::class);
-        $this->app->bind(CartRepositoryInterface::class, EloquentCartRepository::class);
-        $this->app->bind(CartItemRepositoryInterface::class, EloquentCartItemRepository::class);
-        // $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
-        $this->app->bind(OrderRepositoryInterface::class, EloquentOrderRepository::class);
-        $this->app->bind(OrderItemRepositoryInterface::class, EloquentOrderItemRepository::class);
-        $this->app->bind(ReturnRequestRepositoryInterface::class, EloquentReturnRequestRepository::class);
-        $this->app->bind(AnalyticsRepositoryInterface::class, EloquentEcommerceAnalyticsRepository::class);
-        $this->app->bind(WishlistRepositoryInterface::class, WishlistRepository::class);
-        $this->app->bind(WishlistItemRepositoryInterface::class, WishlistItemRepository::class);
-    }
+  /**
+   * Register any application services.
+   */
+  public function register(): void
+  {
+    $this->app->bind(OfferRepositoryInterface::class, OfferRepositoryEloquent::class);
+    $this->app->bind(OfferPriceRepositoryInterface::class, OfferPriceRepositoryEloquent::class);
+    $this->app->bind(CartRepositoryInterface::class, EloquentCartRepository::class);
+    $this->app->bind(CartItemRepositoryInterface::class, EloquentCartItemRepository::class);
+    // $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
+    $this->app->bind(OrderRepositoryInterface::class, EloquentOrderRepository::class);
+    $this->app->bind(OrderItemRepositoryInterface::class, EloquentOrderItemRepository::class);
+    $this->app->bind(ReturnRequestRepositoryInterface::class, EloquentReturnRequestRepository::class);
+    $this->app->bind(AnalyticsRepositoryInterface::class, EloquentEcommerceAnalyticsRepository::class);
+    $this->app->bind(WishlistRepositoryInterface::class, WishlistRepository::class);
+    $this->app->bind(WishlistItemRepositoryInterface::class, WishlistItemRepository::class);
+  }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        //
-    }
+  /**
+   * Bootstrap any application services.
+   */
+  public function boot(): void
+  {
+    //
+  }
 }

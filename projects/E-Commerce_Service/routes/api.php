@@ -13,6 +13,7 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\WishlistItemController;
 use Illuminate\Support\Facades\Route;
 
+
 Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix('ecommerce')->group(function () {
 
     // -------------------------
