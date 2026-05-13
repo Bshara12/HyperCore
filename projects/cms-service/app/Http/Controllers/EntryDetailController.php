@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domains\CMS\Read\DTOs\GetEntryDetailDTO;
 use App\Domains\CMS\Read\Services\EntryReadService;
 use App\Events\SystemLogEvent;
 use App\Models\DataEntry;
@@ -17,9 +18,30 @@ class EntryDetailController extends Controller
 
   public function show(Request $request, DataEntry $entry)
   {
+    // $lang = $request->query('lang');
+
+
+    // $entryDetail = $this->service->getDetail($entry->id, $lang);
+
+
     $lang = $request->query('lang');
 
-    $entryDetail = $this->service->getDetail($entry->id, $lang);
+    $authUser = $request
+      ->attributes
+      ->get('auth_user');
+
+    $dto = new GetEntryDetailDTO(
+
+      entryId: $entry->id,
+
+      language: $lang,
+
+      userId: $authUser['id'] ?? null
+    );
+
+    $entryDetail = $this->service
+      ->getDetail($dto);
+
 
     if (!$entryDetail) {
       return response()->json([

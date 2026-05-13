@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class SessionService
 {
@@ -44,15 +44,27 @@ class SessionService
     */
     private function detectDevice(?string $agent): string
     {
-        if (!$agent) return 'Unknown device';
+        if (! $agent) {
+            return 'Unknown device';
+        }
 
         $agent = strtolower($agent);
 
-        if (str_contains($agent, 'windows')) return 'Windows device';
-        if (str_contains($agent, 'mac')) return 'Mac device';
-        if (str_contains($agent, 'iphone')) return 'iPhone';
-        if (str_contains($agent, 'android')) return 'Android device';
-        if (str_contains($agent, 'linux')) return 'Linux device';
+        if (str_contains($agent, 'windows')) {
+            return 'Windows device';
+        }
+        if (str_contains($agent, 'mac')) {
+            return 'Mac device';
+        }
+        if (str_contains($agent, 'iphone')) {
+            return 'iPhone';
+        }
+        if (str_contains($agent, 'android')) {
+            return 'Android device';
+        }
+        if (str_contains($agent, 'linux')) {
+            return 'Linux device';
+        }
 
         return 'Browser device';
     }

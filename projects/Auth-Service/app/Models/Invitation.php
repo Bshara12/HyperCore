@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Invitation extends Model
 {
     protected $table = 'project_invitations';
-    
+
     protected $fillable = [
         'project_id',
         'role_id',
@@ -15,6 +15,6 @@ class Invitation extends Model
         'otp_code',
         'otp_expires_at',
         'locked_until',
-        'is_verified'
+        'is_verified',
     ];
 }

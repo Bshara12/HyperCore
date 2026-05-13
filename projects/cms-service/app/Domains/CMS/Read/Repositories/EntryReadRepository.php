@@ -154,12 +154,44 @@ class EntryReadRepository implements EntryReadRepositoryInterface
     string $fallback
   ): ?array {
 
-    $entry = DB::table('data_entries')
-      ->where('id', $entryId)
+    // $entry = DB::table('data_entries')
+    //   ->where('id', $entryId)
+    //   ->where(function ($q) {
+    //     $q->whereNull('scheduled_at')
+    //       ->orWhere('scheduled_at', '<=', now());
+    //   })
+    //   ->first();
+
+    $entry = DB::table('data_entries as e')
+
+      ->join(
+        'data_types as dt',
+        'dt.id',
+        '=',
+        'e.data_type_id'
+      )
+
+      ->where('e.id', $entryId)
+
       ->where(function ($q) {
-        $q->whereNull('scheduled_at')
-          ->orWhere('scheduled_at', '<=', now());
+
+        $q->whereNull('e.scheduled_at')
+          ->orWhere(
+            'e.scheduled_at',
+            '<=',
+            now()
+          );
       })
+
+      ->select(
+
+        'e.*',
+
+        'dt.slug as data_type_slug',
+
+        'dt.name as data_type_name'
+      )
+
       ->first();
 
     if (!$entry) {
@@ -234,11 +266,22 @@ class EntryReadRepository implements EntryReadRepositoryInterface
       ->orderByRaw("language = '$language' DESC")
       ->first();
     return [
-      'id'     => $entry->id,
+
+      'id' => $entry->id,
+
       'slug' => $entry->slug,
+
       'status' => $entry->status,
+
+      'project_id' => $entry->project_id,
+
+      'data_type_slug' => $entry->data_type_slug,
+
+      'data_type_name' => $entry->data_type_name,
+
       'values' => $mappedValues,
-      'seo'    => $seo ? (array) $seo : [],
+
+      'seo' => $seo ? (array) $seo : [],
     ];
   }
 
@@ -257,13 +300,42 @@ class EntryReadRepository implements EntryReadRepositoryInterface
       return [];
     }
 
-    // 1️⃣ fetch entries
-    $entries = DB::table('data_entries')
-      ->whereIn('id', $entryIds)
+    // // 1️⃣ fetch entries
+    // $entries = DB::table('data_entries')
+    //   ->whereIn('id', $entryIds)
+    //   ->where(function ($q) {
+    //     $q->whereNull('scheduled_at')
+    //       ->orWhere('scheduled_at', '<=', now());
+    //   })
+    //   ->get()
+    //   ->keyBy('id');
+
+    $entries = DB::table('data_entries as e')
+
+      ->join(
+        'data_types as dt',
+        'dt.id',
+        '=',
+        'e.data_type_id'
+      )
+
+      ->whereIn('e.id', $entryIds)
+
       ->where(function ($q) {
-        $q->whereNull('scheduled_at')
-          ->orWhere('scheduled_at', '<=', now());
+
+        $q->whereNull('e.scheduled_at')
+          ->orWhere(
+            'e.scheduled_at',
+            '<=',
+            now()
+          );
       })
+
+      ->select(
+        'e.*',
+        'dt.slug as data_type_slug'
+      )
+
       ->get()
       ->keyBy('id');
 
@@ -337,10 +409,24 @@ class EntryReadRepository implements EntryReadRepositoryInterface
       }
 
 
+      // $result[] = [
+      //   'id'     => $entry->id,
+      //   'slug' => $entry->slug,
+      //   'status' => $entry->status,
+      //   'values' => $mapped,
+      // ];
       $result[] = [
-        'id'     => $entry->id,
-        'slug'=>$entry->slug,
+
+        'id' => $entry->id,
+
+        'slug' => $entry->slug,
+
         'status' => $entry->status,
+
+        'project_id' => $entry->project_id,
+
+        'data_type_slug' => $entry->data_type_slug,
+
         'values' => $mapped,
       ];
     }

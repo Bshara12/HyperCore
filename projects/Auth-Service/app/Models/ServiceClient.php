@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class ServiceClient extends Model
 {
@@ -12,6 +11,6 @@ class ServiceClient extends Model
     protected $fillable = [
         'name',
         'client_id',
-        'client_secret'
+        'client_secret',
     ];
 }

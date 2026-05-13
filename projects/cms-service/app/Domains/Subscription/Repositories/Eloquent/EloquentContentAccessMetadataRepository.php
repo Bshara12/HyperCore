@@ -78,4 +78,22 @@ implements ContentAccessMetadataRepositoryInterface
     return ContentAccessMetadata::query()
       ->find($id);
   }
+
+  public function findManyRules(
+    string $contentType,
+    array $contentIds
+  ) {
+
+    return ContentAccessMetadata::query()
+
+      ->where('content_type', $contentType)
+
+      ->whereIn('content_id', $contentIds)
+
+      ->where('is_active', true)
+
+      ->get()
+
+      ->keyBy('content_id');
+  }
 }

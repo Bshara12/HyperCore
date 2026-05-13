@@ -154,17 +154,11 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
             ->where('is_active', true)
             ->selectRaw('
                 resource_id,
-<<<<<<< HEAD
-                SUM(TIMESTAMPDIFF('HOUR', start_time, end_time)) as daily_hours
-            ")
-      ->groupBy('resource_id')
-      ->pluck('daily_hours', 'resource_id');
-=======
+
                 SUM(TIMESTAMPDIFF(HOUR, start_time, end_time)) as daily_hours
             ')
             ->groupBy('resource_id')
             ->pluck('daily_hours', 'resource_id');
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 
         // جيب الساعات الفعلية المحجوزة لكل resource
         $bookedHours = DB::table('bookings')
@@ -175,31 +169,10 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
             ->whereNull('deleted_at')
             ->selectRaw('
                 resource_id,
-<<<<<<< HEAD
-                COALESCE(SUM(TIMESTAMPDIFF('HOUR', start_at, end_at)), 0) as booked_hours
-            ")
-      ->groupBy('resource_id')
-      ->pluck('booked_hours', 'resource_id');
-
-    return [
-      'period'    => ['from' => $dto->from, 'to' => $dto->to],
-      'resources' => $resources->map(function ($r) use ($totalDays, $availabilities, $bookedHours) {
-
-        $dailyAvailableHours = (float) ($availabilities[$r->resource_id] ?? 0);
-        $totalAvailableHours = $dailyAvailableHours * $totalDays * $r->capacity;
-        $totalBookedHours    = (float) ($bookedHours[$r->resource_id] ?? 0);
-
-        $occupancyRate = $totalAvailableHours > 0
-          ? round(($totalBookedHours / $totalAvailableHours) * 100, 2)
-          : 0.0;
-
-        $totalBookings = (int) $r->total_bookings;
-=======
                 COALESCE(SUM(TIMESTAMPDIFF(HOUR, start_at, end_at)), 0) as booked_hours
             ')
             ->groupBy('resource_id')
             ->pluck('booked_hours', 'resource_id');
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 
         return [
             'period' => ['from' => $dto->from, 'to' => $dto->to],
@@ -352,15 +325,15 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
         $from = $dto->from.' 00:00:00';
         $to = $dto->to.' 23:59:59';
 
-<<<<<<< HEAD
-    // أكثر الأيام حجزاً (0=Sunday...6=Saturday)
-    $byDayOfWeek = DB::table('bookings')
-      ->where('project_id', $dto->projectId)
-      ->whereBetween('start_at', [$from, $to])
-      ->whereNotIn('status', ['cancelled'])
-      ->whereNull('deleted_at')
-      ->selectRaw("
-=======
+// <<<<<<< HEAD
+//     // أكثر الأيام حجزاً (0=Sunday...6=Saturday)
+//     $byDayOfWeek = DB::table('bookings')
+//       ->where('project_id', $dto->projectId)
+//       ->whereBetween('start_at', [$from, $to])
+//       ->whereNotIn('status', ['cancelled'])
+//       ->whereNull('deleted_at')
+//       ->selectRaw("
+// =======
         // أكثر الأيام حجزاً (0=Sunday...6=Saturday)
         $byDayOfWeek = DB::table('bookings')
             ->where('project_id', $dto->projectId)
@@ -368,22 +341,14 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
             ->whereNotIn('status', ['cancelled'])
             ->whereNull('deleted_at')
             ->selectRaw('
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
         (DAYOFWEEK(start_at) - 1)     as day_of_week,
         DAYNAME(start_at)             as day_name,
         COUNT(*)                      as bookings_count,
         COALESCE(SUM(amount), 0)      as revenue
-<<<<<<< HEAD
-    ")
-      ->groupByRaw("(DAYOFWEEK(start_at) - 1), DAYNAME(start_at)")
-      ->orderByRaw('bookings_count DESC')
-      ->get();
-=======
     ')
             ->groupByRaw('(DAYOFWEEK(start_at) - 1), DAYNAME(start_at)')
             ->orderByRaw('bookings_count DESC')
             ->get();
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 
         // أكثر الساعات حجزاً
         $byHour = DB::table('bookings')
@@ -425,21 +390,12 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
             ->selectRaw('
                 r.id                                                            as resource_id,
                 r.name,
-<<<<<<< HEAD
-                ROUND(AVG(TIMESTAMPDIFF('HOUR', b.created_at, b.start_at)), 2)   as avg_lead_time_hours
-            ")
-      ->groupBy('r.id', 'r.name')
-      ->orderByRaw('avg_lead_time_hours ASC')
-      ->limit($dto->limit)
-      ->get();
-=======
                 ROUND(AVG(TIMESTAMPDIFF(HOUR, b.created_at, b.start_at)), 2)   as avg_lead_time_hours
             ')
             ->groupBy('r.id', 'r.name')
             ->orderByRaw('avg_lead_time_hours ASC')
             ->limit($dto->limit)
             ->get();
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 
         return [
             'period' => ['from' => $dto->from, 'to' => $dto->to],

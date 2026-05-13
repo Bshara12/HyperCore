@@ -18,6 +18,7 @@ use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\CMS\Requests\DataEntryRequest;
 use App\Events\DataEntrySavedEvent;
 use App\Events\EntryChanged;
+use App\Models\DataType;
 use App\Support\CurrentProject;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -56,12 +57,13 @@ class DataEntryService
   // }
   public function create(
     int $projectId,
-    int $dataTypeId,
+    DataType $dataType,
     string $slug,
     CreateDataEntryDto $dto,
     ?int $userId
   ) {
-    return DB::transaction(function () use ($projectId, $dataTypeId, $slug, $dto, $userId) {
+    return DB::transaction(function () use ($projectId, $dataType, $slug, $dto, $userId) {
+      $dataTypeId = $dataType->id;
       // dd("sdf");
 
       $dto->scheduled_at = $this->normalizeScheduledAt
@@ -72,7 +74,7 @@ class DataEntryService
 
       $entry = $this->createAction->execute(
         $projectId,
-        $dataTypeId,
+        $dataType,
         $slug,
         $userId
       );

@@ -4,14 +4,17 @@ namespace App\Domains\CMS\Read\Actions;
 
 use App\Domains\CMS\Read\Repositories\EntryReadRepository;
 use App\Domains\CMS\Read\Repositories\EntryRelationRepository;
+use App\Domains\CMS\Read\Services\EntryVisibilityService;
 use App\Domains\CMS\Support\LanguageResolver;
+use Exception;
 
 class GetEntryWithRelationsAction
 {
   public function __construct(
     private EntryReadRepository $entryRepository,
     private EntryRelationRepository $relationRepository,
-    private LanguageResolver $languageResolver
+    private LanguageResolver $languageResolver,
+    private EntryVisibilityService $visibilityService
   ) {}
 
   public function execute(int $entryId, ?string $requestedLang): ?array
@@ -23,8 +26,23 @@ class GetEntryWithRelationsAction
     $main = $this->entryRepository
       ->findPublishedWithValues($entryId, $language, $fallback);
 
+
+
     if (!$main) {
       return null;
+    }
+
+    $main =  $this->visibilityService
+      ->filterVisible(
+        entries:[ $main],
+        userId: request()
+          ->attributes
+          ->get('auth_user')['id']
+      );
+
+
+    if (!$main) {
+       throw new Exception("subsicribe to show it");
     }
 
     // 🔹 parents
@@ -45,6 +63,13 @@ class GetEntryWithRelationsAction
         $language,
         $fallback
       );
+    $parents = $this->visibilityService
+      ->filterVisible(
+        entries: $parents,
+        userId: request()
+          ->attributes
+          ->get('auth_user')['id']
+      );
 
 
     // 🔹 children
@@ -60,12 +85,18 @@ class GetEntryWithRelationsAction
     //   }
     // }
     $children = $this->entryRepository
-    ->findPublishedManyWithValues(
+      ->findPublishedManyWithValues(
         $childIds,
         $language,
         $fallback
-    );
-
+      );
+    $children = $this->visibilityService
+      ->filterVisible(
+        entries: $children,
+        userId: request()
+          ->attributes
+          ->get('auth_user')['id']
+      );
     return [
       'entry' => $main,
       'parents' => $parents,

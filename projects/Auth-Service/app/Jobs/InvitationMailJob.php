@@ -12,12 +12,16 @@ use Illuminate\Support\Facades\Mail;
 
 class InvitationMailJob implements ShouldQueue
 {
-    use Queueable ,Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable ,InteractsWithQueue, Queueable, SerializesModels;
 
     public $tries = 3;
+
     public $timeout = 30;
+
     protected Invitation $invitation;
+
     protected string $otp;
+
     /**
      * Create a new job instance.
      */
