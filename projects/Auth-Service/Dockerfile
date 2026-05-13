@@ -16,8 +16,11 @@ RUN apk update && apk add --no-cache \
   g++ \
   linux-headers
 
-# تثبيت Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
+# تثبيت Redis و PCOV مع التفعيل القسري للإعدادات لضمان عمل التغطية
+RUN pecl install redis pcov && \
+  docker-php-ext-enable redis pcov && \
+  echo "pcov.enabled=1" >> /usr/local/etc/php/conf.d/docker-php-ext-pcov.ini && \
+  echo "pcov.directory=/var/www" >> /usr/local/etc/php/conf.d/docker-php-ext-pcov.ini
 
 # تثبيت إضافات PHP
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd sockets
@@ -29,6 +32,7 @@ WORKDIR /var/www
 
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader
+# هام: أزلنا --no-dev لكي يتم تثبيت Pest وأدوات الاختبار لتعمل التغطية
+RUN composer install --optimize-autoloader
 
 CMD ["php-fpm"]

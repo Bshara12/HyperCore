@@ -83,6 +83,7 @@ class BookingService
             // $resource = $this->resourceRepository->findById($dto->resourceId);
             $resource = $this->resourceRepository->findById($dto->resourceId);
 
+
             throw_if(! $resource, \Exception::class, 'Resource not found');
             // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
             throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is inactive.');
@@ -99,6 +100,7 @@ class BookingService
 
             // throw_if(! $resource, \Exception::class, 'Resource not found');
             // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
+
 
             $start = Carbon::parse($dto->startAt);
             $end = Carbon::parse($dto->endAt);

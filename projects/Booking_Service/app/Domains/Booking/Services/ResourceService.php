@@ -10,12 +10,22 @@ use App\Domains\Booking\Actions\UpdateResourceAction;
 use App\Domains\Booking\DTOs\ResourceDTO;
 use App\Domains\Booking\Read\Actions\IndexResourcesAction;
 use App\Domains\Booking\Read\Actions\ShowResourceAction;
-use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
 use App\Models\Resource;
 use Illuminate\Database\Eloquent\Collection;
 
 class ResourceService
 {
+// <<<<<<< HEAD
+//   public function __construct(
+//     private readonly CreateResourceAction $createAction,
+//     private readonly UpdateResourceAction $updateAction,
+//     private readonly SetAvailabilityAction $availabilityAction,
+//     private readonly SetCancellationPolicyAction $policyAction,
+//     private readonly ShowResourceAction $showAction,
+//     private readonly IndexResourcesAction $indexAction,
+//     private readonly DeleteResourceAction $deleteAction,
+//   ) {}
+// =======
     public function __construct(
         private readonly CreateResourceAction $createAction,
         private readonly UpdateResourceAction $updateAction,

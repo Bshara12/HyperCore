@@ -5,6 +5,7 @@ namespace App\Domains\Booking\Actions\Client;
 use App\Domains\Booking\DTOs\Client\CreateBookingDTO;
 use App\Models\Booking;
 use App\Services\CMS\CMSApiClient;
+use Illuminate\Support\Facades\Log;
 
 class ProcessBookingPaymentAction
 {
@@ -12,30 +13,6 @@ class ProcessBookingPaymentAction
         protected CMSApiClient $cmsClient
     ) {}
 
-    // public function execute($booking, CreateBookingDTO $dto)
-    // {
-    //   try {
-    //     $payment = $this->cmsClient->chargeBooking([
-    //       'user_id'   => $dto->userId,
-    //       'user_name' => $dto->userName,
-    //       'project_id' => $dto->projectId,
-    //       'amount'    => $dto->amount,
-    //       'currency'  => $dto->currency,
-    //       'gateway'   => $dto->gateway,
-    //       'token'     => $dto->gatewayToken,
-    //     ]);
-
-    //     $booking->update([
-    //       'status' => \App\Models\Booking::STATUS_CONFIRMED,
-    //       'payment_id' => $payment['payment_id'] ?? null,
-    //     ]);
-    //   } catch (\Throwable $e) {
-    //     $booking->update(['status' => \App\Models\Booking::STATUS_CANCELLED]);
-    //     throw $e;
-    //   }
-
-    //   return $booking;
-    // }
     public function execute($booking, CreateBookingDTO $dto)
     {
         // 🔥 1. إذا مجاني → بدون دفع
@@ -50,6 +27,7 @@ class ProcessBookingPaymentAction
         }
 
         try {
+          Log::info("Processing payment for booking ID: {$booking->id}, amount: {$dto->amount} {$dto->currency}");
             $payment = $this->cmsClient->chargeBooking([
                 'user_id' => $dto->userId,
                 'user_name' => $dto->userName,
@@ -59,6 +37,7 @@ class ProcessBookingPaymentAction
                 'gateway' => $dto->gateway,
                 'token' => $dto->gatewayToken,
             ]);
+            Log::info("Payment processed for booking ID: {$booking->id}, payment response: " . json_encode($payment));
 
             $booking->update([
                 'status' => Booking::STATUS_CONFIRMED,

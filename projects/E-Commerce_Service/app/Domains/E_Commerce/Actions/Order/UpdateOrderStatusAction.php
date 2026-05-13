@@ -10,79 +10,79 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateOrderStatusAction
 {
-    public function __construct(
-        protected OrderRepositoryInterface $orderRepo
-    ) {}
+  public function __construct(
+    protected OrderRepositoryInterface $orderRepo
+  ) {}
 
-    // public function execute(UpdateOrderStatusDTO $dto)
-    // {
-    //   return DB::transaction(function () use ($dto) {
+  // public function execute(UpdateOrderStatusDTO $dto)
+  // {
+  //   return DB::transaction(function () use ($dto) {
 
-    //     $order = $this->orderRepo->findById($dto->order_id);
+  //     $order = $this->orderRepo->findById($dto->order_id);
 
-    //     if (!$order || $order->project_id !== $dto->project_id) {
-    //       throw new \Exception('Order not found');
-    //     }
+  //     if (!$order || $order->project_id !== $dto->project_id) {
+  //       throw new \Exception('Order not found');
+  //     }
 
-    //     // 🔥 State Machine Validation
-    //     $this->validateTransition($order->status, $dto->status);
+  //     // 🔥 State Machine Validation
+  //     $this->validateTransition($order->status, $dto->status);
 
-    //     // 🔥 update
-    //     $order->update([
-    //       'status' => $dto->status
-    //     ]);
+  //     // 🔥 update
+  //     $order->update([
+  //       'status' => $dto->status
+  //     ]);
 
-    //     return $order;
-    //   });
-    // }
+  //     return $order;
+  //   });
+  // }
 
-    public function execute(UpdateOrderStatusDTO $dto)
-    {
-        return DB::transaction(function () use ($dto) {
+  public function execute(UpdateOrderStatusDTO $dto)
+  {
+    return DB::transaction(function () use ($dto) {
 
-            $order = $this->orderRepo->findById($dto->order_id);
+      $order = $this->orderRepo->findById($dto->order_id);
 
-            if (! $order || $order->project_id !== $dto->project_id) {
-                throw new \Exception('Order not found');
-            }
+      if (! $order || $order->project_id !== $dto->project_id) {
+        throw new \Exception('Order not found');
+      }
 
-            $this->validateTransition($order->status, $dto->status);
+      $this->validateTransition($order->status, $dto->status);
 
-            // 🔥 خزّن الحالة القديمة
-            $oldStatus = $order->status;
+      // 🔥 خزّن الحالة القديمة
+      $oldStatus = $order->status;
 
-            // 🔥 تحديث order
-            $order->update([
-                'status' => $dto->status,
-            ]);
+      // 🔥 تحديث order
+      $order->update([
+        'status' => $dto->status,
+      ]);
 
-            // 🔥 تحديث كل items (هون المطلوب)
-            $this->orderRepo->updateItemsStatus($order->id, $dto->status);
+      // 🔥 تحديث كل items (هون المطلوب)
+      $this->orderRepo->updateItemsStatus($order->id, $dto->status);
 
-            // ✅ Status تغير — امسح كل الـ Cache المتعلق بهذا الـ Order
-            Cache::forget(CacheKeys::order($order->id, $order->user_id));
-            Cache::forget(CacheKeys::userOrders($order->user_id, $order->project_id));
+      // ✅ Status تغير — امسح كل الـ Cache المتعلق بهذا الـ Order
+      Cache::forget(CacheKeys::order($order->id, $order->user_id));
+      Cache::forget(CacheKeys::userOrders($order->user_id, $order->project_id));
 
-            // ✅ امسح كل الـ admin cache لأن الـ status تغير
-            // نستخدم tags هنا لأننا ما نعرف كل الـ filter combinations
-            Cache::tags(['admin_orders'])->flush();
+      // ✅ امسح كل الـ admin cache لأن الـ status تغير
+      // نستخدم tags هنا لأننا ما نعرف كل الـ filter combinations
+      Cache::tags(['admin_orders'])->flush();
 
-            return $order;
-        });
+      return $order;
+    });
+  }
+
+  private function validateTransition(string $current, string $new)
+  {
+    $allowed = [
+      'pending' => ['paid', 'cancelled'],
+      'paid' => ['shipped', 'cancelled'],
+      'shipped' => ['delivered'],
+      'delivered' => [],
+      'cancelled' => [],
+    ];
+
+    if (! in_array($new, $allowed[$current] ?? [])) {
+      throw new \Exception("Invalid status transition from $current to $new");
     }
-
-    private function validateTransition(string $current, string $new)
-    {
-        $allowed = [
-            'pending' => ['paid', 'cancelled'],
-            'paid' => ['shipped', 'cancelled'],
-            'shipped' => ['delivered'],
-            'delivered' => [],
-            'cancelled' => [],
-        ];
-
-        if (! in_array($new, $allowed[$current] ?? [])) {
-            throw new \Exception("Invalid status transition from $current to $new");
-        }
-    }
+  }
 }

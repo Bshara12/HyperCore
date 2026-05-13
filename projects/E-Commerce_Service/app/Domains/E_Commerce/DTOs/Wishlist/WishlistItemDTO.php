@@ -16,29 +16,29 @@ class WishlistItemDTO
         public string $updated_at,
     ) {}
 
-    public static function fromModel(WishlistItem $item): self
-    {
-        return new self(
-            id: $item->id,
-            product_id: $item->product_id,
-            variant_id: $item->variant_id,
-            sort_order: $item->sort_order,
-            product_snapshot: $item->product_snapshot,
-            created_at: $item->created_at?->toISOString(),
-            updated_at: $item->updated_at?->toISOString(),
-        );
-    }
+  public static function fromModel(WishlistItem $item): self
+  {
+    return new self(
+      id: $item->id,
+      product_id: $item->product_id,
+      variant_id: $item->variant_id,
+      sort_order: $item->sort_order,
+      product_snapshot: $item->product_snapshot,
+      created_at: $item->created_at?->toISOString(),
+      updated_at: $item->updated_at?->toISOString(),
+    );
+  }
 
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'product_id' => $this->product_id,
-            'variant_id' => $this->variant_id,
-            'sort_order' => $this->sort_order,
-            'product_snapshot' => $this->product_snapshot,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
-    }
+  public function toArray(): array
+  {
+    return [
+      'id' => $this->id,
+      'product_id' => $this->product_id,
+      'variant_id' => $this->variant_id,
+      'sort_order' => $this->sort_order,
+      'product_snapshot' => $this->product_snapshot,
+      'created_at' => $this->created_at,
+      'updated_at' => $this->updated_at,
+    ];
+  }
 }
