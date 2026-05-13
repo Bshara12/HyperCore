@@ -8,6 +8,9 @@ use App\Models\SubscriptionFeatureRule;
 use App\Domains\Subscription\DTOs\Usage\ProcessUsageEventDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionFeatureRuleRepositoryInterface;
+use App\Exceptions\FeatureMissingException;
+use App\Exceptions\SubscriptionRequiredException;
+use App\Exceptions\UsageLimitExceededException;
 use App\Models\Subscription;
 
 class ProcessUsageEventAction
@@ -39,12 +42,10 @@ class ProcessUsageEventAction
         $dto->projectId
       );
 
-    // if (!$subscription) {
+    if (!$subscription) {
 
-    //   throw new Exception(
-    //     'No active subscription.'
-    //   );
-    // }
+      throw new SubscriptionRequiredException();
+    }
 
     foreach ($rules as $rule) {
 
@@ -74,11 +75,14 @@ class ProcessUsageEventAction
 
     if (!$feature) {
 
-      throw new Exception(
-        sprintf(
-          'Feature [%s] missing in plan.',
-          $rule->feature_key
-        )
+      // throw new Exception(
+      //   sprintf(
+      //     'Feature [%s] missing in plan.',
+      //     $rule->feature_key
+      //   )
+      // );
+      throw new FeatureMissingException(
+        $rule->feature_key
       );
     }
 
@@ -183,11 +187,15 @@ class ProcessUsageEventAction
       ($used + $amount) > $limit
     ) {
 
-      throw new Exception(
-        sprintf(
-          'Feature limit exceeded [%s].',
-          $feature->feature_key
-        )
+      // throw new Exception(
+      //   sprintf(
+      //     'Feature limit exceeded [%s].',
+      //     $feature->feature_key
+      //   )
+      // );
+      throw new UsageLimitExceededException(
+        feature: $feature->feature_key,
+        limit: $limit
       );
     }
   }

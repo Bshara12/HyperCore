@@ -3,17 +3,20 @@
 namespace App\Exceptions;
 
 use App\Domains\Subscription\Enums\SubscriptionErrorCode;
-use Exception;
 
-class SubscriptionRequiredException
+class UsageLimitExceededException
 extends SubscriptionException
 {
   public function __construct(
-    private readonly ?string $requiredPlan = null
+    private readonly string $feature,
+    private readonly int $limit
   ) {
 
     parent::__construct(
-      'Subscription required.'
+      sprintf(
+        'Usage limit exceeded [%s].',
+        $feature
+      )
     );
   }
 
@@ -21,12 +24,14 @@ extends SubscriptionException
   {
     return [
 
-      // 'code' => 'SUBSCRIPTION_REQUIRED',
+      // 'code' => 'USAGE_LIMIT_EXCEEDED',
       'code' => SubscriptionErrorCode
-      ::SUBSCRIPTION_REQUIRED
+      ::USAGE_LIMIT_EXCEEDED
         ->value,
 
-      'required_plan' => $this->requiredPlan,
+      'feature' => $this->feature,
+
+      'limit' => $this->limit,
     ];
   }
 }

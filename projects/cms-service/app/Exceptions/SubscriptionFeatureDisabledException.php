@@ -3,17 +3,19 @@
 namespace App\Exceptions;
 
 use App\Domains\Subscription\Enums\SubscriptionErrorCode;
-use Exception;
 
-class SubscriptionRequiredException
+class SubscriptionFeatureDisabledException
 extends SubscriptionException
 {
   public function __construct(
-    private readonly ?string $requiredPlan = null
+    private readonly string $feature
   ) {
 
     parent::__construct(
-      'Subscription required.'
+      sprintf(
+        'Feature disabled [%s].',
+        $feature
+      )
     );
   }
 
@@ -21,12 +23,12 @@ extends SubscriptionException
   {
     return [
 
-      // 'code' => 'SUBSCRIPTION_REQUIRED',
+      // 'code' => 'FEATURE_DISABLED',
       'code' => SubscriptionErrorCode
-      ::SUBSCRIPTION_REQUIRED
+      ::FEATURE_DISABLED
         ->value,
 
-      'required_plan' => $this->requiredPlan,
+      'feature' => $this->feature,
     ];
   }
 }
