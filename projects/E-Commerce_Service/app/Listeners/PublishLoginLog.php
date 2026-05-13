@@ -2,7 +2,7 @@
 
 namespace App\Listeners;
 
-use App\Domains\CMS\Services\RabbitMQPublisher;
+use App\Domains\Core\Services\RabbitMQPublisher;
 use App\Events\UserLoggedIn;
 use Illuminate\Support\Str;
 

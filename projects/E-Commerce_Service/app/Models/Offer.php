@@ -19,4 +19,9 @@ class Offer extends Model
     'start_at' => 'datetime',
     'end_at' => 'datetime',
   ];
+
+  public function offer_price()
+  {
+    return $this->hasMany(OfferPrice::class, 'applied_offer_id', 'id');
+  }
 }
