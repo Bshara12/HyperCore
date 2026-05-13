@@ -15,10 +15,4 @@ class Cart extends Model
   {
     return $this->hasMany(CartItem::class);
   }
-
-  // حساب السعر الكلي للسلة
-  public function getTotalAttribute()
-  {
-    return $this->items->sum('subtotal');
-  }
 }

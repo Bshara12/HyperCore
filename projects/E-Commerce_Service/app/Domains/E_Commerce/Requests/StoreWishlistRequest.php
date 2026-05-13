@@ -7,11 +7,6 @@ use Illuminate\Validation\Rule;
 
 class StoreWishlistRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         return [
