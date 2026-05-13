@@ -6,8 +6,10 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-class EloquentUserRepository implements UserRepositoryInterface {
-    public function create(array $data):User {
+class EloquentUserRepository implements UserRepositoryInterface
+{
+    public function create(array $data): User
+    {
         return User::create($data);
     }
 
@@ -44,9 +46,9 @@ class EloquentUserRepository implements UserRepositoryInterface {
                 'updated_at' => now(),
             ]);
 
-            // إضافة access token إلى blacklist
+        // إضافة access token إلى blacklist
         DB::table('token_blacklist')->insert([
-            'token_id'   => $decoded->jti,
+            'token_id' => $decoded->jti,
             'expires_at' => date('Y-m-d H:i:s', $decoded->exp),
             'created_at' => now(),
             'updated_at' => now(),
@@ -58,14 +60,15 @@ class EloquentUserRepository implements UserRepositoryInterface {
             ->update(['revoked' => true]);
     }
 
-    public function updatePassword($userId, $hashedPassword) {
+    public function updatePassword($userId, $hashedPassword)
+    {
         return User::where('id', $userId)->update([
-            'password' => $hashedPassword
+            'password' => $hashedPassword,
         ]);
     }
 
-
-    public function getUsersByIds(array $ids): Collection {
+    public function getUsersByIds(array $ids): Collection
+    {
         return User::query()
             ->whereIn('id', $ids)
             ->select('id', 'name')

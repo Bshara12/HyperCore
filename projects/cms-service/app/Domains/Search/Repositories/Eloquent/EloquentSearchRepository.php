@@ -348,28 +348,67 @@ class EloquentSearchRepository implements SearchRepositoryInterface
    *
    * @param string[] $excludeTerms  كلمات يجب ألا تظهر في النتائج
    */
+
+
+  // public function searchWithExclusions(
+  //   SearchQueryDTO    $dto,
+  //   ProcessedKeyword  $processed,
+  //   UserPreferenceDTO $preference,
+  //   array             $excludeTerms = []
+  // ): array {
+  //   /*
+  //    * إذا لا يوجد استبعاد → استخدم الـ search العادي
+  //    */
+  //   if (empty($excludeTerms)) {
+  //     return $this->search($dto, $processed, $preference);
+  //   }
+
+  //   /*
+  //    * بناء relaxed queries مع إضافة الاستبعاد لكل منها
+  //    *
+  //    * مثال:
+  //    *   original relaxed: ["+iphone*", "iphone*"]
+  //    *   مع exclude "15":  ["+iphone* -15", "iphone* -15"]
+  //    */
+
+
+
+  //   $excludeSuffix = ' ' . implode(
+  //     ' ',
+  //     array_map(
+  //       fn($t) => '-' . preg_replace('/[+\-><\(\)~*"@]+/', '', $t),
+  //       $excludeTerms
+  //     )
+  //   );
+  //   $modifiedProcessed = $this->injectExclusionsIntoProcessed(
+  //     $processed,
+  //     $excludeSuffix
+  //   );
+
+  //   return $this->search($dto, $modifiedProcessed, $preference);
+  // }
+
+
+
+
   public function searchWithExclusions(
     SearchQueryDTO    $dto,
     ProcessedKeyword  $processed,
     UserPreferenceDTO $preference,
     array             $excludeTerms = []
   ): array {
-    /*
-     * إذا لا يوجد استبعاد → استخدم الـ search العادي
-     */
+
+    // ✅ FIX #1: كشف exclude-only query
+    // إذا cleanWords فارغة + excludeTerms موجودة → استخدم SQL WHERE بدل FULLTEXT
+    $isExcludeOnly = empty($processed->cleanWords) && ! empty($excludeTerms);
+
+    if ($isExcludeOnly) {
+      return $this->searchExcludeOnly($dto, $excludeTerms, $preference);
+    }
+
     if (empty($excludeTerms)) {
       return $this->search($dto, $processed, $preference);
     }
-
-    /*
-     * بناء relaxed queries مع إضافة الاستبعاد لكل منها
-     *
-     * مثال:
-     *   original relaxed: ["+iphone*", "iphone*"]
-     *   مع exclude "15":  ["+iphone* -15", "iphone* -15"]
-     */
-
-
 
     $excludeSuffix = ' ' . implode(
       ' ',
@@ -378,13 +417,129 @@ class EloquentSearchRepository implements SearchRepositoryInterface
         $excludeTerms
       )
     );
-    $modifiedProcessed = $this->injectExclusionsIntoProcessed(
-      $processed,
-      $excludeSuffix
-    );
+
+    $modifiedProcessed = $this->injectExclusionsIntoProcessed($processed, $excludeSuffix);
 
     return $this->search($dto, $modifiedProcessed, $preference);
   }
+
+// ─────────────────────────────────────────────────────────────────
+// ✅ NEW: Exclude-Only Search بدون FULLTEXT
+// ─────────────────────────────────────────────────────────────────
+
+  /**
+   * بحث بدون keyword — يُعيد كل entries ما عدا المستثناة
+   *
+   * يُستخدم لـ queries مثل:
+   *   "بدون سامسونج" → include=[], exclude=["samsung"]
+   *   "without dell"  → include=[], exclude=["dell"]
+   *
+   * لا يستخدم FULLTEXT لأن MySQL لا يدعمه مع empty query.
+   * يستخدم NOT LIKE على title+content.
+   */
+  private function searchExcludeOnly(
+    SearchQueryDTO    $dto,
+    array             $excludeTerms,
+    UserPreferenceDTO $preference
+  ): array {
+
+    // بناء WHERE conditions
+    $where  = 'si.project_id = ? AND si.language = ? AND si.status = ?';
+    $binds  = [$dto->projectId, $dto->language, 'published'];
+
+    // إضافة NOT LIKE لكل excluded term
+    $excludeConditions = [];
+    foreach ($excludeTerms as $term) {
+      $term = trim($term);
+      if (empty($term)) continue;
+      $excludeConditions[] = "CONCAT_WS(' ', si.title, si.content) NOT LIKE ?";
+      $binds[]             = '%' . $term . '%';
+    }
+
+    if (! empty($excludeConditions)) {
+      $where .= ' AND ' . implode(' AND ', $excludeConditions);
+    }
+
+    // DataType filter (بدون FULLTEXT intent filtering)
+    if ($dto->dataTypeSlug !== null) {
+      $where  .= ' AND si.data_type_slug = ?';
+      $binds[] = $dto->dataTypeSlug;
+    }
+
+    // COUNT
+    $countSql = "
+        SELECT COUNT(*) AS total
+        FROM search_indices si
+        WHERE {$where}
+        LIMIT 10000
+    ";
+
+    $countRow = DB::selectOne($countSql, $binds);
+    $total    = (int) ($countRow->total ?? 0);
+
+    if ($total === 0) {
+      return ['items' => [], 'total' => 0];
+    }
+
+    $fetchLimit = max(self::DB_FETCH_LIMIT, $dto->perPage * 3);
+    $offset     = max(0, ($dto->page - 1) * $dto->perPage);
+
+    // Search بدون FULLTEXT — order بـ published_at + popularity
+    $searchSql = "
+        SELECT
+            si.entry_id,
+            si.data_type_id,
+            si.data_type_slug,
+            si.project_id,
+            si.language,
+            si.title,
+            si.content,
+            si.status,
+            si.published_at,
+            si.ctr_score,
+            si.freshness_score,
+            si.title_has_numbers,
+            si.title_word_count,
+            si.click_count,
+            si.view_count,
+            si.popularity_score,
+            si.popularity_score AS fulltext_score
+        FROM search_indices si
+        WHERE {$where}
+        ORDER BY si.popularity_score DESC, si.published_at DESC
+        LIMIT ?
+        OFFSET ?
+    ";
+
+    $searchBinds   = [...$binds, $fetchLimit, $offset];
+    $rows          = DB::select($searchSql, $searchBinds);
+
+    if (empty($rows)) {
+      return ['items' => [], 'total' => $total];
+    }
+
+    // Re-rank بدون cleanWords (لأن لا يوجد search terms)
+    $emptyPreference = UserPreferenceDTO::noHistory();
+    $reranked        = $this->ranker->rerank(
+      rows: $rows,
+      cleanWords: [],
+      phraseQuery: '',
+      intent: 'general',
+      intentConf: 0.0,
+      preference: $preference,
+      userKeywords: [],
+    );
+
+    $pageStart  = ($dto->page - 1) * $dto->perPage;
+    $pagedItems = array_slice($reranked, $pageStart, $dto->perPage);
+
+    return [
+      'items' => $pagedItems,
+      'total' => $total,
+    ];
+  }
+
+
 
   /**
    * حقن الـ exclude suffix في كل relaxed queries

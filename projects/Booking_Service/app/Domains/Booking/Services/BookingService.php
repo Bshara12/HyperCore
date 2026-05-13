@@ -83,15 +83,10 @@ class BookingService
             // $resource = $this->resourceRepository->findById($dto->resourceId);
             $resource = $this->resourceRepository->findById($dto->resourceId);
 
-<<<<<<< HEAD
-      throw_if(!$resource, \Exception::class, 'Resource not found');
-      // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
-      throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is inactive.');
-=======
+
             throw_if(! $resource, \Exception::class, 'Resource not found');
             // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
             throw_if($resource->status !== \App\Models\Resource::STATUS_ACTIVE, \Exception::class, 'Resource is inactive.');
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 
             // 🔥 تحقق السعر
             if ($resource->payment_type === 'paid') {
@@ -103,17 +98,12 @@ class BookingService
                 $dto->amount = 0;
             }
 
-            throw_if(! $resource, \Exception::class, 'Resource not found');
+            // throw_if(! $resource, \Exception::class, 'Resource not found');
             // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
-            throw_if($resource->status !== 'active', \Exception::class, 'Resource inactive');
 
-<<<<<<< HEAD
-      // throw_if(! $resource->isActive(), \Exception::class, 'Resource inactive');
-      throw_if($resource->status !== 'active', \Exception::class, 'Resource inactive');
-=======
+
             $start = Carbon::parse($dto->startAt);
             $end = Carbon::parse($dto->endAt);
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 
             // 1. validate time
             $this->validateTime->execute($start, $end);

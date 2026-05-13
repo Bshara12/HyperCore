@@ -13,16 +13,16 @@ class GetCancellationReportAction
     private AnalyticsRepositoryInterface $repository
   ) {}
 
-<<<<<<< HEAD
-  public function execute(AnalyticsFilterDTO $dto): array
-  {
-    return Cache::remember(
-      "analytics:booking:project:{$dto->projectId}:cancellations:{$dto->period}:{$dto->from}:{$dto->to}",
-      CacheKeys::TTL_SHORT,
-      fn() => $this->repository->getCancellationReport($dto)
-    );
-  }
-=======
+// <<<<<<< HEAD
+//   public function execute(AnalyticsFilterDTO $dto): array
+//   {
+//     return Cache::remember(
+//       "analytics:booking:project:{$dto->projectId}:cancellations:{$dto->period}:{$dto->from}:{$dto->to}",
+//       CacheKeys::TTL_SHORT,
+//       fn() => $this->repository->getCancellationReport($dto)
+//     );
+//   }
+// =======
     public function execute(AnalyticsFilterDTO $dto): array
     {
         return Cache::remember(
@@ -31,5 +31,4 @@ class GetCancellationReportAction
             fn () => $this->repository->getCancellationReport($dto)
         );
     }
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 }

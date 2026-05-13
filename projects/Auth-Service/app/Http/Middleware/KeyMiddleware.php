@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\JwtService;
 use Closure;
 use Exception;
 use Firebase\JWT\JWT;
@@ -15,13 +14,13 @@ class KeyMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->bearerToken();
 
-        if (!$token) {
+        if (! $token) {
             return response()->json(['error' => 'Missing token'], 401);
         }
 
@@ -39,11 +38,9 @@ class KeyMiddleware
         $request->merge([
             'auth_user_id' => $decoded->sub,
             'auth_project_id' => $decoded->proj,
-            'auth_role' => $decoded->role
+            'auth_role' => $decoded->role,
         ]);
 
         return $next($request);
     }
-
-
 }

@@ -29,4 +29,9 @@ interface ContentAccessMetadataRepositoryInterface
   public function findById(
     int $id
   ): ?ContentAccessMetadata;
+
+  public function findManyRules(
+    string $contentType,
+    array $contentIds
+  );
 }

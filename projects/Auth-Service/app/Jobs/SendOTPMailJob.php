@@ -12,11 +12,14 @@ use Illuminate\Support\Facades\Mail;
 
 class SendOTPMailJob implements ShouldQueue
 {
-    use Queueable, Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $tries = 3;
+
     public $timeout = 30;
+
     protected User $user;
+
     protected string $otp;
 
     /**

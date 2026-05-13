@@ -4,6 +4,7 @@ namespace App\Domains\CMS\Read\Actions;
 
 use App\Domains\CMS\Read\Repositories\EntryReadRepository;
 use App\Domains\CMS\Read\Repositories\EntryTypeReadRepository;
+use App\Domains\CMS\Read\Services\EntryVisibilityService;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
 use App\Domains\CMS\Support\LanguageResolver;
 
@@ -13,7 +14,8 @@ class GetEntriesByDataTypeSlugAction
     private DataTypeRepositoryInterface $dataTypeRepository,
     private EntryTypeReadRepository $typeRepository,
     private EntryReadRepository $entryRepository,
-    private LanguageResolver $languageResolver
+    private LanguageResolver $languageResolver,
+    private EntryVisibilityService $visibilityService
   ) {}
 
   public function execute(int $projectId, string $slug, array $filters): array
@@ -61,6 +63,13 @@ class GetEntriesByDataTypeSlugAction
         $fallback
       );
 
+    $entries = $this->visibilityService
+      ->filterVisible(
+        entries: $entries,
+        userId: request()
+          ->attributes
+          ->get('auth_user')['id']
+      );
     return [
       'data_type_slug' => $slug,
       'entries' => $entries,

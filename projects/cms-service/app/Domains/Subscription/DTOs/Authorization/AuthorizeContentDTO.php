@@ -6,7 +6,7 @@ class AuthorizeContentDTO
 {
     public function __construct(
 
-        public readonly int $userId,
+        public readonly ?int $userId,
 
         public readonly ?int $projectId,
 

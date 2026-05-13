@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 class OperationController extends Controller
 {
     protected $operations;
+
     protected $jwt;
 
     public function __construct(OperationServices $operationServices, JwtService $jwtService)
@@ -18,17 +19,18 @@ class OperationController extends Controller
         $this->jwt = $jwtService;
     }
 
-    public function getAllUsers(Request $request) {
+    public function getAllUsers(Request $request)
+    {
         $token = $request->bearerToken();
         $decode = $this->jwt->validateToken($token);
-        if(!$decode) {
+        if (! $decode) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $user = User::find($decode->sub);
 
-        if($user) {
-            if(!User::is_super_admin($user)) {
+        if ($user) {
+            if (! User::is_super_admin($user)) {
                 return response()->json([
                     'message' => 'Not authorized',
                 ], 401);
@@ -47,10 +49,11 @@ class OperationController extends Controller
         ], 404);
     }
 
-    public function assginRoleToUser(Request $request) {
+    public function assginRoleToUser(Request $request)
+    {
         $token = $request->bearerToken();
         $decode = $this->jwt->validateToken($token);
-        if(!$decode) {
+        if (! $decode) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -58,8 +61,8 @@ class OperationController extends Controller
 
         $data = $request->only(['user_id', 'role_id']);
 
-        if($user) {
-            if(!User::is_super_admin($user) && !User::is_admin($user)) {
+        if ($user) {
+            if (! User::is_super_admin($user) && ! User::is_admin($user)) {
                 return response()->json([
                     'message' => 'Not authorized',
                 ], 401);
@@ -67,7 +70,7 @@ class OperationController extends Controller
 
             $assignment = $this->operations->assginRoleService($data);
 
-            if($assignment) {
+            if ($assignment) {
                 return response()->json([
                     'message' => 'Done',
                 ], 200);
@@ -79,10 +82,11 @@ class OperationController extends Controller
         ], 404);
     }
 
-    public function removeRoleFromUser(Request $request) {
+    public function removeRoleFromUser(Request $request)
+    {
         $token = $request->bearerToken();
         $decode = $this->jwt->validateToken($token);
-        if(!$decode) {
+        if (! $decode) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -90,8 +94,8 @@ class OperationController extends Controller
 
         $data = $request->only(['user_id']);
 
-        if($user) {
-            if(!User::is_super_admin($user) && !User::is_admin($user)) {
+        if ($user) {
+            if (! User::is_super_admin($user) && ! User::is_admin($user)) {
                 return response()->json([
                     'message' => 'Not authorized',
                 ], 401);
@@ -99,7 +103,7 @@ class OperationController extends Controller
 
             $assignment = $this->operations->removeRoleService($data);
 
-            if($assignment) {
+            if ($assignment) {
                 return response()->json([
                     'message' => 'Done',
                 ], 200);
@@ -111,10 +115,11 @@ class OperationController extends Controller
         ], 404);
     }
 
-    public function add_permession(Request $request) {
+    public function add_permession(Request $request)
+    {
         $token = $request->bearerToken();
         $decode = $this->jwt->validateToken($token);
-        if(!$decode) {
+        if (! $decode) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -122,32 +127,34 @@ class OperationController extends Controller
 
         $data = $request->only(['permession']);
 
-        if($user) {
-            if(!User::is_super_admin($user)) {
+        if ($user) {
+            if (! User::is_super_admin($user)) {
                 return response()->json([
                     'message' => 'Not authorized',
                 ], 401);
             }
             $done = $this->operations->addPermessionService($data);
-            if($done) {
+            if ($done) {
                 return response()->json([
                     'message' => 'The permession added successfuly',
                 ]);
             }
 
             return response()->json([
-                'message' => 'Something went wrong, Try again!'
+                'message' => 'Something went wrong, Try again!',
             ]);
         }
+
         return response()->json([
             'message' => 'Not authorized',
         ], 401);
     }
 
-    public function assign_permession_to_role(Request $request) {
+    public function assign_permession_to_role(Request $request)
+    {
         $token = $request->bearerToken();
         $decode = $this->jwt->validateToken($token);
-        if(!$decode) {
+        if (! $decode) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -155,8 +162,8 @@ class OperationController extends Controller
 
         $data = $request->only(['permession_id', 'role_id']);
 
-        if($user) {
-            if(!User::is_super_admin($user)) {
+        if ($user) {
+            if (! User::is_super_admin($user)) {
                 return response()->json([
                     'message' => 'Not authorized',
                 ], 401);
@@ -164,7 +171,7 @@ class OperationController extends Controller
 
             $assignment = $this->operations->assginPermToRoleService($data);
 
-            if($assignment) {
+            if ($assignment) {
                 return response()->json([
                     'message' => 'Done',
                 ], 200);
@@ -175,10 +182,12 @@ class OperationController extends Controller
             'message' => 'Somthig went wrong!',
         ], 404);
     }
-    public function remove_permession_from_role(Request $request) {
+
+    public function remove_permession_from_role(Request $request)
+    {
         $token = $request->bearerToken();
         $decode = $this->jwt->validateToken($token);
-        if(!$decode) {
+        if (! $decode) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -186,8 +195,8 @@ class OperationController extends Controller
 
         $data = $request->only(['permession_id', 'role_id']);
 
-        if($user) {
-            if(!User::is_super_admin($user)) {
+        if ($user) {
+            if (! User::is_super_admin($user)) {
                 return response()->json([
                     'message' => 'Not authorized',
                 ], 401);
@@ -195,7 +204,7 @@ class OperationController extends Controller
 
             $assignment = $this->operations->removePermToRoleService($data);
 
-            if($assignment) {
+            if ($assignment) {
                 return response()->json([
                     'message' => 'Done',
                 ], 200);
@@ -207,27 +216,31 @@ class OperationController extends Controller
         ], 404);
     }
 
-    public function getAllRoles() {
+    public function getAllRoles()
+    {
         $roles = $this->operations->getAllRolesService();
-        if(!empty($roles)) {
+        if (! empty($roles)) {
             return response()->json([
-                'roles' => $roles
+                'roles' => $roles,
             ]);
         }
+
         return response()->json([
-            'message' => 'Ther is no roles'
+            'message' => 'Ther is no roles',
         ]);
     }
 
-    public function getAllPermissions() {
+    public function getAllPermissions()
+    {
         $permissions = $this->operations->getAllPermissionsService();
-        if(!empty($permissions)) {
+        if (! empty($permissions)) {
             return response()->json([
-                'permissions' => $permissions
+                'permissions' => $permissions,
             ]);
         }
+
         return response()->json([
-            'message' => 'Ther is no permissions'
+            'message' => 'Ther is no permissions',
         ]);
     }
 }

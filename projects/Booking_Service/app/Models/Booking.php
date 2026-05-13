@@ -2,11 +2,8 @@
 
 namespace App\Models;
 
-<<<<<<< HEAD
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-=======
 use Carbon\Carbon;
->>>>>>> 82063b382a93696f7689a7115240f607da375cf6
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;

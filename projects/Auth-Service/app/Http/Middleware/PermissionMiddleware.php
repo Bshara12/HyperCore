@@ -11,15 +11,16 @@ class PermissionMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next, $permission): Response
     {
         $permissions = $request->auth_permissions;
 
-        if (!in_array($permission, $permissions)) {
+        if (! in_array($permission, $permissions)) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
+
         return $next($request);
     }
 }
