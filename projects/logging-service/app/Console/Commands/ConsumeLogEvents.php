@@ -2,22 +2,37 @@
 
 namespace App\Console\Commands;
 
-use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
 
 class ConsumeLogEvents extends Command
 {
   protected $signature = 'consume:logs';
+
   protected $description = 'Consume log events from RabbitMQ';
 
-  public function handle()
+  public function handle(): int
   {
+    /** @var string $rabbitmqHost */
+    $rabbitmqHost = config('rabbitmq.host');
+
+    /** @var string $rabbitmqPort */
+    $rabbitmqPort = config('rabbitmq.port');
+
+    /** @var string $rabbitmqUser */
+    $rabbitmqUser = config('rabbitmq.user');
+
+    /** @var string $rabbitmqPassword */
+    $rabbitmqPassword = config('rabbitmq.password');
+
+
     $connection = new AMQPStreamConnection(
-      env('RABBITMQ_HOST'),
-      env('RABBITMQ_PORT'),
-      env('RABBITMQ_USER'),
-      env('RABBITMQ_PASSWORD'),
+      $rabbitmqHost,
+      $rabbitmqPort,
+      $rabbitmqUser,
+      $rabbitmqPassword,
       '/',
       false,
       'AMQPLAIN',
@@ -32,7 +47,7 @@ class ConsumeLogEvents extends Command
 
     $channel = $connection->channel();
     $channel->queue_declare('logs_queue', false, true, false, false);
-    $channel->basic_qos(null, 1, null);
+    // $channel->basic_qos(null, 1, null);
     $channel->basic_qos(0, 1, false);
 
     $channel->basic_consume(
@@ -42,13 +57,20 @@ class ConsumeLogEvents extends Command
       false,
       false,
       false,
-      function ($msg) use ($channel) {
+      function (AMQPMessage $msg) use ($channel): void {
+        /** @var array<string, mixed>|null $data */
 
         $data = json_decode($msg->body, true);
 
-        if (!$data) {
+        if (! $data) {
           echo "Invalid message\n";
-          $msg->ack();
+          // ازا ما زبط شيل نوع المسج
+          // $msg->ack();
+
+          /** @var string $deliveryTag */
+          $deliveryTag = $msg->delivery_info['delivery_tag'];
+
+          $channel->basic_ack($deliveryTag);
           return;
         }
 
@@ -100,16 +122,24 @@ class ConsumeLogEvents extends Command
           }
         } catch (\Throwable $e) {
 
-          echo "Error processing message: " . $e->getMessage() . "\n";
+          echo 'Error processing message: ' . $e->getMessage() . "\n";
         }
 
-        $channel->basic_ack($msg->delivery_info['delivery_tag']);
+        // $channel->basic_ack($msg->delivery_info['delivery_tag']);
+
+        /** @var string $deliveryTag */
+        $deliveryTag = $msg->delivery_info['delivery_tag'];
+
+        $channel->basic_ack($deliveryTag);
       }
     );
 
     echo "Waiting for messages...\n";
 
-    while (true) {
+    // while (true) {
+    //   $channel->wait();
+    // }
+    for (;;) {
       $channel->wait();
     }
   }

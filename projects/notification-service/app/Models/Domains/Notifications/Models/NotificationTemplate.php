@@ -2,8 +2,8 @@
 
 namespace App\Models\Domains\Notifications\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
 
 class NotificationTemplate extends Model
 {
@@ -31,7 +31,8 @@ class NotificationTemplate extends Model
         'is_active' => 'boolean',
     ];
 
-    public function notifications() {
+    public function notifications()
+    {
         return $this->hasMany(Notification::class, 'template_id');
     }
 }

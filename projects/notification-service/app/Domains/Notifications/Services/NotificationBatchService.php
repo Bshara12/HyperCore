@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\DB;
 class NotificationBatchService
 {
     public function __construct(
-        private readonly NotificationPreferenceService $preferenceService
+        // private readonly NotificationPreferenceService $preferenceService
     ) {}
 
     public function create(NotificationActor $actor, array $payload): NotificationBatch
     {
-        $lockKey = 'notifications:batch:' . ($payload['dedupe_key'] ?? hash('sha256', json_encode($payload)));
+        $lockKey = 'notifications:batch:'.($payload['dedupe_key'] ?? hash('sha256', json_encode($payload)));
 
         return Cache::lock($lockKey, 30)->block(5, function () use ($actor, $payload) {
             return DB::transaction(function () use ($actor, $payload) {
@@ -84,7 +84,7 @@ class NotificationBatchService
                     'type' => $subscription->subscriber_type,
                     'id' => $subscription->subscriber_id,
                 ])
-                ->unique(fn ($item) => $item['type'] . ':' . $item['id'])
+                ->unique(fn ($item) => $item['type'].':'.$item['id'])
                 ->values()
                 ->all();
         }

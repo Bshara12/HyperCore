@@ -3,30 +3,35 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-
+use stdClass;
 class LogController extends Controller
 {
-  // public function index(Request $request)
-  // {
-  //     $query = DB::table('logs');
+    // public function index(Request $request)
+    // {
+    //     $query = DB::table('logs');
 
-  //     if ($request->module) {
-  //         $query->where('module', $request->module);
-  //     }
+    //     if ($request->module) {
+    //         $query->where('module', $request->module);
+    //     }
 
-  //     if ($request->user_id) {
-  //         $query->where('user_id', $request->user_id);
-  //     }
+    //     if ($request->user_id) {
+    //         $query->where('user_id', $request->user_id);
+    //     }
 
-  //     return $query
-  //         ->orderBy('occurred_at','desc')
-  //         ->limit(50)
-  //         ->get();
-  // }
+    //     return $query
+    //         ->orderBy('occurred_at','desc')
+    //         ->limit(50)
+    //         ->get();
+    // }
 
 
-  public function index(Request $request)
+  /**
+   * @return LengthAwarePaginator<int, object>
+   */
+  public function index(Request $request): LengthAwarePaginator
   {
     $query = DB::table('logs');
 
@@ -54,9 +59,10 @@ class LogController extends Controller
       ->orderBy('occurred_at', 'desc')
       ->paginate(10);
   }
-
-
-  public function auditLogs()
+/**
+ * @return Collection<int, stdClass>
+ */
+  public function auditLogs(): Collection
   {
     return DB::table('audit_logs')
       ->orderBy('occurred_at', 'desc')

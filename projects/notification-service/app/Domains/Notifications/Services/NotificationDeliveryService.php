@@ -6,7 +6,6 @@ use App\Domains\Notifications\Enums\DeliveryStatus;
 use App\Domains\Notifications\Enums\NotificationStatus;
 use App\Models\Domains\Notifications\Models\Notification;
 use App\Models\Domains\Notifications\Models\NotificationDelivery;
-use Illuminate\Support\Carbon;
 
 class NotificationDeliveryService
 {

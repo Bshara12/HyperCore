@@ -43,7 +43,6 @@ return new class extends Migration
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
 
-
             $table->timestamps();
 
             $table->index(['status', 'scheduled_at'], 'notification_batches_status_scheduled_idx');

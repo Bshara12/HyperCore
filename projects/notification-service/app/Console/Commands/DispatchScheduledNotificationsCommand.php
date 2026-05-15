@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class DispatchScheduledNotificationsCommand extends Command
 {
     protected $signature = 'notifications:dispatch-scheduled';
+
     protected $description = 'Dispatch all due scheduled notifications';
 
     public function handle(): int

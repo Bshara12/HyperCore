@@ -4,7 +4,6 @@ namespace App\Domains\Notifications\Services;
 
 use App\Models\Domains\Notifications\Models\NotificationDelivery;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class NotificationWebhookCallbackService
