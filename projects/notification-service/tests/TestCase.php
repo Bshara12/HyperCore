@@ -5,7 +5,6 @@ namespace Tests;
 use App\Services\Auth\AuthApiClient;
 use App\Services\CMS\CMSApiClient;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Mockery;
 
 abstract class TestCase extends BaseTestCase
 {

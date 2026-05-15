@@ -2,31 +2,25 @@
 
 namespace App\Exceptions;
 
-use App\Domains\Subscription\Enums\SubscriptionErrorCode;
-use Exception;
-
 class SubscriptionRequiredException
 extends SubscriptionException
 {
-  public function __construct(
-    private readonly ?string $requiredPlan = null
-  ) {
+    public function __construct(
+        private readonly array $requiredFeatures = []
+    ) {
 
-    parent::__construct(
-      'Subscription required.'
-    );
-  }
+        parent::__construct(
+            'Subscription required.'
+        );
+    }
 
-  public function context(): array
-  {
-    return [
+    public function context(): array
+    {
+        return [
 
-      // 'code' => 'SUBSCRIPTION_REQUIRED',
-      'code' => SubscriptionErrorCode
-      ::SUBSCRIPTION_REQUIRED
-        ->value,
+            'code' => 'SUBSCRIPTION_REQUIRED',
 
-      'required_plan' => $this->requiredPlan,
-    ];
-  }
+            'required_features' => $this->requiredFeatures,
+        ];
+    }
 }

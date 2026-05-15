@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 class PruneNotificationFailedJobsCommand extends Command
 {
     protected $signature = 'notifications:prune-failed {--days=14}';
+
     protected $description = 'Prune failed queue jobs using the configured queue failer';
 
     public function handle(): int
@@ -16,10 +17,11 @@ class PruneNotificationFailedJobsCommand extends Command
 
         $failer = app('queue.failer');
 
-        if (! method_exists($failer, 'prune')) {
-            $this->warn('Configured failed-job provider does not expose prune().');
-            return self::SUCCESS;
-        }
+        // if (! method_exists($failer, 'prune')) {
+        //     $this->warn('Configured failed-job provider does not expose prune().');
+
+        //     return self::SUCCESS;
+        // }
 
         $deleted = $failer->prune($before);
 

@@ -17,15 +17,14 @@ class DispatchWebhookNotificationJob implements ShouldQueue
     use HasNotificationJobMiddleware;
 
     public int $tries = 3;
+
     public int $timeout = 30;
 
-    public function __construct(public string $deliveryId)
-    {
-    }
+    public function __construct(public string $deliveryId) {}
 
     protected function overlapKey(): string
     {
-        return 'webhook:' . $this->deliveryId;
+        return 'webhook:'.$this->deliveryId;
     }
 
     public function handle(WebhookChannelDriver $driver): void
