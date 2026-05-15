@@ -18,7 +18,7 @@ class GetCartAction
         protected CMSApiClient $cms
     ) {}
 
-    public function execute(int $project_id, int $user_id): array
+    public function execute(int $project_id, int $user_id): ?array
     {
         return Cache::remember(
             CacheKeys::cart($user_id, $project_id),
