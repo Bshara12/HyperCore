@@ -144,6 +144,13 @@ class KeyboardLayoutFixer
     }
 
     if ($analysis['dominantType'] === 'english') {
+
+
+      // English طبيعي → لا تحوله لعربي
+      if ($this->calculateVowelRatio($query) >= 0.20) {
+        return $this->buildResult($query, null, 0.0, null);
+      }
+
       $vowelRatio = $this->calculateVowelRatio($query);
 
       // ✅ FIX #2: إعادة الـ guard الذي كان محذوفاً

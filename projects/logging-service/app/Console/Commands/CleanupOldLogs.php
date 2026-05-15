@@ -12,23 +12,23 @@ class CleanupOldLogs extends Command
    *
    * @var string
    */
-  // protected $signature = 'app:cleanup-old-logs';
+    // protected $signature = 'app:cleanup-old-logs';
 
   /**
    * The console command description.
    *
    * @var string
    */
-  // protected $description = 'Command description';
+    // protected $description = 'Command description';
 
   /**
    * Execute the console command.
    */
-
   protected $signature = 'logs:cleanup';
+
   protected $description = 'Delete old logs';
 
-  public function handle()
+  public function handle(): int
   {
     $deleted = DB::table('logs')
       ->where('occurred_at', '<', now()->subDays(90))
@@ -40,5 +40,6 @@ class CleanupOldLogs extends Command
 
     $this->info("Deleted $deleted logs");
     $this->info("Deleted $auditDeleted audit logs");
+    return self::SUCCESS;
   }
 }

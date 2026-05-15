@@ -42,7 +42,7 @@ class RetryFailedNotificationDeliveryJobTest extends TestCase
             'payload_snapshot' => [],
         ]);
 
-        $job = new RetryFailedNotificationDeliveryJob();
+        $job = new RetryFailedNotificationDeliveryJob;
         $job->handle();
 
         Bus::assertDispatched(DispatchNotificationDeliveryJob::class, function ($queuedJob) use ($delivery) {

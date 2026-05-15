@@ -29,7 +29,7 @@ class AuthApiClient
                 ?? substr($response->body(), 0, 200);
 
             throw new \Exception(
-                'Failed to fetch user from auth service: ' . $error
+                'Failed to fetch user from auth service: '.$error
             );
         }
 
@@ -64,7 +64,7 @@ class AuthApiClient
                 ?? substr($response->body(), 0, 200);
 
             throw new \Exception(
-                'Failed to fetch user from auth service: ' . $error
+                'Failed to fetch user from auth service: '.$error
             );
         }
 

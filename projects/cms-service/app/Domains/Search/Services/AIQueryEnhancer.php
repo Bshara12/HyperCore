@@ -2,6 +2,7 @@
 
 namespace App\Domains\Search\Services;
 
+use App\Domains\Search\Support\QueryLanguageDetector;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -129,7 +130,7 @@ class AIQueryEnhancer
         }
 
         // Gibberish: ترفض فوراً بدون API call
-        if ($this->isGibberish($query)) {
+        if (QueryLanguageDetector::isGibberish($query)) {
             Log::debug('AIQueryEnhancer: gibberish detected', ['query' => $query]);
             $result = $this->emptyResult($query, 0.04, 'gibberish');
             Cache::put($cacheKey, $result, self::CACHE_TTL);
@@ -137,7 +138,7 @@ class AIQueryEnhancer
         }
 
         // Arabic: معالجة محلية بدون API
-        if ($this->isArabic($query)) {
+        if (QueryLanguageDetector::isArabic($query)) {
             Log::debug('AIQueryEnhancer: arabic detected, using local processing', ['query' => $query]);
             $result = $this->processArabicLocally($query);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
@@ -460,32 +461,7 @@ PROMPT;
 
     // ─────────────────────────────────────────────────────────────────
     // Public Helpers (مستخدمة من SearchEntriesAction)
-    // ─────────────────────────────────────────────────────────────────
-
-    public function isGibberish(string $text): bool
-    {
-        $text = mb_strtolower(trim($text), 'UTF-8');
-
-        if (empty($text) || mb_strlen($text, 'UTF-8') < 4) return false;
-        if ($this->isArabic($text)) return false;
-
-        $letters = preg_replace('/[^a-z]/i', '', $text);
-        $len     = strlen($letters);
-        if ($len < 4) return false;
-
-        $vowels = preg_replace('/[^aeiou]/i', '', $letters);
-        if (strlen($vowels) / $len < 0.08) return true;
-        if (preg_match('/[^aeiou\s]{6,}/i', $letters)) return true;
-
-        return false;
-    }
-
-    public function isArabic(string $text): bool
-    {
-        $arabicChars = preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
-        $totalChars  = mb_strlen(preg_replace('/\s+/', '', $text), 'UTF-8');
-        return $totalChars > 0 && ($arabicChars / $totalChars) > 0.25;
-    }
+    // ───────────────────────────────────────────────────────────────
 
     // ─────────────────────────────────────────────────────────────────
     // Private Helpers
