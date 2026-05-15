@@ -4,7 +4,6 @@ namespace App\Domains\Payment\Services;
 
 use App\Domains\Payment\DTOs\PayInstallmentDTO;
 use App\Domains\Payment\DTOs\PaymentDTO;
-use App\Domains\Payment\DTOs\RefundDTO;
 use App\Services\CMS\CMSApiClient;
 
 class PaymentService
@@ -23,12 +22,5 @@ class PaymentService
     public function payInstallment(PayInstallmentDTO $dto): array
     {
         return $this->cms->payInstallment($dto);
-    }
-
-    // ─── Process Refund ───────────────────────────────────────────────────────
-
-    public function processRefund(RefundDTO $dto)
-    {
-        // return $this->refundAction->execute($dto);
     }
 }

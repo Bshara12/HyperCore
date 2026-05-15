@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Domains\Payment\Actions\RefundPaymentAction;
 use App\Domains\Payment\DTOs\PayInstallmentDTO;
 use App\Domains\Payment\DTOs\PaymentDTO;
-use App\Domains\Payment\DTOs\RefundDTO;
 use App\Domains\Payment\Requests\PayInstallmentRequest;
 use App\Domains\Payment\Requests\ProcessPaymentRequest;
-use App\Domains\Payment\Requests\RefundRequest;
 use App\Domains\Payment\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 
@@ -64,27 +61,4 @@ class PaymentController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
-
-    // ─── POST /payments/{payment}/refund ──────────────────────────────────────
-
-    // public function refund(
-    //     RefundRequest $request
-    // ): JsonResponse {
-    //     $dto = RefundDTO::fromArray($request->validated());
-    //     $result = $this->refundPaymentAction->execute($dto);
-
-    //     if (! $result['success']) {
-    //         return response()->json([
-    //             'message' => 'Refund failed. Please try again.',
-    //             'status' => $result['status'],
-    //         ], 422);
-    //     }
-
-    //     return response()->json([
-    //         'message' => 'Refund processed successfully.',
-    //         'payment_id' => $result['payment']->id,
-    //         'refund_id' => $result['refund_id'],
-    //         'status' => $result['status'],
-    //     ]);
-    // }
 }

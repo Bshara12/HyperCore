@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\CMS\Services;
+namespace App\Domains\Core\Services;
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;

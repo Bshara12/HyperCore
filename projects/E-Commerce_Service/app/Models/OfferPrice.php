@@ -20,6 +20,6 @@ class OfferPrice extends Model
 
   public function offer()
   {
-    return $this->belongsTo(Offer::class, 'applied_offer_id');
+    return $this->belongsTo(Offer::class, 'applied_offer_id', 'id');
   }
 }
