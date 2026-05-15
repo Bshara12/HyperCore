@@ -15,7 +15,7 @@ class NotificationSubscriptionService
             ->when($actor->projectId, fn ($q) => $q->where('project_id', $actor->projectId))
             ->when($actor->isUser(), function ($q) use ($actor) {
                 $q->where('subscriber_type', 'user')
-                  ->where('subscriber_id', $actor->id);
+                    ->where('subscriber_id', $actor->id);
             })
             ->when($actor->isService(), function ($q) {
                 // service can inspect whole project scope

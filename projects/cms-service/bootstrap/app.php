@@ -48,6 +48,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ], 403);
       }
     );
+
+    $exceptions->render(
+      function (
+        \App\Exceptions\ContentEntryNotFoundException $e,
+        \Illuminate\Http\Request $request
+      ) {
+        return response()->json([
+          'message' => $e->getMessage(),
+        ], 422);
+      }
+    );
   })->withCommands([
     \App\Console\Commands\SearchReindexCommand::class,
   ])

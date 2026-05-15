@@ -4,7 +4,6 @@ namespace App\Domains\Notifications\Services;
 
 use App\Domains\Notifications\DTOs\NotificationActor;
 use App\Domains\Notifications\Enums\NotificationStatus;
-use App\Domains\Notifications\ReadModels\NotificationReadModel;
 use App\Models\Domains\Notifications\Models\Notification;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;

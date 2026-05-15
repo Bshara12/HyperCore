@@ -10,13 +10,14 @@ use Illuminate\Console\Command;
 class PruneNotificationDataCommand extends Command
 {
     protected $signature = 'notifications:prune';
+
     protected $description = 'Prune old notification data';
 
     public function handle(): int
     {
-        $notifications = (new Notification())->pruneAll();
-        $deliveries = (new NotificationDelivery())->pruneAll();
-        $batches = (new NotificationBatch())->pruneAll();
+        $notifications = (new Notification)->pruneAll();
+        $deliveries = (new NotificationDelivery)->pruneAll();
+        $batches = (new NotificationBatch)->pruneAll();
 
         $this->info("Pruned notifications: {$notifications}");
         $this->info("Pruned deliveries: {$deliveries}");

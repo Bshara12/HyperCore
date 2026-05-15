@@ -25,7 +25,7 @@ class CMSApiClient
             $error = $response->json('message')
                 ?? substr($response->body(), 0, 200);
 
-            throw new \Exception('Failed to resolve project in CMS: ' . $error);
+            throw new \Exception('Failed to resolve project in CMS: '.$error);
         }
 
         return $response->json('original')

@@ -10,8 +10,6 @@ use App\Models\Domains\Notifications\Models\Notification;
 use App\Models\Domains\Notifications\Models\NotificationDelivery;
 use App\Models\Domains\Notifications\Models\NotificationTemplate;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Throwable;
 
 class NotificationService
 {
@@ -109,8 +107,8 @@ class NotificationService
         $body = $template->body_template;
 
         foreach ($variables as $key => $value) {
-            $subject = $subject ? str_replace('{{' . $key . '}}', (string) $value, $subject) : null;
-            $body = str_replace('{{' . $key . '}}', (string) $value, $body);
+            $subject = $subject ? str_replace('{{'.$key.'}}', (string) $value, $subject) : null;
+            $body = str_replace('{{'.$key.'}}', (string) $value, $body);
         }
 
         return [

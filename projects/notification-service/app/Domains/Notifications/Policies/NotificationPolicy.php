@@ -22,8 +22,8 @@ class NotificationPolicy
     public function createSystem(NotificationActor $actor): bool
     {
         return $actor->isService();
-            // && ($actor->hasPermission('notifications.system.create')
-                // || $actor->hasPermission('notifications.manage'));
+        // && ($actor->hasPermission('notifications.system.create')
+        // || $actor->hasPermission('notifications.manage'));
     }
 
     public function viewAny(NotificationActor $actor, ?string $projectId = null): bool
@@ -46,7 +46,7 @@ class NotificationPolicy
         return $actor->isUser()
             && (string) $notification->recipient_type === 'user'
             && (string) $notification->recipient_id === (string) $actor->id;
-            // && (string) $notification->project_id === (string) $actor->projectId;
+        // && (string) $notification->project_id === (string) $actor->projectId;
     }
 
     public function markAsRead(NotificationActor $actor, Notification $notification): bool

@@ -4,11 +4,12 @@ namespace App\Domains\Notifications\Services;
 
 use App\Domains\Notifications\DTOs\NotificationActor;
 use App\Models\Domains\Notifications\Models\NotificationPreference;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class NotificationPreferenceService
 {
-    public function listForActor(NotificationActor $actor): \Illuminate\Database\Eloquent\Collection
+    public function listForActor(NotificationActor $actor): Collection
     {
         return NotificationPreference::query()
             ->where('recipient_type', 'user')
@@ -19,7 +20,7 @@ class NotificationPreferenceService
             ->get();
     }
 
-    public function upsertForActor(NotificationActor $actor, array $preferences): \Illuminate\Database\Eloquent\Collection
+    public function upsertForActor(NotificationActor $actor, array $preferences): Collection
     {
         return DB::transaction(function () use ($actor, $preferences) {
             foreach ($preferences as $item) {
@@ -54,7 +55,7 @@ class NotificationPreferenceService
             ->when($actor->projectId, fn ($q) => $q->where('project_id', $actor->projectId))
             ->where(function ($q) use ($topicKey) {
                 $q->where('topic_key', $topicKey)
-                ->orWhereNull('topic_key');
+                    ->orWhereNull('topic_key');
             })
             ->where('channel', $channel)
             ->latest()

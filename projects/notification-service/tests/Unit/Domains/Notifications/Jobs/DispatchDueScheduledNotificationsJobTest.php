@@ -42,7 +42,7 @@ class DispatchDueScheduledNotificationsJobTest extends TestCase
             'payload_snapshot' => [],
         ]);
 
-        $job = new DispatchDueScheduledNotificationsJob();
+        $job = new DispatchDueScheduledNotificationsJob;
         $job->handle();
 
         $this->assertSame(NotificationStatus::Queued->value, $notification->fresh()->status->value);

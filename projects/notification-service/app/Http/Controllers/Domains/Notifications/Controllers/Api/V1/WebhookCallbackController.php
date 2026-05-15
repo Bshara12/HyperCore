@@ -6,7 +6,6 @@ use App\Domains\Notifications\Resources\NotificationDeliveryResource;
 use App\Domains\Notifications\Services\NotificationWebhookCallbackService;
 use App\Http\Requests\Domains\Notifications\Requests\WebhookDeliveryCallbackRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class WebhookCallbackController extends Controller

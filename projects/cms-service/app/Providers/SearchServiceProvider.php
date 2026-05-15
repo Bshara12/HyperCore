@@ -14,7 +14,7 @@ use App\Domains\Search\Repositories\Interfaces\SearchRepositoryInterface;
 use App\Domains\Search\Repositories\Interfaces\SuggestionRepositoryInterface;
 use App\Domains\Search\Repositories\Interfaces\SynonymSuggestionRepositoryInterface;
 use App\Domains\Search\Repositories\Interfaces\UserBehaviorRepositoryInterface;
-use App\Domains\Search\Services\AIQueryEnhancer;
+use App\Domains\Search\Services\AIQueryInterpreter;
 use App\Domains\Search\Services\KeyboardLayoutFixer;
 use App\Domains\Search\Services\SearchCacheService;
 use App\Domains\Search\Support\EntityExtractor;
@@ -72,7 +72,7 @@ class SearchServiceProvider extends ServiceProvider
                 $app->make(SynonymExpander::class),  // ← إضافة
             )
         );
-        $this->app->singleton(AIQueryEnhancer::class);
+        $this->app->singleton(AIQueryInterpreter::class);
         $this->app->singleton(KeyboardLayoutFixer::class);
         $this->app->singleton(SearchCacheService::class);
         $this->app->singleton(EntityExtractor::class);

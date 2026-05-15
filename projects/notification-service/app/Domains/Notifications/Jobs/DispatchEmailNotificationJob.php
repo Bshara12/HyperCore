@@ -17,15 +17,14 @@ class DispatchEmailNotificationJob implements ShouldQueue
     use HasNotificationJobMiddleware;
 
     public int $tries = 3;
+
     public int $timeout = 30;
 
-    public function __construct(public string $deliveryId)
-    {
-    }
+    public function __construct(public string $deliveryId) {}
 
     protected function overlapKey(): string
     {
-        return 'email:' . $this->deliveryId;
+        return 'email:'.$this->deliveryId;
     }
 
     public function handle(EmailChannelDriver $driver): void

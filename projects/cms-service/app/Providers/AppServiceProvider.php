@@ -40,6 +40,8 @@ use App\Domains\CMS\Repositories\Interface\RatingRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\SeoEntryRepository;
 use App\Domains\Payment\Repositories\EloquentPaymentRepository;
 use App\Domains\Payment\Repositories\PaymentRepositoryInterface;
+use App\Domains\Subscription\Repositories\Interface\ContentTypeResolverInterface;
+use App\Domains\Subscription\Repositories\Eloquent\DataEntryContentTypeResolver;
 use App\Domains\Subscription\Repositories\Eloquent\EloquentSubscriptionAccessRuleRepository;
 use App\Domains\Subscription\Repositories\Eloquent\EloquentSubscriptionFeatureRuleRepository;
 use App\Domains\Subscription\Repositories\Eloquent\EloquentSubscriptionPlanRepository;
@@ -148,6 +150,10 @@ class AppServiceProvider extends ServiceProvider
     $this->app->bind(
       \App\Domains\Subscription\Repositories\Interface\ContentAccessMetadataRepositoryInterface::class,
       \App\Domains\Subscription\Repositories\Eloquent\EloquentContentAccessMetadataRepository::class
+    );
+    $this->app->bind(
+      ContentTypeResolverInterface::class,
+      DataEntryContentTypeResolver::class
     );
   }
 
