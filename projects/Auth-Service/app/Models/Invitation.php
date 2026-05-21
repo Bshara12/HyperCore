@@ -17,4 +17,10 @@ class Invitation extends Model
         'locked_until',
         'is_verified',
     ];
+
+    protected $casts = [
+    'otp_expires_at' => 'datetime',
+    'locked_until'   => 'datetime',
+    'is_verified'    => 'boolean', // هذا السطر سيحل مشكلة الـ 1 و true
+];
 }
