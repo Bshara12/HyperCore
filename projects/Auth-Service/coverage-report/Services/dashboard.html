@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /var/www/app/Services</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../_css/bootstrap.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../_css/nv.d3.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../_css/style.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../index.html">/var/www/app</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Services</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="AuthService.php.html#14">App\Services\AuthService</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="JwtService.php.html#11">App\Services\JwtService</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OTPService.php.html#7">App\Services\OTPService</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#7">App\Services\OperationServices</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ProjectServices.php.html#10">App\Services\ProjectServices</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RabbitMQPublisher.php.html#8">App\Services\RabbitMQPublisher</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SessionService.php.html#8">App\Services\SessionService</a></td><td class="text-right">0%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="AuthService.php.html#14">App\Services\AuthService</a></td><td class="text-right">462</td></tr>
+       <tr><td><a href="JwtService.php.html#11">App\Services\JwtService</a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="ProjectServices.php.html#10">App\Services\ProjectServices</a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="SessionService.php.html#8">App\Services\SessionService</a></td><td class="text-right">72</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="AuthService.php.html#20"><abbr title="App\Services\AuthService::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#26"><abbr title="App\Services\AuthService::registerService">registerService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#46"><abbr title="App\Services\AuthService::generateOTP">generateOTP</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#61"><abbr title="App\Services\AuthService::verifyOTP">verifyOTP</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#82"><abbr title="App\Services\AuthService::log">log</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#92"><abbr title="App\Services\AuthService::attemptLogin">attemptLogin</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#129"><abbr title="App\Services\AuthService::logoutService">logoutService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#146"><abbr title="App\Services\AuthService::changePassword">changePassword</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AuthService.php.html#158"><abbr title="App\Services\AuthService::getUsersByIds">getUsersByIds</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="JwtService.php.html#23"><abbr title="App\Services\JwtService::returnInfo">returnInfo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="JwtService.php.html#33"><abbr title="App\Services\JwtService::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="JwtService.php.html#72"><abbr title="App\Services\JwtService::generateToken">generateToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="JwtService.php.html#112"><abbr title="App\Services\JwtService::validateToken">validateToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="JwtService.php.html#133"><abbr title="App\Services\JwtService::generateRefreshToken">generateRefreshToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="JwtService.php.html#164"><abbr title="App\Services\JwtService::generateProjectToken">generateProjectToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OTPService.php.html#9"><abbr title="App\Services\OTPService::generate">generate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OTPService.php.html#17"><abbr title="App\Services\OTPService::verify">verify</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#11"><abbr title="App\Services\OperationServices::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#16"><abbr title="App\Services\OperationServices::getUsersService">getUsersService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#21"><abbr title="App\Services\OperationServices::assginRoleService">assginRoleService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#26"><abbr title="App\Services\OperationServices::removeRoleService">removeRoleService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#31"><abbr title="App\Services\OperationServices::addPermessionService">addPermessionService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#36"><abbr title="App\Services\OperationServices::assginPermToRoleService">assginPermToRoleService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#41"><abbr title="App\Services\OperationServices::removePermToRoleService">removePermToRoleService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#46"><abbr title="App\Services\OperationServices::getAllRolesService">getAllRolesService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="OperationServices.php.html#51"><abbr title="App\Services\OperationServices::getAllPermissionsService">getAllPermissionsService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ProjectServices.php.html#14"><abbr title="App\Services\ProjectServices::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ProjectServices.php.html#19"><abbr title="App\Services\ProjectServices::createProjectService">createProjectService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ProjectServices.php.html#26"><abbr title="App\Services\ProjectServices::creteInvitationService">creteInvitationService</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ProjectServices.php.html#34"><abbr title="App\Services\ProjectServices::generateInvitationOTP">generateInvitationOTP</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ProjectServices.php.html#47"><abbr title="App\Services\ProjectServices::verifyOTP">verifyOTP</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RabbitMQPublisher.php.html#10"><abbr title="App\Services\RabbitMQPublisher::publish">publish</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SessionService.php.html#15"><abbr title="App\Services\SessionService::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SessionService.php.html#45"><abbr title="App\Services\SessionService::detectDevice">detectDevice</abbr></a></td><td class="text-right">0%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="SessionService.php.html#45"><abbr title="App\Services\SessionService::detectDevice">detectDevice</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="AuthService.php.html#92"><abbr title="App\Services\AuthService::attemptLogin">attemptLogin</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="AuthService.php.html#61"><abbr title="App\Services\AuthService::verifyOTP">verifyOTP</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="JwtService.php.html#33"><abbr title="App\Services\JwtService::__construct">__construct</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="ProjectServices.php.html#47"><abbr title="App\Services\ProjectServices::verifyOTP">verifyOTP</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="AuthService.php.html#129"><abbr title="App\Services\AuthService::logoutService">logoutService</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="AuthService.php.html#146"><abbr title="App\Services\AuthService::changePassword">changePassword</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="JwtService.php.html#112"><abbr title="App\Services\JwtService::validateToken">validateToken</abbr></a></td><td class="text-right">6</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.12</a> using <a href="https://www.php.net/" target="_top">PHP 8.2.30</a> and <a href="https://phpunit.de/">PHPUnit 11.5.50</a> at Fri May 15 13:04:13 UTC 2026.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../_js/jquery.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../_js/d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../_js/nv.d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([7,0,0,0,0,0,0,0,0,0,0,0], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([34,0,0,0,0,0,0,0,0,0,0,0], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[0,21,"<a href=\"AuthService.php.html#14\">App\\Services\\AuthService<\/a>"],[0,11,"<a href=\"JwtService.php.html#11\">App\\Services\\JwtService<\/a>"],[0,2,"<a href=\"OTPService.php.html#7\">App\\Services\\OTPService<\/a>"],[0,9,"<a href=\"OperationServices.php.html#7\">App\\Services\\OperationServices<\/a>"],[0,9,"<a href=\"ProjectServices.php.html#10\">App\\Services\\ProjectServices<\/a>"],[0,1,"<a href=\"RabbitMQPublisher.php.html#8\">App\\Services\\RabbitMQPublisher<\/a>"],[0,8,"<a href=\"SessionService.php.html#8\">App\\Services\\SessionService<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[0,1,"<a href=\"AuthService.php.html#20\">App\\Services\\AuthService::__construct<\/a>"],[0,1,"<a href=\"AuthService.php.html#26\">App\\Services\\AuthService::registerService<\/a>"],[0,1,"<a href=\"AuthService.php.html#46\">App\\Services\\AuthService::generateOTP<\/a>"],[0,5,"<a href=\"AuthService.php.html#61\">App\\Services\\AuthService::verifyOTP<\/a>"],[0,1,"<a href=\"AuthService.php.html#82\">App\\Services\\AuthService::log<\/a>"],[0,6,"<a href=\"AuthService.php.html#92\">App\\Services\\AuthService::attemptLogin<\/a>"],[0,3,"<a href=\"AuthService.php.html#129\">App\\Services\\AuthService::logoutService<\/a>"],[0,2,"<a href=\"AuthService.php.html#146\">App\\Services\\AuthService::changePassword<\/a>"],[0,1,"<a href=\"AuthService.php.html#158\">App\\Services\\AuthService::getUsersByIds<\/a>"],[0,1,"<a href=\"JwtService.php.html#23\">App\\Services\\JwtService::returnInfo<\/a>"],[0,5,"<a href=\"JwtService.php.html#33\">App\\Services\\JwtService::__construct<\/a>"],[0,1,"<a href=\"JwtService.php.html#72\">App\\Services\\JwtService::generateToken<\/a>"],[0,2,"<a href=\"JwtService.php.html#112\">App\\Services\\JwtService::validateToken<\/a>"],[0,1,"<a href=\"JwtService.php.html#133\">App\\Services\\JwtService::generateRefreshToken<\/a>"],[0,1,"<a href=\"JwtService.php.html#164\">App\\Services\\JwtService::generateProjectToken<\/a>"],[0,1,"<a href=\"OTPService.php.html#9\">App\\Services\\OTPService::generate<\/a>"],[0,1,"<a href=\"OTPService.php.html#17\">App\\Services\\OTPService::verify<\/a>"],[0,1,"<a href=\"OperationServices.php.html#11\">App\\Services\\OperationServices::__construct<\/a>"],[0,1,"<a href=\"OperationServices.php.html#16\">App\\Services\\OperationServices::getUsersService<\/a>"],[0,1,"<a href=\"OperationServices.php.html#21\">App\\Services\\OperationServices::assginRoleService<\/a>"],[0,1,"<a href=\"OperationServices.php.html#26\">App\\Services\\OperationServices::removeRoleService<\/a>"],[0,1,"<a href=\"OperationServices.php.html#31\">App\\Services\\OperationServices::addPermessionService<\/a>"],[0,1,"<a href=\"OperationServices.php.html#36\">App\\Services\\OperationServices::assginPermToRoleService<\/a>"],[0,1,"<a href=\"OperationServices.php.html#41\">App\\Services\\OperationServices::removePermToRoleService<\/a>"],[0,1,"<a href=\"OperationServices.php.html#46\">App\\Services\\OperationServices::getAllRolesService<\/a>"],[0,1,"<a href=\"OperationServices.php.html#51\">App\\Services\\OperationServices::getAllPermissionsService<\/a>"],[0,1,"<a href=\"ProjectServices.php.html#14\">App\\Services\\ProjectServices::__construct<\/a>"],[0,1,"<a href=\"ProjectServices.php.html#19\">App\\Services\\ProjectServices::createProjectService<\/a>"],[0,1,"<a href=\"ProjectServices.php.html#26\">App\\Services\\ProjectServices::creteInvitationService<\/a>"],[0,1,"<a href=\"ProjectServices.php.html#34\">App\\Services\\ProjectServices::generateInvitationOTP<\/a>"],[0,5,"<a href=\"ProjectServices.php.html#47\">App\\Services\\ProjectServices::verifyOTP<\/a>"],[0,1,"<a href=\"RabbitMQPublisher.php.html#10\">App\\Services\\RabbitMQPublisher::publish<\/a>"],[0,1,"<a href=\"SessionService.php.html#15\">App\\Services\\SessionService::create<\/a>"],[0,7,"<a href=\"SessionService.php.html#45\">App\\Services\\SessionService::detectDevice<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>
