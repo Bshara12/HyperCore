@@ -6,19 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-  public function up(): void
-  {
-    Schema::create('wallets', function (Blueprint $table) {
-      $table->id();
-      $table->unsignedBigInteger('user_id')->unique()->index();
-      $table->string('wallet_number', 10)->unique()->index();
-      $table->decimal('balance', 12, 2)->default(0);
-      $table->timestamps();
-    });
-  }
+    public function up(): void
+    {
+        Schema::create('wallets', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->unique()->index();
+            $table->string('wallet_number', 10)->unique()->index();
+            $table->decimal('balance', 12, 2)->default(0);
+            $table->timestamps();
+        });
+    }
 
-  public function down(): void
-  {
-    Schema::dropIfExists('wallets');
-  }
+    public function down(): void
+    {
+        Schema::dropIfExists('wallets');
+    }
 };

@@ -5,8 +5,8 @@ namespace App\Domains\CMS\Actions\DataCollection;
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
-use Illuminate\Support\Facades\Cache;
 use App\Events\SystemLogEvent;
+use Illuminate\Support\Facades\Cache;
 
 class DeleteDataCollectionItemsAction extends Action
 {
@@ -28,15 +28,14 @@ class DeleteDataCollectionItemsAction extends Action
       entityType: 'collection',
       entityId: $collectionId
     ));
+
     return $this->run(function () use ($collectionId) {
 
-      $result = $this->repository->deleteItems($collectionId);
+      $this->repository->deleteItems($collectionId);
 
       Cache::forget(CacheKeys::collectionItems($collectionId));
       Cache::forget(CacheKeys::collectionEntries($collectionId));
       Cache::forget(CacheKeys::collectionById($collectionId));
-
-      return $result;
     });
   }
 }

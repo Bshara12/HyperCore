@@ -9,25 +9,26 @@ use App\Domains\CMS\Read\DTOs\DataType\ShowDataTypeDTOProperities;
 
 class DataTypeReadService
 {
-  public function __construct(
-    private ShowDataTypeAction $showAction,
-    private IndexDataTypeAction $indexAction,
-    private IndexTrashedDataType $indexTrashedAction
-  ) {}
+    public function __construct(
+        private ShowDataTypeAction $showAction,
+        private IndexDataTypeAction $indexAction,
+        private IndexTrashedDataType $indexTrashedAction
+    ) {}
 
-  public function findBySlug(ShowDataTypeDTOProperities $dto)
-  {
-    return $this->showAction->execute($dto);
-  }
+    public function findBySlug(ShowDataTypeDTOProperities $dto)
+    {
+        return $this->showAction->execute($dto);
+    }
 
-  public function list()
-  {
-    $project_id = app('currentProject')->id;
-    return $this->indexAction->execute($project_id);
-  }
+    public function list()
+    {
+        $project_id = app('currentProject')->id;
 
-  public function trashed(int $projectId)
-  {
-    return $this->indexTrashedAction->execute($projectId);
-  }
+        return $this->indexAction->execute($project_id);
+    }
+
+    public function trashed(int $projectId)
+    {
+        return $this->indexTrashedAction->execute($projectId);
+    }
 }

@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Cache;
 
 class GetAdminOverviewAction
 {
-  public function __construct(
-    private AnalyticsRepositoryInterface $repository
-  ) {}
+    public function __construct(
+        private AnalyticsRepositoryInterface $repository
+    ) {}
 
-  public function execute(AdminOverviewDTO $dto): array
-  {
-    return Cache::remember(
-      "analytics:admin:overview:{$dto->from}:{$dto->to}",
-      CacheKeys::TTL_SHORT,
-      fn() => $this->repository->getAdminOverview($dto->from, $dto->to)
-    );
-  }
+    public function execute(AdminOverviewDTO $dto): array
+    {
+        return Cache::remember(
+            "analytics:admin:overview:{$dto->from}:{$dto->to}",
+            CacheKeys::TTL_SHORT,
+            fn () => $this->repository->getAdminOverview($dto->from, $dto->to)
+        );
+    }
 }

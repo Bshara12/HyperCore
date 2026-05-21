@@ -4,30 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SubscriptionAccessRule
-extends Model
+class SubscriptionAccessRule extends Model
 {
-  protected $fillable = [
+    protected $fillable = [
 
-    'project_id',
+        'project_id',
 
-    'event_key',
+        'event_key',
 
-    'requires_subscription',
+        'requires_subscription',
 
-    'required_feature',
+        'required_feature',
 
-    'is_active',
+        'is_active',
 
-    'metadata'
-  ];
+        'metadata',
+    ];
 
-  protected $casts = [
+    protected $casts = [
 
-    'requires_subscription' => 'boolean',
+        'requires_subscription' => 'boolean',
 
-    'is_active' => 'boolean',
+        'is_active' => 'boolean',
 
-    'metadata' => 'array'
-  ];
+        'metadata' => 'array',
+    ];
 }

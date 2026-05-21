@@ -22,17 +22,17 @@ class PayInstallmentAction
 
       $payment = $this->repository->findPayment($dto->paymentId);
 
-      throw_if(! $payment,               \Exception::class, 'Payment not found.');
+      throw_if(! $payment, \Exception::class, 'Payment not found.');
       throw_if(! $payment->isInstallment(), \Exception::class, 'This payment is not an installment plan.');
-
+      /** @var \App\Models\InstallmentPlan|null $plan */
       $plan = $payment->installmentPlan;
 
-      throw_if(! $plan,                          \Exception::class, 'Installment plan not found.');
-      throw_if($plan->isCompleted(),              \Exception::class, 'All installments have been paid.');
-      throw_if($plan->status === 'defaulted',     \Exception::class, 'This installment plan is defaulted.');
+      throw_if(! $plan, \Exception::class, 'Installment plan not found.');
+      throw_if($plan->isCompleted(), \Exception::class, 'All installments have been paid.');
+      throw_if($plan->status === 'defaulted', \Exception::class, 'This installment plan is defaulted.');
 
       $installmentNumber = $plan->nextInstallmentNumber();
-      $amount            = $plan->installment_amount;
+      $amount = $plan->installment_amount;
 
       // ─── دفع عبر المحفظة ──────────────────────────────────────────
       if ($dto->gateway === 'wallet') {
@@ -87,13 +87,13 @@ class PayInstallmentAction
     }
 
     return [
-      'success'            => $result['success'],
-      'payment_id'         => $payment->id,
-      'transaction_id'     => $result['transaction_id'],
-      'payment_method'     => 'gateway',
+      'success' => $result['success'],
+      'payment_id' => $payment->id,
+      'transaction_id' => $result['transaction_id'],
+      'payment_method' => 'gateway',
       'installment_number' => $installmentNumber,
-      'remaining'          => $plan->remainingInstallments(),
-      'plan_status'        => $plan->status,
+      'remaining' => $plan->remainingInstallments(),
+      'plan_status' => $plan->status,
     ];
   }
 
@@ -132,13 +132,13 @@ class PayInstallmentAction
     }
 
     return [
-      'success'            => true,
-      'payment_id'         => $payment->id,
-      'transaction_id'     => $transaction->id,
-      'payment_method'     => 'wallet',
+      'success' => true,
+      'payment_id' => $payment->id,
+      'transaction_id' => $transaction->id,
+      'payment_method' => 'wallet',
       'installment_number' => $installmentNumber,
-      'remaining'          => $plan->remainingInstallments(),
-      'plan_status'        => $plan->status,
+      'remaining' => $plan->remainingInstallments(),
+      'plan_status' => $plan->status,
     ];
   }
 }

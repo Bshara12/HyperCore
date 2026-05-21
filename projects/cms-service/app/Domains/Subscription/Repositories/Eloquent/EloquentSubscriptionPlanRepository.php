@@ -8,8 +8,7 @@ use App\Models\SubscriptionFeature;
 use App\Models\SubscriptionPlan;
 use Illuminate\Support\Facades\DB;
 
-class EloquentSubscriptionPlanRepository
-    implements SubscriptionPlanRepositoryInterface
+class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
 {
     public function createWithFeatures(
         CreatePlanDTO $dto
@@ -26,10 +25,10 @@ class EloquentSubscriptionPlanRepository
                 'currency' => $dto->currency,
                 'duration_days' => $dto->durationDays,
                 'is_active' => $dto->isActive,
-                'metadata' => $dto->metadata
+                'metadata' => $dto->metadata,
             ]);
 
-            if (!empty($dto->features)) {
+            if (! empty($dto->features)) {
 
                 $rows = [];
 
@@ -43,7 +42,7 @@ class EloquentSubscriptionPlanRepository
                             $feature['feature_value']
                         ),
                         'created_at' => now(),
-                        'updated_at' => now()
+                        'updated_at' => now(),
                     ];
                 }
 

@@ -2,15 +2,9 @@
 
 namespace App\Domains\CMS\Read\Services;
 
-use Illuminate\Support\Collection;
-
-use App\Domains\Subscription\Services\AuthorizationEngineService;
-use App\Domains\Subscription\Services\ContentAuthorizationService;
-
-use App\Domains\Subscription\DTOs\Rule\AuthorizeEventDTO;
-use App\Domains\Subscription\DTOs\Authorization\AuthorizeContentDTO;
 use App\Domains\Subscription\Repositories\Interface\ContentAccessMetadataRepositoryInterface;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use Illuminate\Support\Collection;
 
 class EntryVisibilityService
 {
@@ -31,25 +25,25 @@ class EntryVisibilityService
 
     $firstEntry = $entries->first();
 
-    if (!is_array($firstEntry)) {
+    if (! is_array($firstEntry)) {
       return [];
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | Shared Metadata
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Shared Metadata
+        |--------------------------------------------------------------------------
+        */
 
     $contentType = $firstEntry['data_type_slug'];
 
     $projectId = $firstEntry['project_id'];
 
     /*
-    |--------------------------------------------------------------------------
-    | Preload Rules
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Preload Rules
+        |--------------------------------------------------------------------------
+        */
 
     $contentIds = $entries
       ->pluck('id')
@@ -62,10 +56,11 @@ class EntryVisibilityService
       );
 
     /*
-    |--------------------------------------------------------------------------
-    | Preload Subscription
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Preload Subscription
+        |--------------------------------------------------------------------------
+        */
+    /** @var \App\Models\Subscription|null $subscription */
 
     $subscription = $userId
       ? $this->subscriptionRepository
@@ -76,24 +71,32 @@ class EntryVisibilityService
       : null;
 
     /*
-    |--------------------------------------------------------------------------
-    | Feature Keys
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Feature Keys
+        |--------------------------------------------------------------------------
+        */
 
-    $features = $subscription
-      ? $subscription->plan->features
+    // $features = $subscription
+    //   ? $subscription->plan->features
+    //   ->pluck('feature_value', 'feature_key')
+    //   : collect();
+
+
+    /** @var \App\Models\SubscriptionPlan|null $plan */
+    $plan = $subscription?->plan;
+
+    $features = $plan
+      ? $plan->features
       ->pluck('feature_value', 'feature_key')
       : collect();
 
     /*
-    |--------------------------------------------------------------------------
-    | Filter
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Filter
+        |--------------------------------------------------------------------------
+        */
 
     return $entries
-
       ->filter(function (
         array $entry
       ) use (
@@ -105,52 +108,50 @@ class EntryVisibilityService
         $rule = $rules[$entry['id']] ?? null;
 
         /*
-            |--------------------------------------------------------------------------
-            | Public
-            |--------------------------------------------------------------------------
-            */
+                  |--------------------------------------------------------------------------
+                  | Public
+                  |--------------------------------------------------------------------------
+                  */
 
-        if (!$rule) {
+        if (! $rule) {
           return true;
         }
 
-        if (!$rule->requires_subscription) {
+        if (! $rule->requires_subscription) {
           return true;
         }
 
         /*
-            |--------------------------------------------------------------------------
-            | Guest
-            |--------------------------------------------------------------------------
-            */
+                  |--------------------------------------------------------------------------
+                  | Guest
+                  |--------------------------------------------------------------------------
+                  */
 
-        if (!$subscription) {
+        if (! $subscription) {
           return false;
         }
 
         /*
-            |--------------------------------------------------------------------------
-            | No Feature Required
-            |--------------------------------------------------------------------------
-            */
+                  |--------------------------------------------------------------------------
+                  | No Feature Required
+                  |--------------------------------------------------------------------------
+                  */
 
-        if (!$rule->required_feature) {
+        if (! $rule->required_feature) {
           return true;
         }
 
         /*
-            |--------------------------------------------------------------------------
-            | Feature Check
-            |--------------------------------------------------------------------------
-            */
+                  |--------------------------------------------------------------------------
+                  | Feature Check
+                  |--------------------------------------------------------------------------
+                  */
 
         return $features->has(
           $rule->required_feature
         );
       })
-
       ->values()
-
       ->toArray();
   }
 }

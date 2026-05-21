@@ -6,12 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+
+/**
+ * @property-read SubscriptionPlan $plan
+ */
 class Subscription extends Model
 {
     const STATUS_PENDING = 'pending';
+
     const STATUS_ACTIVE = 'active';
+
     const STATUS_EXPIRED = 'expired';
+
     const STATUS_CANCELLED = 'cancelled';
+
     const STATUS_GRACE_PERIOD = 'grace_period';
 
     protected $fillable = [
@@ -26,7 +34,7 @@ class Subscription extends Model
         'current_period_end',
         'cancelled_at',
         'auto_renew',
-        'metadata'
+        'metadata',
     ];
 
     protected $casts = [
@@ -36,7 +44,7 @@ class Subscription extends Model
         'current_period_end' => 'datetime',
         'cancelled_at' => 'datetime',
         'auto_renew' => 'boolean',
-        'metadata' => 'array'
+        'metadata' => 'array',
     ];
 
     public function plan(): BelongsTo

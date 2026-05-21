@@ -6,5 +6,5 @@ use Exception;
 
 abstract class SubscriptionException extends Exception
 {
-  abstract public function context(): array;
+    abstract public function context(): array;
 }

@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-
-use App\Http\Controllers\Controller;
-use App\Domains\Subscription\Services\PlanService;
 use App\Domains\Subscription\DTOs\Plan\CreatePlanDTO;
 use App\Domains\Subscription\Requests\Plan\CreatePlanRequest;
+use App\Domains\Subscription\Services\PlanService;
 
 class PlanController extends Controller
 {
@@ -23,7 +21,7 @@ class PlanController extends Controller
         $plan = $this->service->create($dto);
 
         return response()->json([
-            'data' => $plan
+            'data' => $plan,
         ], 201);
     }
 }

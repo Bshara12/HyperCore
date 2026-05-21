@@ -8,19 +8,18 @@ use App\Models\DataType;
 
 class DataTypeFieldService
 {
+    public function __construct(
+        protected IndexFieldsAction $IndexFieldsAction,
+        protected IndexTrashedFields $indexTrashedFieldsAction,
+    ) {}
 
-  public function __construct(
-    protected IndexFieldsAction $IndexFieldsAction,
-    protected IndexTrashedFields $indexTrashedFieldsAction,
-  ) {}
+    public function list(DataType $dataType)
+    {
+        return $this->IndexFieldsAction->execute($dataType);
+    }
 
-  public function list(DataType $dataType)
-  {
-    return $this->IndexFieldsAction->execute($dataType);
-  }
-
-  public function trashed(DataType $dataType)
-  {
-    return $this->indexTrashedFieldsAction->execute($dataType);
-  }
+    public function trashed(DataType $dataType)
+    {
+        return $this->indexTrashedFieldsAction->execute($dataType);
+    }
 }

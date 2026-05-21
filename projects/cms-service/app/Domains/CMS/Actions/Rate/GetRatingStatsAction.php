@@ -22,7 +22,10 @@ class GetRatingStatsAction
       CacheKeys::TTL_MEDIUM,
       fn() => match ($dto->rateableType) {
         'project' => $this->projects->getRatingStats($dto->rateableId),
-        'data'    => $this->dataEntries->getRatingStats($dto->rateableId),
+        'data' => $this->dataEntries->getRatingStats($dto->rateableId),
+        default => throw new \InvalidArgumentException(
+          "Unsupported rateable type: {$dto->rateableType}"
+        ),
       }
     );
   }

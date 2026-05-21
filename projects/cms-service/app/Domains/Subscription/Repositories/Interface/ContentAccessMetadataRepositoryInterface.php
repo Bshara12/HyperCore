@@ -3,6 +3,7 @@
 namespace App\Domains\Subscription\Repositories\Interface;
 
 use App\Models\ContentAccessMetadata;
+use Illuminate\Support\Collection;
 
 interface ContentAccessMetadataRepositoryInterface
 {
@@ -26,8 +27,8 @@ interface ContentAccessMetadataRepositoryInterface
     /**
      * Create a rule and sync its allowed features atomically.
      *
-     * @param  array        $data      Fillable fields for ContentAccessMetadata
-     * @param  string[]     $features  List of feature_key strings
+     * @param  array  $data  Fillable fields for ContentAccessMetadata
+     * @param  string[]  $features  List of feature_key strings
      */
     public function createWithFeatures(
         array $data,
@@ -66,7 +67,7 @@ interface ContentAccessMetadataRepositoryInterface
      * Find many rules for a content type by multiple IDs.
      * Eager-loads `features` to avoid N+1.
      *
-     * @return \Illuminate\Support\Collection<int, ContentAccessMetadata>  keyed by content_id
+     * @return Collection<int, ContentAccessMetadata> keyed by content_id
      */
     public function findManyRules(
         string $contentType,

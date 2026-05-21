@@ -10,9 +10,9 @@ class CheckPermission
     {
         $user = $request->attributes->get('auth_user');
 
-        if (!in_array($permission, $user['permissions'])) {
+        if (! in_array($permission, $user['permissions'])) {
             return response()->json([
-                'message' => 'Forbidden'
+                'message' => 'Forbidden',
             ], 403);
         }
 

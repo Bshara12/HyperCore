@@ -5,11 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\DataTypeField;
 
+/**
+ * @property DataTypeField|null $field
+ */
 class DataEntryValue extends Model
 {
-  use SoftDeletes;
   use HasFactory;
+  use SoftDeletes;
+
   protected $guarded = [];
 
   public function entry()

@@ -2,7 +2,6 @@
 
 namespace App\Domains\Auth\DTOs;
 
-
 class CheckProjectAccessDto
 {
     public function __construct(

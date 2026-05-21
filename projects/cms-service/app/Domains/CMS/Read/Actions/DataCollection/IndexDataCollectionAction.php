@@ -10,24 +10,24 @@ use Illuminate\Support\Facades\Cache;
 
 class IndexDataCollectionAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataCollection.list';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'dataCollection.list';
+    }
 
-  public function __construct(protected DataCollectionRepositoryInterface $repository, protected ProjectRepositoryInterface $projectRepository) {}
+    public function __construct(protected DataCollectionRepositoryInterface $repository, protected ProjectRepositoryInterface $projectRepository) {}
 
-  public function execute($projectKey)
-  {
-    return $this->run(function () use ($projectKey) {
+    public function execute($projectKey)
+    {
+        return $this->run(function () use ($projectKey) {
 
-      $projectId = $this->projectRepository->findByKey($projectKey)->id;
+            $projectId = $this->projectRepository->findByKey($projectKey)->id;
 
-      return Cache::remember(
-        CacheKeys::collections($projectId),
-        CacheKeys::TTL_MEDIUM,
-        fn() => $this->repository->list($projectId)
-      );
-    });
-  }
+            return Cache::remember(
+                CacheKeys::collections($projectId),
+                CacheKeys::TTL_MEDIUM,
+                fn () => $this->repository->list($projectId)
+            );
+        });
+    }
 }

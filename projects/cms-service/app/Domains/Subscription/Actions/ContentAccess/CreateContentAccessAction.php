@@ -33,12 +33,12 @@ class CreateContentAccessAction
         return $this->repository
             ->createWithFeatures(
                 data: [
-                    'project_id'            => $dto->projectId,
-                    'content_type'          => $contentType,
-                    'content_id'            => $dto->contentId,
+                    'project_id' => $dto->projectId,
+                    'content_type' => $contentType,
+                    'content_id' => $dto->contentId,
                     'requires_subscription' => $dto->requiresSubscription,
-                    'metadata'              => $dto->metadata,
-                    'is_active'             => true,
+                    'metadata' => $dto->metadata,
+                    'is_active' => true,
                 ],
                 features: $dto->features
             );

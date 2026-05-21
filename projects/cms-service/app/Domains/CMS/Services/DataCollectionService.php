@@ -21,85 +21,87 @@ use App\Domains\CMS\Read\Actions\DataCollection\ShowDataCollectionDetailsByIdAct
 
 class DataCollectionService
 {
-  public function __construct(
-    protected CreateDataCollectionAction $createAction,
-    protected GenerateDynamicItemsAction $generateAction,
-    protected UpdateDataCollectionAction $updateAction,
-    protected DeleteDataCollectionItemsAction $deleteItemsAction,
-    protected DeleteDataCollectionAction $deleteAction,
-    protected IndexDataCollectionAction $indexAction,
-    protected ShowDataCollectionDetailsAction $showDetailsAction,
-    protected InsertCollectionItemsAction $insertItemsAction,
-    protected RemoveCollectionItemsAction $removeItemsAction,
-    protected ReOrderCollectionItemsAction $reOrderItemsAction,
-    protected GetCollectionEntriesAction $getEntriesAction,
-    protected ShowDataCollectionDetailsByIdAction $showDetailsByIdAction,
-    protected DeactivateCollectionAction $deactivateCollection
-  ) {}
+    public function __construct(
+        protected CreateDataCollectionAction $createAction,
+        protected GenerateDynamicItemsAction $generateAction,
+        protected UpdateDataCollectionAction $updateAction,
+        protected DeleteDataCollectionItemsAction $deleteItemsAction,
+        protected DeleteDataCollectionAction $deleteAction,
+        protected IndexDataCollectionAction $indexAction,
+        protected ShowDataCollectionDetailsAction $showDetailsAction,
+        protected InsertCollectionItemsAction $insertItemsAction,
+        protected RemoveCollectionItemsAction $removeItemsAction,
+        protected ReOrderCollectionItemsAction $reOrderItemsAction,
+        protected GetCollectionEntriesAction $getEntriesAction,
+        protected ShowDataCollectionDetailsByIdAction $showDetailsByIdAction,
+        protected DeactivateCollectionAction $deactivateCollection
+    ) {}
 
-  public function list($projectId)
-  {
-    return $this->indexAction->execute($projectId);
-  }
-
-  public function create(CreateDataCollectionDTO $dto)
-  {
-    $collection = $this->createAction->execute($dto);
-
-    if ($dto->type === 'dynamic') {
-      $this->generateAction->execute($collection);
+    public function list($projectId)
+    {
+        return $this->indexAction->execute($projectId);
     }
-    return $collection;
-  }
 
-  public function update($dto)
-  {
-    $collection = $this->updateAction->execute($dto);
+    public function create(CreateDataCollectionDTO $dto)
+    {
+        $collection = $this->createAction->execute($dto);
 
-    if ($collection->type === 'dynamic') {
-      $this->deleteItemsAction->execute($dto->collection_id);
-      $this->generateAction->execute($collection);
+        if ($dto->type === 'dynamic') {
+            $this->generateAction->execute($collection);
+        }
+
+        return $collection;
     }
-    return $collection;
-  }
 
-  public function delete($collectionSlug)
-  {
-    $this->deleteAction->execute($collectionSlug);
-  }
+    public function update($dto)
+    {
+        $collection = $this->updateAction->execute($dto);
 
-  public function show(string $projectKey, string $collectionSlug)
-  {
-    return $this->showDetailsAction->execute($projectKey, $collectionSlug);
-  }
+        if ($collection->type === 'dynamic') {
+            $this->deleteItemsAction->execute($dto->collection_id);
+            $this->generateAction->execute($collection);
+        }
 
-  public function showById(int $collectionId)
-  {
-    return $this->showDetailsByIdAction->execute($collectionId);
-  }
+        return $collection;
+    }
 
-  public function addItems(CollectionItemsDTO $dto)
-  {
-    $this->insertItemsAction->execute($dto);
-  }
+    public function delete($collectionSlug)
+    {
+        $this->deleteAction->execute($collectionSlug);
+    }
 
-  public function removeItems(CollectionItemsDTO $dto)
-  {
-    $this->removeItemsAction->execute($dto);
-  }
+    public function show(string $projectKey, string $collectionSlug)
+    {
+        return $this->showDetailsAction->execute($projectKey, $collectionSlug);
+    }
 
-  public function reOrderItems(CollectionItemsDTO $dto)
-  {
-    return $this->reOrderItemsAction->execute($dto);
-  }
+    public function showById(int $collectionId)
+    {
+        return $this->showDetailsByIdAction->execute($collectionId);
+    }
 
-  public function getEntries(string $projectKey, string $collectionSlug)
-  {
-    return $this->getEntriesAction->execute($projectKey, $collectionSlug);
-  }
+    public function addItems(CollectionItemsDTO $dto)
+    {
+        $this->insertItemsAction->execute($dto);
+    }
 
-  public function deactivate(DeactivateCollectionDTO $dto)
-  {
-    $this->deactivateCollection->execute($dto);
-  }
+    public function removeItems(CollectionItemsDTO $dto)
+    {
+        $this->removeItemsAction->execute($dto);
+    }
+
+    public function reOrderItems(CollectionItemsDTO $dto)
+    {
+        return $this->reOrderItemsAction->execute($dto);
+    }
+
+    public function getEntries(string $projectKey, string $collectionSlug)
+    {
+        return $this->getEntriesAction->execute($projectKey, $collectionSlug);
+    }
+
+    public function deactivate(DeactivateCollectionDTO $dto)
+    {
+        $this->deactivateCollection->execute($dto);
+    }
 }

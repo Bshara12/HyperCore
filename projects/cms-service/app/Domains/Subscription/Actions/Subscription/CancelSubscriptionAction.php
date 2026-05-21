@@ -2,10 +2,10 @@
 
 namespace App\Domains\Subscription\Actions\Subscription;
 
-use Exception;
-use App\Models\Subscription;
 use App\Domains\Subscription\DTOs\Subscription\CancelSubscriptionDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use App\Models\Subscription;
+use Exception;
 
 class CancelSubscriptionAction
 {
@@ -41,9 +41,9 @@ class CancelSubscriptionAction
                 'metadata' => array_merge(
                     $subscription->metadata ?? [],
                     [
-                        'cancel_reason' => $dto->reason
+                        'cancel_reason' => $dto->reason,
                     ]
-                )
+                ),
             ]
         );
     }

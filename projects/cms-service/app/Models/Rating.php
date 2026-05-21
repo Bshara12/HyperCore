@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Rating extends Model
 {
-  use HasFactory;
-  protected $guarded = [];
+    use HasFactory;
 
-  public function rateable()
-  {
-    return $this->morphTo();
-  }
+    protected $guarded = [];
+
+    public function rateable()
+    {
+        return $this->morphTo();
+    }
 }

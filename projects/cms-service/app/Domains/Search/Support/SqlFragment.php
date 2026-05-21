@@ -27,113 +27,115 @@ namespace App\Domains\Search\Support;
  */
 final class SqlFragment
 {
-  private function __construct(
-    public readonly string $sql,
-    public readonly array  $bindings,
-  ) {}
+    private function __construct(
+        public readonly string $sql,
+        public readonly array $bindings,
+    ) {}
 
-  // ─────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────
 
-  public static function create(string $sql = '', array $bindings = []): self
-  {
-    return new self($sql, $bindings);
-  }
-
-  /**
-   * يُضيف condition بـ AND
-   * SQL و binding يُضافان معاً — لا يمكن الفصل بينهما
-   */
-  public function and(string $sql, array $bindings = []): self
-  {
-    $separator = empty($this->sql) ? '' : ' AND ';
-
-    return new self(
-      $this->sql . $separator . $sql,
-      array_merge($this->bindings, $bindings),
-    );
-  }
-
-  /**
-   * يُضيف condition مشروط — إذا $condition=false لا يُضيف شيئاً
-   */
-  public function andIf(bool $condition, string $sql, array $bindings = []): self
-  {
-    if (! $condition) {
-      return $this;
+    public static function create(string $sql = '', array $bindings = []): self
+    {
+        return new self($sql, $bindings);
     }
 
-    return $this->and($sql, $bindings);
-  }
+    /**
+     * يُضيف condition بـ AND
+     * SQL و binding يُضافان معاً — لا يمكن الفصل بينهما
+     */
+    public function and(string $sql, array $bindings = []): self
+    {
+        $separator = empty($this->sql) ? '' : ' AND ';
 
-  /**
-   * يُضيف OR condition
-   */
-  public function or(string $sql, array $bindings = []): self
-  {
-    $separator = empty($this->sql) ? '' : ' OR ';
-
-    return new self(
-      $this->sql . $separator . $sql,
-      array_merge($this->bindings, $bindings),
-    );
-  }
-
-  /**
-   * يُضيف IN condition مع placeholder generation تلقائي
-   *
-   * andIn('si.data_type_slug', ['product', 'article'])
-   * → "si.data_type_slug IN (?, ?)"  bindings: ['product', 'article']
-   */
-  public function andIn(string $column, array $values): self
-  {
-    if (empty($values)) {
-      return $this;
+        return new self(
+            $this->sql.$separator.$sql,
+            array_merge($this->bindings, $bindings),
+        );
     }
 
-    $placeholders = implode(', ', array_fill(0, count($values), '?'));
+    /**
+     * يُضيف condition مشروط — إذا $condition=false لا يُضيف شيئاً
+     */
+    public function andIf(bool $condition, string $sql, array $bindings = []): self
+    {
+        if (! $condition) {
+            return $this;
+        }
 
-    return $this->and("{$column} IN ({$placeholders})", $values);
-  }
-
-  /**
-   * يُضيف multiple NOT LIKE conditions
-   * كل term يُضاف مع binding معاً — impossible to forget
-   */
-  public function andNotLikeAll(string $expression, array $terms): self
-  {
-    $fragment = $this;
-
-    foreach ($terms as $term) {
-      $term = trim((string) $term);
-      if ($term === '') continue;
-
-      $fragment = $fragment->and(
-        "{$expression} NOT LIKE ?",
-        ['%' . $term . '%']
-      );
+        return $this->and($sql, $bindings);
     }
 
-    return $fragment;
-  }
+    /**
+     * يُضيف OR condition
+     */
+    public function or(string $sql, array $bindings = []): self
+    {
+        $separator = empty($this->sql) ? '' : ' OR ';
 
-  /**
-   * يُعيد SQL مُغلَّف بـ parentheses (مفيد للـ subqueries)
-   */
-  public function wrap(): self
-  {
-    return new self(
-      '(' . $this->sql . ')',
-      $this->bindings,
-    );
-  }
+        return new self(
+            $this->sql.$separator.$sql,
+            array_merge($this->bindings, $bindings),
+        );
+    }
 
-  public function isEmpty(): bool
-  {
-    return empty($this->sql);
-  }
+    /**
+     * يُضيف IN condition مع placeholder generation تلقائي
+     *
+     * andIn('si.data_type_slug', ['product', 'article'])
+     * → "si.data_type_slug IN (?, ?)"  bindings: ['product', 'article']
+     */
+    public function andIn(string $column, array $values): self
+    {
+        if (empty($values)) {
+            return $this;
+        }
 
-  public function __toString(): string
-  {
-    return $this->sql;
-  }
+        $placeholders = implode(', ', array_fill(0, count($values), '?'));
+
+        return $this->and("{$column} IN ({$placeholders})", $values);
+    }
+
+    /**
+     * يُضيف multiple NOT LIKE conditions
+     * كل term يُضاف مع binding معاً — impossible to forget
+     */
+    public function andNotLikeAll(string $expression, array $terms): self
+    {
+        $fragment = $this;
+
+        foreach ($terms as $term) {
+            $term = trim((string) $term);
+            if ($term === '') {
+                continue;
+            }
+
+            $fragment = $fragment->and(
+                "{$expression} NOT LIKE ?",
+                ['%'.$term.'%']
+            );
+        }
+
+        return $fragment;
+    }
+
+    /**
+     * يُعيد SQL مُغلَّف بـ parentheses (مفيد للـ subqueries)
+     */
+    public function wrap(): self
+    {
+        return new self(
+            '('.$this->sql.')',
+            $this->bindings,
+        );
+    }
+
+    public function isEmpty(): bool
+    {
+        return empty($this->sql);
+    }
+
+    public function __toString(): string
+    {
+        return $this->sql;
+    }
 }

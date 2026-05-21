@@ -2,8 +2,7 @@
 
 namespace App\Exceptions;
 
-class SubscriptionRequiredException
-extends SubscriptionException
+class SubscriptionRequiredException extends SubscriptionException
 {
     public function __construct(
         private readonly array $requiredFeatures = []

@@ -9,15 +9,14 @@ use Illuminate\Support\Str;
 
 class ProjectFactory extends Factory
 {
-  protected $model = Project::class;
+    protected $model = Project::class;
 
-  public function definition()
-  {
-    return [
-      'public_id' => Str::uuid()->toString(),
-      'name' => $this->faker->company(),
-      'owner_id' => User::factory(),
-    ];
-  }
+    public function definition()
+    {
+        return [
+            'public_id' => Str::uuid()->toString(),
+            'name' => $this->faker->company(),
+            'owner_id' => User::factory(),
+        ];
+    }
 }
-

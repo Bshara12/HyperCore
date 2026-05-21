@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class DataEntryVersion extends Model
 {
-  use HasFactory;
-  protected $guarded = [];
-  protected $casts = [
-    'snapshot' => 'array',
-  ];
+    use HasFactory;
 
-  public function entry()
-  {
-    return $this->belongsTo(DataEntry::class);
-  }
+    protected $guarded = [];
+
+    protected $casts = [
+        'snapshot' => 'array',
+    ];
+
+    public function entry()
+    {
+        return $this->belongsTo(DataEntry::class);
+    }
 }

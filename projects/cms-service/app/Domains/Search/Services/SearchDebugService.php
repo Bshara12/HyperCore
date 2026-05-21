@@ -9,7 +9,6 @@ use App\Domains\Search\Repositories\Interfaces\SearchRepositoryInterface;
 use App\Domains\Search\Support\ArabicQueryNormalizer;
 use App\Domains\Search\Support\KeywordProcessor;
 use App\Domains\Search\Support\QueryLanguageDetector;
-use App\Domains\Search\Support\UserPreferenceAnalyzer;
 
 class SearchDebugService
 {
@@ -61,12 +60,12 @@ class SearchDebugService
   // ─────────────────────────────────────────────────────────────────
 
   public function __construct(
-    private ArabicQueryNormalizer     $arabicNormalizer,
-    private KeywordProcessor          $processor,
+    private ArabicQueryNormalizer $arabicNormalizer,
+    private KeywordProcessor $processor,
     private SearchRepositoryInterface $repository,
-    private KeyboardLayoutFixer       $keyboardFixer,
-    private AIQueryInterpreter        $aiInterpreter,
-    private SearchEntriesAction       $searchAction,
+    private KeyboardLayoutFixer $keyboardFixer,
+    private AIQueryInterpreter $aiInterpreter,
+    private SearchEntriesAction $searchAction,
   ) {}
 
   // ─────────────────────────────────────────────────────────────────
@@ -76,27 +75,27 @@ class SearchDebugService
   public function runDebugPipeline(
     string $keyword,
     string $language,
-    int    $projectId
+    int $projectId
   ): array {
-    $startTime     = microtime(true);
+    $startTime = microtime(true);
     $decisionTrace = [];
 
     // ══════════════════════════════════════════════════════════════
     // STEP 1 — Query Classification
     // ══════════════════════════════════════════════════════════════
-    $isArabic    = QueryLanguageDetector::isArabic($keyword);
-    $isMixed     = QueryLanguageDetector::isMixed($keyword);
-    $isGibberish =  QueryLanguageDetector::isGibberish($keyword);
+    $isArabic = QueryLanguageDetector::isArabic($keyword);
+    $isMixed = QueryLanguageDetector::isMixed($keyword);
+    $isGibberish = QueryLanguageDetector::isGibberish($keyword);
     $hasNegation = $this->containsNegation($keyword);
 
     // ══════════════════════════════════════════════════════════════
     // STEP 2 — Normalization
     // ══════════════════════════════════════════════════════════════
     $normalizeInfo = [
-      'normalized'        => $keyword,
-      'excludeTerms'      => [],
+      'normalized' => $keyword,
+      'excludeTerms' => [],
       'isNaturalLanguage' => false,
-      'cleanWords'        => [],
+      'cleanWords' => [],
     ];
 
     if ($isArabic || $language === 'ar') {
@@ -107,17 +106,17 @@ class SearchDebugService
       ? $normalizeInfo['normalized']
       : $keyword;
 
-    $excludeTerms      = $normalizeInfo['excludeTerms']      ?? [];
+    $excludeTerms = $normalizeInfo['excludeTerms'] ?? [];
     $isNaturalLanguage = $normalizeInfo['isNaturalLanguage'] ?? false;
 
     $normalizationData = [
-      'detected_arabic'     => $isArabic,
-      'is_mixed'            => $isMixed,
-      'original'            => $keyword,
-      'normalized'          => $effectiveKeyword,
-      'exclude_terms'       => $excludeTerms,
+      'detected_arabic' => $isArabic,
+      'is_mixed' => $isMixed,
+      'original' => $keyword,
+      'normalized' => $effectiveKeyword,
+      'exclude_terms' => $excludeTerms,
       'is_natural_language' => $isNaturalLanguage,
-      'has_negation'        => $hasNegation,
+      'has_negation' => $hasNegation,
     ];
 
     // ══════════════════════════════════════════════════════════════
@@ -126,7 +125,7 @@ class SearchDebugService
     // هذا هو القلب الهندسي:
     // نحدد مرة واحدة هل يجب تخطي كل recovery systems
     // ══════════════════════════════════════════════════════════════
-    $skipRecovery       = $this->shouldSkipRecovery(
+    $skipRecovery = $this->shouldSkipRecovery(
       $hasNegation,
       $excludeTerms,
       $isArabic,
@@ -145,7 +144,7 @@ class SearchDebugService
 
     $recoveryMeta = [
       'skipped' => $skipRecovery,
-      'reason'  => $skipRecovery ? $skipRecoveryReason : null,
+      'reason' => $skipRecovery ? $skipRecoveryReason : null,
     ];
 
     // ══════════════════════════════════════════════════════════════
@@ -158,17 +157,17 @@ class SearchDebugService
     );
 
     $processingData = [
-      'clean_words'      => $processed->cleanWords,
-      'boolean_query'    => $processed->booleanQuery,
-      'relaxed_queries'  => $processed->relaxedQueries,
-      'intent'           => $processed->intent,
+      'clean_words' => $processed->cleanWords,
+      'boolean_query' => $processed->booleanQuery,
+      'relaxed_queries' => $processed->relaxedQueries,
+      'intent' => $processed->intent,
       'had_db_expansion' => $processed->hadDbExpansion,
     ];
 
     $preAiData = [
       'is_gibberish' => $isGibberish,
       'has_negation' => $hasNegation,
-      'vowel_ratio'  => $this->getVowelRatio($effectiveKeyword),
+      'vowel_ratio' => $this->getVowelRatio($effectiveKeyword),
       'skip_recovery' => $skipRecovery,
     ];
 
@@ -194,12 +193,12 @@ class SearchDebugService
 
     $decisionTrace[] = $initialResult['total'] > 0
       ? "✅ Initial search: {$initialResult['total']} results"
-      : "❌ Initial search: 0 results";
+      : '❌ Initial search: 0 results';
 
     $initialSearchData = [
-      'total'         => $initialResult['total'],
+      'total' => $initialResult['total'],
       'exclude_terms' => $excludeTerms,
-      'top_results'   => $this->mapResultRows(
+      'top_results' => $this->mapResultRows(
         array_slice($initialResult['items'], 0, 5),
         $processed->cleanWords
       ),
@@ -225,7 +224,7 @@ class SearchDebugService
     // ══════════════════════════════════════════════════════════════
     // STEP 7 — AI Simulation
     // ══════════════════════════════════════════════════════════════
-    $threshold     = (int) config('search.ai_trigger_threshold', 0);
+    $threshold = (int) config('search.ai_trigger_threshold', 0);
     $needsFallback = $initialResult['total'] <= $threshold
       || $isGibberish
       || empty($processed->cleanWords);
@@ -259,8 +258,8 @@ class SearchDebugService
 
     $finalSource = match (true) {
       $realResult->keyboardFixed && ! $realResult->aiEnhanced => 'keyboard_or_typo',
-      $realResult->aiEnhanced                                  => 'ai',
-      default                                                  => 'initial',
+      $realResult->aiEnhanced => 'ai',
+      default => 'initial',
     };
 
     if ($realResult->keyboardFixed) {
@@ -279,36 +278,36 @@ class SearchDebugService
     }
 
     $finalItems = array_map(fn($item) => [
-      'entry_id'      => $item->entryId,
-      'title'         => $item->title,
-      'score'         => $item->score,
-      'data_type'     => $item->dataTypeId,
+      'entry_id' => $item->entryId,
+      'title' => $item->title,
+      'score' => $item->score,
+      'data_type' => $item->dataTypeId,
       'matched_terms' => $this->findMatchedTerms($item->title ?? '', $matchWords),
     ], $realResult->items);
 
     return [
       'execution_time_ms' => round((microtime(true) - $startTime) * 1000, 2),
-      'decision_trace'    => $decisionTrace,
-      'input'             => [
-        'original'   => $keyword,
-        'language'   => $language,
+      'decision_trace' => $decisionTrace,
+      'input' => [
+        'original' => $keyword,
+        'language' => $language,
         'project_id' => $projectId,
       ],
-      'normalization'   => $normalizationData,
+      'normalization' => $normalizationData,
       'pre_ai_analysis' => $preAiData,
-      'processing'      => $processingData,
-      'recovery'        => $recoveryMeta,
-      'initial_search'  => $initialSearchData,
-      'keyboard_fix'    => $keyboardData,
-      'ai'              => $aiData,
-      'final'           => [
-        'total'          => $realResult->total,
-        'source'         => $finalSource,
+      'processing' => $processingData,
+      'recovery' => $recoveryMeta,
+      'initial_search' => $initialSearchData,
+      'keyboard_fix' => $keyboardData,
+      'ai' => $aiData,
+      'final' => [
+        'total' => $realResult->total,
+        'source' => $finalSource,
         'keyboard_fixed' => $realResult->keyboardFixed,
         'keyboard_query' => $realResult->keyboardQuery,
-        'ai_enhanced'    => $realResult->aiEnhanced,
-        'ai_query'       => $realResult->aiQuery,
-        'results'        => $finalItems,
+        'ai_enhanced' => $realResult->aiEnhanced,
+        'ai_query' => $realResult->aiQuery,
+        'results' => $finalItems,
       ],
     ];
   }
@@ -412,22 +411,23 @@ class SearchDebugService
   // ─────────────────────────────────────────────────────────────────
 
   private function simulateKeyboardFix(
-    string            $keyword,
-    int               $projectId,
-    string            $language,
+    string $keyword,
+    int $projectId,
+    string $language,
     UserPreferenceDTO $preference,
-    int               $initialTotal,
-    bool              $isGibberish,
-    bool              $isArabic,
-    bool              $isMixed,
-    bool              $skipRecovery,
-    string            $skipReason,
-    array             &$decisionTrace
+    int $initialTotal,
+    bool $isGibberish,
+    bool $isArabic,
+    bool $isMixed,
+    bool $skipRecovery,
+    string $skipReason,
+    array &$decisionTrace
   ): array {
 
     // ── Guard #1: recovery مُتخطَّى ──────────────────────────────
     if ($skipRecovery) {
       $decisionTrace[] = "⏭️ Keyboard: skipped ({$skipReason})";
+
       return $this->buildSkippedKeyboardResult($skipReason);
     }
 
@@ -435,35 +435,38 @@ class SearchDebugService
     if ($isArabic || $isMixed) {
       $reason = $isArabic ? 'arabic_query' : 'mixed_query';
       $decisionTrace[] = "⏭️ Keyboard: skipped ({$reason})";
+
       return $this->buildSkippedKeyboardResult($reason);
     }
 
     // ── Guard #3: gibberish EN→AR لا معنى له ─────────────────────
     $kbFix = $this->keyboardFixer->fix($keyword);
     if ($isGibberish && ($kbFix['direction'] === 'en_to_ar' || $kbFix['direction'] === null)) {
-      $decisionTrace[] = "⏭️ Keyboard: skipped (gibberish_en_to_ar)";
+      $decisionTrace[] = '⏭️ Keyboard: skipped (gibberish_en_to_ar)';
+
       return $this->buildSkippedKeyboardResult('gibberish_en_to_ar');
     }
 
     // ── تحقق من الحاجة للـ fallback ──────────────────────────────
-    $threshold     = (int) config('search.ai_trigger_threshold', 0);
+    $threshold = (int) config('search.ai_trigger_threshold', 0);
     $needsFallback = $initialTotal <= $threshold || $isGibberish;
 
     if (! $needsFallback) {
-      $decisionTrace[] = "⏭️ Keyboard: skipped (has_results)";
+      $decisionTrace[] = '⏭️ Keyboard: skipped (has_results)';
+
       return [
-        'triggered'         => false,
-        'decision'          => 'skipped_has_results',
-        'fixed_query'       => $kbFix['fixed'],
-        'confidence'        => $kbFix['confidence'],
-        'direction'         => $kbFix['direction'],
-        'total_after'       => $initialTotal,
+        'triggered' => false,
+        'decision' => 'skipped_has_results',
+        'fixed_query' => $kbFix['fixed'],
+        'confidence' => $kbFix['confidence'],
+        'direction' => $kbFix['direction'],
+        'total_after' => $initialTotal,
         'top_results_after' => [],
       ];
     }
 
     // ── تنفيذ keyboard fix ─────────────────────────────────────────
-    $minConf  = $isGibberish ? 0.25 : 0.4;
+    $minConf = $isGibberish ? 0.25 : 0.4;
     $decision = 'no_fix';
 
     if ($kbFix['fixed'] === null) {
@@ -474,13 +477,14 @@ class SearchDebugService
 
     if ($decision !== 'no_fix') {
       $decisionTrace[] = "⏭️ Keyboard: {$decision}";
+
       return [
-        'triggered'         => false,
-        'decision'          => $decision,
-        'fixed_query'       => $kbFix['fixed'],
-        'confidence'        => $kbFix['confidence'],
-        'direction'         => $kbFix['direction'],
-        'total_after'       => 0,
+        'triggered' => false,
+        'decision' => $decision,
+        'fixed_query' => $kbFix['fixed'],
+        'confidence' => $kbFix['confidence'],
+        'direction' => $kbFix['direction'],
+        'total_after' => 0,
         'top_results_after' => [],
       ];
     }
@@ -497,14 +501,14 @@ class SearchDebugService
       page: 1,
       perPage: 5,
     );
-    $kbResult   = $this->repository->searchWithExclusions(
+    $kbResult = $this->repository->searchWithExclusions(
       $fixedDto,
       $fixedProcessed,
       $preference,
       []
     );
     $totalAfter = $kbResult['total'];
-    $topAfter   = $this->mapResultRows(
+    $topAfter = $this->mapResultRows(
       array_slice($kbResult['items'], 0, 5),
       $fixedProcessed->cleanWords
     );
@@ -512,12 +516,12 @@ class SearchDebugService
     $decisionTrace[] = "✅ Keyboard: '{$kbFix['fixed']}' (conf:{$kbFix['confidence']}) → {$totalAfter} results";
 
     return [
-      'triggered'         => true,
-      'decision'          => 'accepted',
-      'fixed_query'       => $kbFix['fixed'],
-      'confidence'        => $kbFix['confidence'],
-      'direction'         => $kbFix['direction'],
-      'total_after'       => $totalAfter,
+      'triggered' => true,
+      'decision' => 'accepted',
+      'fixed_query' => $kbFix['fixed'],
+      'confidence' => $kbFix['confidence'],
+      'direction' => $kbFix['direction'],
+      'total_after' => $totalAfter,
       'top_results_after' => $topAfter,
     ];
   }
@@ -527,35 +531,38 @@ class SearchDebugService
   // ─────────────────────────────────────────────────────────────────
 
   private function simulateAI(
-    string            $keyword,
-    string            $language,
-    int               $projectId,
+    string $keyword,
+    string $language,
+    int $projectId,
     UserPreferenceDTO $preference,
-    bool              $needsFallback,
-    int               $initialTotal,
-    array             $excludeTerms,
-    bool              $isGibberish,
-    bool              $skipRecovery,
-    string            $skipReason,
-    array             &$decisionTrace
+    bool $needsFallback,
+    int $initialTotal,
+    array $excludeTerms,
+    bool $isGibberish,
+    bool $skipRecovery,
+    string $skipReason,
+    array &$decisionTrace
   ): array {
 
     // ── Guard #1: recovery مُتخطَّى ──────────────────────────────
     if ($skipRecovery) {
       $decisionTrace[] = "⏭️ AI: skipped ({$skipReason})";
+
       return $this->buildEmptyAIResult($skipReason, $initialTotal);
     }
 
     // ── Guard #2: AI غير مفعّل ────────────────────────────────────
     $aiEnabled = (bool) config('search.ai_enabled', false);
     if (! $aiEnabled) {
-      $decisionTrace[] = "⛔ AI: disabled";
+      $decisionTrace[] = '⛔ AI: disabled';
+
       return $this->buildEmptyAIResult('disabled', $initialTotal);
     }
 
     // ── Guard #3: لا حاجة للـ fallback ───────────────────────────
     if (! $needsFallback) {
-      $decisionTrace[] = "⏭️ AI: skipped (has_results)";
+      $decisionTrace[] = '⏭️ AI: skipped (has_results)';
+
       return $this->buildEmptyAIResult('skipped_has_results', $initialTotal);
     }
 
@@ -564,11 +571,12 @@ class SearchDebugService
       $interpretation = $this->aiInterpreter->interpret($keyword, $language);
     } catch (\Throwable $e) {
       $decisionTrace[] = "❌ AI: error ({$e->getMessage()})";
+
       return $this->buildEmptyAIResult('error:' . $e->getMessage(), $initialTotal);
     }
 
     $decisionTrace[] = sprintf(
-      "🤖 AI: interpreted → include:[%s] exclude:[%s] intent:%s conf:%.2f source:%s",
+      '🤖 AI: interpreted → include:[%s] exclude:[%s] intent:%s conf:%.2f source:%s',
       implode(',', $interpretation['include']),
       implode(',', $interpretation['exclude']),
       $interpretation['intent'],
@@ -584,7 +592,7 @@ class SearchDebugService
     ));
     $includeTokens = $cleanedInclude;
 
-    if (empty($includeTokens) && ! empty(trim($interpretation['corrected'] ?? ''))) {
+    if (empty($includeTokens) && ! empty(trim($interpretation['corrected']))) {
       $includeTokens = $this->filterArabicStopwords(
         array_filter(
           explode(' ', mb_strtolower(trim($interpretation['corrected']))),
@@ -594,14 +602,16 @@ class SearchDebugService
     }
 
     if (empty($includeTokens) && empty($mergedExclude)) {
-      $decisionTrace[] = "⏭️ AI: no usable tokens";
+      $decisionTrace[] = '⏭️ AI: no usable tokens';
+
       return $this->buildEmptyAIResult('no_tokens', $initialTotal);
     }
 
-    if (empty($includeTokens) && ! empty($mergedExclude)) {
-      $decisionTrace[] = "🔀 AI: exclude-only mode";
-      $emptyProcessed  = $this->processor->processWithExpansion('', $projectId, $language);
-      $emptyDto        = new SearchQueryDTO(
+    if (empty($includeTokens)) {
+      // if (empty($includeTokens) && ! empty($mergedExclude)) {
+      $decisionTrace[] = '🔀 AI: exclude-only mode';
+      $emptyProcessed = $this->processor->processWithExpansion('', $projectId, $language);
+      $emptyDto = new SearchQueryDTO(
         keyword: '',
         projectId: $projectId,
         language: $language,
@@ -617,24 +627,25 @@ class SearchDebugService
       $decisionTrace[] = "✅ AI exclude-only: {$altResult['total']} results";
 
       return [
-        'triggered'    => true,
-        'source'       => $interpretation['source'],
-        'include'      => [],
-        'exclude'      => $mergedExclude,
-        'intent'       => $interpretation['intent'],
-        'confidence'   => $interpretation['confidence'],
-        'expanded'     => $interpretation['expanded'] ?? [],
-        'final_query'  => '',
+        'triggered' => true,
+        'source' => $interpretation['source'],
+        'include' => [],
+        'exclude' => $mergedExclude,
+        'intent' => $interpretation['intent'],
+        'confidence' => $interpretation['confidence'],
+        'expanded' => $interpretation['expanded'],
+        // 'expanded' => $interpretation['expanded'] ?? [],
+        'final_query' => '',
         'final_exclude' => $mergedExclude,
-        'total_after'  => $altResult['total'],
-        'top_results'  => $this->mapResultRows(array_slice($altResult['items'], 0, 5), []),
+        'total_after' => $altResult['total'],
+        'top_results' => $this->mapResultRows(array_slice($altResult['items'], 0, 5), []),
       ];
     }
 
-    $allTokens  = array_unique(array_merge($includeTokens, array_slice($interpretation['expanded'] ?? [], 0, 2)));
-    $aiKeyword  = implode(' ', array_slice($allTokens, 0, 8));
+    $allTokens = array_unique(array_merge($includeTokens, array_slice($interpretation['expanded'], 0, 2)));
+    $aiKeyword = implode(' ', array_slice($allTokens, 0, 8));
     $aiProcessed = $this->processor->processWithExpansion($aiKeyword, $projectId, $language);
-    $aiDto       = new SearchQueryDTO(
+    $aiDto = new SearchQueryDTO(
       keyword: $aiKeyword,
       projectId: $projectId,
       language: $language,
@@ -651,17 +662,17 @@ class SearchDebugService
     $decisionTrace[] = "✅ AI search: '{$aiKeyword}' → {$aiResult['total']} results";
 
     return [
-      'triggered'    => true,
-      'source'       => $interpretation['source'],
-      'include'      => $includeTokens,
-      'exclude'      => $mergedExclude,
-      'intent'       => $interpretation['intent'],
-      'confidence'   => $interpretation['confidence'],
-      'expanded'     => $interpretation['expanded'] ?? [],
-      'final_query'  => $aiKeyword,
+      'triggered' => true,
+      'source' => $interpretation['source'],
+      'include' => $includeTokens,
+      'exclude' => $mergedExclude,
+      'intent' => $interpretation['intent'],
+      'confidence' => $interpretation['confidence'],
+      'expanded' => $interpretation['expanded'],
+      'final_query' => $aiKeyword,
       'final_exclude' => $mergedExclude,
-      'total_after'  => $aiResult['total'],
-      'top_results'  => $this->mapResultRows(
+      'total_after' => $aiResult['total'],
+      'top_results' => $this->mapResultRows(
         array_slice($aiResult['items'], 0, 5),
         $includeTokens
       ),
@@ -677,27 +688,27 @@ class SearchDebugService
     return array_map(function ($row) use ($matchWords) {
       $isObj = is_object($row);
 
-      $entryId  = $isObj
-        ? (int)   ($row->entry_id       ?? 0)
-        : (int)   ($row['entry_id']      ?? $row['entryId'] ?? 0);
+      $entryId = $isObj
+        ? (int) ($row->entry_id ?? 0)
+        : (int) ($row['entry_id'] ?? $row['entryId'] ?? 0);
 
-      $title    = $isObj
-        ? (string)($row->title           ?? '')
-        : (string)($row['title']         ?? '');
+      $title = $isObj
+        ? (string) ($row->title ?? '')
+        : (string) ($row['title'] ?? '');
 
-      $score    = $isObj
-        ? (float) ($row->final_score     ?? $row->weighted_score ?? $row->fulltext_score ?? 0)
-        : (float) ($row['score']         ?? $row['final_score']  ?? $row['weighted_score'] ?? 0);
+      $score = $isObj
+        ? (float) ($row->final_score ?? $row->weighted_score ?? $row->fulltext_score ?? 0)
+        : (float) ($row['score'] ?? $row['final_score'] ?? $row['weighted_score'] ?? 0);
 
       $dataType = $isObj
-        ? (string)($row->data_type_slug  ?? '')
-        : (string)($row['data_type']     ?? $row['data_type_slug'] ?? '');
+        ? (string) ($row->data_type_slug ?? '')
+        : (string) ($row['data_type'] ?? $row['data_type_slug'] ?? '');
 
       return [
-        'entry_id'      => $entryId,
-        'title'         => $title,
-        'score'         => round($score, 4),
-        'data_type'     => $dataType,
+        'entry_id' => $entryId,
+        'title' => $title,
+        'score' => round($score, 4),
+        'data_type' => $dataType,
         'matched_terms' => $this->findMatchedTerms($title, $matchWords),
       ];
     }, $rows);
@@ -710,12 +721,12 @@ class SearchDebugService
   private function buildSkippedKeyboardResult(string $reason): array
   {
     return [
-      'triggered'         => false,
-      'decision'          => "skipped_{$reason}",
-      'fixed_query'       => null,
-      'confidence'        => 0.0,
-      'direction'         => null,
-      'total_after'       => 0,
+      'triggered' => false,
+      'decision' => "skipped_{$reason}",
+      'fixed_query' => null,
+      'confidence' => 0.0,
+      'direction' => null,
+      'total_after' => 0,
       'top_results_after' => [],
     ];
   }
@@ -723,18 +734,18 @@ class SearchDebugService
   private function buildEmptyAIResult(string $reason, int $initialTotal): array
   {
     return [
-      'triggered'    => false,
-      'reason'       => $reason,
-      'source'       => 'none',
-      'include'      => [],
-      'exclude'      => [],
-      'intent'       => '',
-      'confidence'   => 0.0,
-      'expanded'     => [],
-      'final_query'  => '',
+      'triggered' => false,
+      'reason' => $reason,
+      'source' => 'none',
+      'include' => [],
+      'exclude' => [],
+      'intent' => '',
+      'confidence' => 0.0,
+      'expanded' => [],
+      'final_query' => '',
       'final_exclude' => [],
-      'total_after'  => $initialTotal,
-      'top_results'  => [],
+      'total_after' => $initialTotal,
+      'top_results' => [],
     ];
   }
 
@@ -759,7 +770,7 @@ class SearchDebugService
 
   private function containsNegation(string $text): bool
   {
-    $text    = mb_strtolower($text, 'UTF-8');
+    $text = mb_strtolower($text, 'UTF-8');
     $signals = [
       'ما بدي',
       'ما اريد',
@@ -785,12 +796,14 @@ class SearchDebugService
 
     foreach ($signals as $signal) {
       $pos = mb_strpos($text, $signal, 0, 'UTF-8');
-      if ($pos === false) continue;
+      if ($pos === false) {
+        continue;
+      }
 
       // word boundary check للإنجليزي
       if (! QueryLanguageDetector::isArabic($signal)) {
         $before = $pos > 0 ? mb_substr($text, $pos - 1, 1, 'UTF-8') : ' ';
-        $after  = mb_substr($text, $pos + mb_strlen($signal, 'UTF-8'), 1, 'UTF-8');
+        $after = mb_substr($text, $pos + mb_strlen($signal, 'UTF-8'), 1, 'UTF-8');
         if (($before !== ' ' && $pos !== 0) || ($after !== '' && $after !== ' ')) {
           continue;
         }
@@ -805,9 +818,12 @@ class SearchDebugService
   private function getVowelRatio(string $text): float
   {
     $letters = preg_replace('/[^a-z]/i', '', mb_strtolower($text));
-    $len     = strlen($letters);
-    if ($len === 0) return 0.0;
-    $vowels  = preg_replace('/[^aeiou]/i', '', $letters);
+    $len = strlen($letters);
+    if ($len === 0) {
+      return 0.0;
+    }
+    $vowels = preg_replace('/[^aeiou]/i', '', $letters);
+
     return round(strlen($vowels) / $len, 4);
   }
 
@@ -816,12 +832,13 @@ class SearchDebugService
   private function findMatchedTerms(string $title, array $words): array
   {
     $matched = [];
-    $lower   = mb_strtolower($title, 'UTF-8');
+    $lower = mb_strtolower($title, 'UTF-8');
     foreach ($words as $word) {
       if (! empty($word) && str_contains($lower, mb_strtolower($word, 'UTF-8'))) {
         $matched[] = $word;
       }
     }
+
     return array_values(array_unique($matched));
   }
 }

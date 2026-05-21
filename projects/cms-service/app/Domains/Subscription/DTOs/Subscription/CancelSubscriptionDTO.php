@@ -2,8 +2,8 @@
 
 namespace App\Domains\Subscription\DTOs\Subscription;
 
-use App\Models\Subscription;
 use App\Domains\Subscription\Requests\Subscription\CancelSubscriptionRequest;
+use App\Models\Subscription;
 
 class CancelSubscriptionDTO
 {

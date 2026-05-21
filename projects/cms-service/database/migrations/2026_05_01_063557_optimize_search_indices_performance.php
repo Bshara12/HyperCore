@@ -56,32 +56,32 @@ return new class extends Migration
         // هذا الـ index الأهم: يُغطي الـ WHERE clause الشائع
         // (project_id, language, status, data_type_id)
         // بدلاً من 4 indexes منفصلة
-        DB::statement("
+        DB::statement('
             ALTER TABLE search_indices
             ADD INDEX si_filter_composite_idx
             (project_id, language, status, data_type_id, published_at)
-        ");
+        ');
 
         // ─── Data Type Slug Index (للـ intent filtering بدون JOIN) ────
-        DB::statement("
+        DB::statement('
             ALTER TABLE search_indices
             ADD INDEX si_data_type_slug_idx
             (project_id, language, data_type_slug)
-        ");
+        ');
 
         // ─── CTR + Freshness Index (للـ ranking المُحسوب) ─────────────
-        DB::statement("
+        DB::statement('
             ALTER TABLE search_indices
             ADD INDEX si_ranking_signals_idx
             (project_id, language, status, ctr_score, freshness_score)
-        ");
+        ');
 
         // ─── Primary Keyword Index (للـ fast title matching) ──────────
-        DB::statement("
+        DB::statement('
             ALTER TABLE search_indices
             ADD INDEX si_primary_keyword_idx
             (project_id, primary_keyword)
-        ");
+        ');
 
         // ─── تحديث البيانات الموجودة ──────────────────────────────────
         DB::statement("

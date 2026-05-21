@@ -1,6 +1,6 @@
 <?php
 
-namespace  App\Domains\CMS\Services\Versioning;
+namespace App\Domains\CMS\Services\Versioning;
 
 use App\Models\DataEntry;
 use App\Models\DataEntryVersion;

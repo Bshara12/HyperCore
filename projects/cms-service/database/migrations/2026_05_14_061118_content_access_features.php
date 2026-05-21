@@ -83,7 +83,7 @@ return new class extends Migration
         );
 
         // Restore first feature back (best effort, data was many-to-one)
-        DB::statement("
+        DB::statement('
             UPDATE content_access_metadata cam
             JOIN (
                 SELECT
@@ -93,7 +93,7 @@ return new class extends Migration
                 GROUP BY content_access_metadata_id
             ) caf ON caf.content_access_metadata_id = cam.id
             SET cam.required_feature = caf.feature_key
-        ");
+        ');
 
         Schema::dropIfExists('content_access_features');
     }

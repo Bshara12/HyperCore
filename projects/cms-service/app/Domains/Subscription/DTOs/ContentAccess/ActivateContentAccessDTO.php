@@ -8,7 +8,6 @@ class ActivateContentAccessDTO
 {
     public function __construct(
 
-        public readonly ContentAccessMetadata
-        $contentAccessMetadata
+        public readonly ContentAccessMetadata $contentAccessMetadata
     ) {}
 }

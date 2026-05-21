@@ -2,7 +2,7 @@
 
 return [
 
-  /*
+    /*
     |--------------------------------------------------------------------------
     | Third Party Services
     |--------------------------------------------------------------------------
@@ -14,53 +14,52 @@ return [
     |
     */
 
-  'postmark' => [
-    'key' => env('POSTMARK_API_KEY'),
-  ],
-
-  'e_commerce' => [
-    'url' => env('ECOMMERCE_URL'),
-  ],
-
-
-  'resend' => [
-    'key' => env('RESEND_API_KEY'),
-  ],
-
-  'ses' => [
-    'key' => env('AWS_ACCESS_KEY_ID'),
-    'secret' => env('AWS_SECRET_ACCESS_KEY'),
-    'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-  ],
-
-  'resend' => [
-    'key' => env('RESEND_API_KEY'),
-  ],
-
-  'ses' => [
-    'key' => env('AWS_ACCESS_KEY_ID'),
-    'secret' => env('AWS_SECRET_ACCESS_KEY'),
-    'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-  ],
-
-  'slack' => [
-    'notifications' => [
-      'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
-      'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+    'postmark' => [
+        'key' => env('POSTMARK_API_KEY'),
     ],
-  ],
 
-  'gemini' => [
-    'api_key' => env('GEMINI_API_KEY'),
-  ],
+    'e_commerce' => [
+        'url' => env('ECOMMERCE_URL'),
+    ],
 
-  'rabbitmq' => [
-    'host' => env('RABBITMQ_HOST'),
-    'port' => env('RABBITMQ_PORT'),
-    'user' => env('RABBITMQ_USER'),
-    'password' => env('RABBITMQ_PASSWORD'),
-  ],
-  'auth_service' => [
-    'url' => env('AUTH_SERVICE_URL')
-  ],
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
+    'ses' => [
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
+    'ses' => [
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'slack' => [
+        'notifications' => [
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+        ],
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
+    'rabbitmq' => [
+        'host' => env('RABBITMQ_HOST'),
+        'port' => env('RABBITMQ_PORT'),
+        'user' => env('RABBITMQ_USER'),
+        'password' => env('RABBITMQ_PASSWORD'),
+    ],
+    'auth_service' => [
+        'url' => env('AUTH_SERVICE_URL'),
+    ],
 ];

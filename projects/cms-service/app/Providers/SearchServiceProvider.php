@@ -76,7 +76,7 @@ class SearchServiceProvider extends ServiceProvider
         $this->app->singleton(KeyboardLayoutFixer::class);
         $this->app->singleton(SearchCacheService::class);
         $this->app->singleton(EntityExtractor::class);
-        $this->app->singleton(\App\Domains\Search\Services\AIQueryInterpreter::class);
+        $this->app->singleton(AIQueryInterpreter::class);
 
     }
 }

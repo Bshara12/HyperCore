@@ -41,7 +41,9 @@ class DataCollection extends Model
 
   public function orderedItems()
   {
-    return $this->collectionItems()->orderBy('sort_order');
+    // return $this->collectionItems()->orderBy('sort_order');
+    return $this->items()
+      ->orderBy('sort_order');
   }
 
   public function items()

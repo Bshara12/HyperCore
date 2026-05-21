@@ -10,23 +10,23 @@ use Illuminate\Support\Facades\Cache;
 
 class IndexFieldsAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataTypeField.indexFields';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'dataTypeField.indexFields';
+    }
 
-  public function __construct(
-    protected FieldRepositoryRead $repository
-  ) {}
+    public function __construct(
+        protected FieldRepositoryRead $repository
+    ) {}
 
-  public function execute(DataType $dataType)
-  {
-    return $this->run(function () use ($dataType) {
-      return Cache::remember(
-        CacheKeys::fields($dataType->id),
-        CacheKeys::TTL_MEDIUM,
-        fn() => $this->repository->list($dataType)
-      );
-    });
-  }
+    public function execute(DataType $dataType)
+    {
+        return $this->run(function () use ($dataType) {
+            return Cache::remember(
+                CacheKeys::fields($dataType->id),
+                CacheKeys::TTL_MEDIUM,
+                fn () => $this->repository->list($dataType)
+            );
+        });
+    }
 }

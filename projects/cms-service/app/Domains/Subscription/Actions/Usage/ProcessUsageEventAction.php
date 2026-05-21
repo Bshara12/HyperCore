@@ -2,16 +2,16 @@
 
 namespace App\Domains\Subscription\Actions\Usage;
 
-use Exception;
-use App\Models\SubscriptionFeature;
-use App\Models\SubscriptionFeatureRule;
 use App\Domains\Subscription\DTOs\Usage\ProcessUsageEventDTO;
-use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionFeatureRuleRepositoryInterface;
+use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Exceptions\FeatureMissingException;
 use App\Exceptions\SubscriptionRequiredException;
 use App\Exceptions\UsageLimitExceededException;
 use App\Models\Subscription;
+use App\Models\SubscriptionFeature;
+use App\Models\SubscriptionFeatureRule;
+use Exception;
 
 class ProcessUsageEventAction
 {
@@ -42,9 +42,9 @@ class ProcessUsageEventAction
         $dto->projectId
       );
 
-    if (!$subscription) {
+    if (! $subscription) {
 
-      throw new SubscriptionRequiredException();
+      throw new SubscriptionRequiredException;
     }
 
     foreach ($rules as $rule) {
@@ -60,7 +60,7 @@ class ProcessUsageEventAction
   // ─────────────────────────────────────
 
   private function processRule(
-    Subscription  $subscription,
+    Subscription $subscription,
     SubscriptionFeatureRule $rule,
     int $amount
   ): void {
@@ -73,7 +73,7 @@ class ProcessUsageEventAction
         $rule->feature_key
       );
 
-    if (!$feature) {
+    if (! $feature) {
 
       // throw new Exception(
       //   sprintf(
@@ -86,6 +86,45 @@ class ProcessUsageEventAction
       );
     }
 
+    // match ($rule->action) {
+
+    //     SubscriptionFeatureRule::ACTION_CHECK => $this->checkLimit(
+    //         $subscription->id,
+    //         $feature,
+    //         $amount
+    //     ),
+
+    //     SubscriptionFeatureRule::ACTION_INCREMENT =>
+    //     // $this->incrementUsage(
+    //     //   $subscription->id,
+    //     //   $feature->feature_key,
+    //     //   $amount
+    //     // ),
+    //     $this->incrementUsage(
+
+    //         $subscription->id,
+
+    //         $rule,
+
+    //         $feature->feature_key,
+
+    //         $amount
+    //     ),
+
+    //     SubscriptionFeatureRule::ACTION_BOTH => $this->checkAndIncrement(
+
+    //         $subscription->id,
+
+    //         $rule,
+
+    //         $feature,
+
+    //         $amount
+    //     ),
+
+    //     default => null
+    // };
+
     match ($rule->action) {
 
       SubscriptionFeatureRule::ACTION_CHECK =>
@@ -96,35 +135,20 @@ class ProcessUsageEventAction
       ),
 
       SubscriptionFeatureRule::ACTION_INCREMENT =>
-      // $this->incrementUsage(
-      //   $subscription->id,
-      //   $feature->feature_key,
-      //   $amount
-      // ),
       $this->incrementUsage(
-
         $subscription->id,
-
         $rule,
-
         $feature->feature_key,
-
         $amount
       ),
 
       SubscriptionFeatureRule::ACTION_BOTH =>
       $this->checkAndIncrement(
-
         $subscription->id,
-
         $rule,
-
         $feature,
-
         $amount
       ),
-
-      default => null
     };
   }
 
@@ -225,14 +249,11 @@ class ProcessUsageEventAction
 
     $resetAt = match ($rule->reset_type) {
 
-      SubscriptionFeatureRule::RESET_DAILY =>
-      now()->addDay(),
+      SubscriptionFeatureRule::RESET_DAILY => now()->addDay(),
 
-      SubscriptionFeatureRule::RESET_MONTHLY =>
-      now()->addMonth(),
+      SubscriptionFeatureRule::RESET_MONTHLY => now()->addMonth(),
 
-      SubscriptionFeatureRule::RESET_YEARLY =>
-      now()->addYear(),
+      SubscriptionFeatureRule::RESET_YEARLY => now()->addYear(),
 
       default => null
     };
@@ -251,9 +272,6 @@ class ProcessUsageEventAction
   }
 }
 
-
-
-
 /*
 كيفية الاستخدام
 app(DomainEventService::class)
@@ -268,5 +286,5 @@ app(DomainEventService::class)
             $dataType->slug
         )
     );
-    
+
 */

@@ -10,28 +10,28 @@ use Illuminate\Support\Facades\Cache;
 
 class GetCollectionEntriesAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataCollection.getEntries';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'dataCollection.getEntries';
+    }
 
-  public function __construct(
-    protected DataCollectionRepositoryInterface $repository,
-    protected ProjectRepositoryInterface $projectRepository
-  ) {}
+    public function __construct(
+        protected DataCollectionRepositoryInterface $repository,
+        protected ProjectRepositoryInterface $projectRepository
+    ) {}
 
-  public function execute(string $projectKey, string $collectionSlug)
-  {
-    return $this->run(function () use ($projectKey, $collectionSlug) {
+    public function execute(string $projectKey, string $collectionSlug)
+    {
+        return $this->run(function () use ($projectKey, $collectionSlug) {
 
-      $projectId = $this->projectRepository->findByKey($projectKey)->id;
-      $collection = $this->repository->find($projectId, $collectionSlug);
+            $projectId = $this->projectRepository->findByKey($projectKey)->id;
+            $collection = $this->repository->find($projectId, $collectionSlug);
 
-      return Cache::remember(
-        CacheKeys::collectionEntries($collection->id),
-        CacheKeys::TTL_MEDIUM,
-        fn() => $this->repository->getEntries($collection->id)
-      );
-    });
-  }
+            return Cache::remember(
+                CacheKeys::collectionEntries($collection->id),
+                CacheKeys::TTL_MEDIUM,
+                fn () => $this->repository->getEntries($collection->id)
+            );
+        });
+    }
 }
