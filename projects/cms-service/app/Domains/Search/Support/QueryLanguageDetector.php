@@ -24,19 +24,26 @@ namespace App\Domains\Search\Support;
 final class QueryLanguageDetector
 {
     // ─── Arabic Unicode blocks ────────────────────────────────────────
-    private const ARABIC_BLOCK_PATTERN     = '/[\x{0600}-\x{06FF}]/u';
-    private const ARABIC_EXTENDED_PATTERN  = '/[\x{0600}-\x{06FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u';
+    private const ARABIC_BLOCK_PATTERN = '/[\x{0600}-\x{06FF}]/u';
+
+    // private const ARABIC_EXTENDED_PATTERN = '/[\x{0600}-\x{06FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u';
+
 
     // ─── Thresholds ───────────────────────────────────────────────────
     // موحّدة هنا — تغييرها يؤثر على كل النظام
     private const ARABIC_DOMINANT_THRESHOLD = 0.30;
-    private const MIXED_ARABIC_MIN          = 0.15;
-    private const MIXED_ENGLISH_MIN         = 0.15;
-    private const GIBBERISH_VOWEL_RATIO_MIN = 0.10;
-    private const GIBBERISH_CONSONANT_RUN   = 5;
-    private const GIBBERISH_MIN_LENGTH      = 4;
 
-    private const ENGLISH_VOWELS = ['a', 'e', 'i', 'o', 'u'];
+    private const MIXED_ARABIC_MIN = 0.15;
+
+    private const MIXED_ENGLISH_MIN = 0.15;
+
+    private const GIBBERISH_VOWEL_RATIO_MIN = 0.10;
+
+    private const GIBBERISH_CONSONANT_RUN = 5;
+
+    private const GIBBERISH_MIN_LENGTH = 4;
+
+    // private const ENGLISH_VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
     // ─────────────────────────────────────────────────────────────────
     // Public API
@@ -75,9 +82,9 @@ final class QueryLanguageDetector
      */
     public static function isMixed(string $text): bool
     {
-        $chars   = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
-        $total   = 0;
-        $arabic  = 0;
+        $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
+        $total = 0;
+        $arabic = 0;
         $english = 0;
 
         foreach ($chars as $char) {
@@ -142,7 +149,7 @@ final class QueryLanguageDetector
         }
 
         $letters = preg_replace('/[^a-z]/i', '', $text);
-        $len     = strlen($letters);
+        $len = strlen($letters);
 
         if ($len < self::GIBBERISH_MIN_LENGTH) {
             return false;
@@ -154,7 +161,7 @@ final class QueryLanguageDetector
         }
 
         // Check 2: Long consonant run
-        if (preg_match('/[^aeiou]{' . self::GIBBERISH_CONSONANT_RUN . ',}/i', $letters)) {
+        if (preg_match('/[^aeiou]{'.self::GIBBERISH_CONSONANT_RUN.',}/i', $letters)) {
             return true;
         }
 
@@ -177,7 +184,7 @@ final class QueryLanguageDetector
     public static function vowelRatioOfText(string $text): float
     {
         $letters = preg_replace('/[^a-z]/i', '', mb_strtolower($text, 'UTF-8'));
-        $len     = strlen($letters);
+        $len = strlen($letters);
 
         if ($len === 0) {
             return 0.0;
@@ -202,15 +209,15 @@ final class QueryLanguageDetector
     public static function analyze(string $text): array
     {
         $isArabic = self::isArabic($text);
-        $isMixed  = ! $isArabic && self::isMixed($text);
+        $isMixed = ! $isArabic && self::isMixed($text);
 
         return [
-            'isArabic'     => $isArabic,
-            'isMixed'      => $isMixed,
-            'isEnglishOnly'=> ! $isArabic && ! $isMixed,
-            'isGibberish'  => self::isGibberish($text),
-            'vowelRatio'   => self::vowelRatioOfText($text),
-            'arabicRatio'  => self::arabicRatio($text),
+            'isArabic' => $isArabic,
+            'isMixed' => $isMixed,
+            'isEnglishOnly' => ! $isArabic && ! $isMixed,
+            'isGibberish' => self::isGibberish($text),
+            'vowelRatio' => self::vowelRatioOfText($text),
+            'arabicRatio' => self::arabicRatio($text),
         ];
     }
 
@@ -226,18 +233,24 @@ final class QueryLanguageDetector
     private static function vowelRatio(string $lettersOnly): float
     {
         $len = strlen($lettersOnly);
-        if ($len === 0) return 0.0;
+        if ($len === 0) {
+            return 0.0;
+        }
 
         $vowels = preg_replace('/[^aeiou]/i', '', $lettersOnly);
+
         return strlen($vowels) / $len;
     }
 
     private static function arabicRatio(string $text): float
     {
-        $clean  = self::stripWhitespace($text);
-        $total  = mb_strlen($clean, 'UTF-8');
-        if ($total === 0) return 0.0;
+        $clean = self::stripWhitespace($text);
+        $total = mb_strlen($clean, 'UTF-8');
+        if ($total === 0) {
+            return 0.0;
+        }
         $arabic = preg_match_all(self::ARABIC_BLOCK_PATTERN, $clean);
+
         return round($arabic / $total, 4);
     }
 
@@ -249,9 +262,11 @@ final class QueryLanguageDetector
     private static function hasRepeatingPattern(string $text): bool
     {
         $len = strlen($text);
-        if ($len < 6) return false;
+        if ($len < 6) {
+            return false;
+        }
 
-        for ($blockLen = 2; $blockLen <= (int)($len / 3); $blockLen++) {
+        for ($blockLen = 2; $blockLen <= (int) ($len / 3); $blockLen++) {
             $block = substr($text, 0, $blockLen);
             $count = substr_count($text, $block);
 

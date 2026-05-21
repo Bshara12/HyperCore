@@ -6,43 +6,43 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-  /**
-   * Run the migrations.
-   */
-  public function up(): void
-  {
-    Schema::create('subscription_features', function (Blueprint $table) {
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('subscription_features', function (Blueprint $table) {
 
-      $table->id();
+            $table->id();
 
-      $table->foreignId('plan_id')
-        ->constrained('subscription_plans')
-        ->cascadeOnDelete();
+            $table->foreignId('plan_id')
+                ->constrained('subscription_plans')
+                ->cascadeOnDelete();
 
-      $table->string('feature_key');
+            $table->string('feature_key');
 
-      $table->string('feature_type');
+            $table->string('feature_type');
 
-      $table->json('feature_value');
+            $table->json('feature_value');
 
-      $table->timestamps();
+            $table->timestamps();
 
-      $table->unique([
-        'plan_id',
-        'feature_key'
-      ]);
+            $table->unique([
+                'plan_id',
+                'feature_key',
+            ]);
 
-      $table->index([
-        'feature_key'
-      ]);
-    });
-  }
+            $table->index([
+                'feature_key',
+            ]);
+        });
+    }
 
-  /**
-   * Reverse the migrations.
-   */
-  public function down(): void
-  {
-    //
-  }
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        //
+    }
 };

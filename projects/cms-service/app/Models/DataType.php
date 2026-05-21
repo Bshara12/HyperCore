@@ -4,13 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\DataTypeField;
 
+/**
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\DataTypeField> $fields
+ */
 class DataType extends Model
 {
-  use SoftDeletes;
   use HasFactory;
+  use SoftDeletes;
 
   protected $fillable = [
     'project_id',
@@ -18,7 +22,7 @@ class DataType extends Model
     'slug',
     'description',
     'is_active',
-    'settings'
+    'settings',
   ];
 
   protected $casts = [
@@ -42,7 +46,6 @@ class DataType extends Model
   //     ->firstOrFail();
   // }
 
-
   public function project()
   {
     return $this->belongsTo(Project::class);
@@ -53,7 +56,7 @@ class DataType extends Model
     return $this->hasMany(DataCollection::class);
   }
 
-  public function fields()
+  public function fields(): HasMany
   {
     return $this->hasMany(DataTypeField::class);
   }
@@ -67,10 +70,12 @@ class DataType extends Model
   {
     return $this->hasMany(DataTypeRelation::class);
   }
+
   public function relatedRelations()
   {
     return $this->hasMany(DataTypeRelation::class, 'related_data_type_id');
   }
+
   public function getRouteKeyName()
   {
     return 'slug';

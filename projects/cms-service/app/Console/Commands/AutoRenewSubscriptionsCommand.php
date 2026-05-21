@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Domains\Subscription\Actions\Subscription\AutoRenewSubscriptionsAction;
+use Illuminate\Console\Command;
 
 class AutoRenewSubscriptionsCommand extends Command
 {

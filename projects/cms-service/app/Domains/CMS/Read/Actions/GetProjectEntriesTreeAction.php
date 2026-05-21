@@ -66,7 +66,7 @@ class GetProjectEntriesTreeAction
 
         $tree = [];
         foreach ($map as $id => $entry) {
-            if (!isset($hasParent[$id])) {
+            if (! isset($hasParent[$id])) {
                 $tree[] = $entry;
             }
         }

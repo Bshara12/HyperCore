@@ -2,9 +2,9 @@
 
 namespace App\Domains\Subscription\Actions\Usage;
 
-use App\Models\SubscriptionFeature;
 use App\Domains\Subscription\DTOs\Usage\CheckUsageLimitDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use App\Models\SubscriptionFeature;
 
 class CheckUsageLimitAction
 {
@@ -22,7 +22,7 @@ class CheckUsageLimitAction
                 $dto->projectId
             );
 
-        if (!$subscription) {
+        if (! $subscription) {
             return false;
         }
 
@@ -34,7 +34,7 @@ class CheckUsageLimitAction
                 $dto->featureKey
             );
 
-        if (!$feature) {
+        if (! $feature) {
             return false;
         }
 
@@ -48,11 +48,10 @@ class CheckUsageLimitAction
                 $dto->featureKey
             );
 
-        return (
+        return
             ($used + $dto->requestedAmount)
             <=
-            $limit
-        );
+            $limit;
     }
 
     private function resolveLimit(

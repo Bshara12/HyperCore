@@ -3,12 +3,13 @@
 namespace App\Domains\AI\Actions;
 
 use App\Domains\AI\DTOs\ProvisionProjectFromSchemaDTO;
-use App\Domains\CMS\Actions\Field\CreateFieldAction;
 use App\Domains\CMS\Actions\DataType\CreateDataTypeAction;
+use App\Domains\CMS\Actions\Field\CreateFieldAction;
 use App\Domains\CMS\Actions\Project\CreateProjectAction;
 use App\Domains\CMS\DTOs\CreateProjectDTO;
 use App\Domains\CMS\DTOs\DataType\CreateDataTypeDTO;
 use App\Domains\CMS\DTOs\Field\CreateFieldDTO;
+use App\Models\DataTypeField;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -22,9 +23,9 @@ class ProvisionProjectFromSchemaAction
   private array $dataTypeMap = [];
 
   public function __construct(
-    private CreateProjectAction  $createProject,
+    private CreateProjectAction $createProject,
     private CreateDataTypeAction $createDataType,
-    private CreateFieldAction    $createField,
+    private CreateFieldAction $createField,
   ) {}
 
   public function execute(ProvisionProjectFromSchemaDTO $dto): array
@@ -37,7 +38,7 @@ class ProvisionProjectFromSchemaAction
           name: $dto->projectInfo['name'],
           ownerId: $dto->ownerId,
           supportedLanguages: $dto->projectInfo['languages'] ?? ['ar', 'en'],
-          enabledModules: $dto->projectInfo['modules']   ?? ['cms'],
+          enabledModules: $dto->projectInfo['modules'] ?? ['cms'],
           // description: $dto->projectInfo['description'] ?? null,
         )
       );
@@ -47,8 +48,8 @@ class ProvisionProjectFromSchemaAction
       // ─── Step 2: إنشاء الـ Data Types ──────────────────────
       foreach ($dto->customDataTypes as $typeData) {
 
-        $slug     = $typeData['slug'] ?? Str::slug($typeData['name']);
-        $name     = $typeData['name'];
+        $slug = $typeData['slug'] ?? Str::slug($typeData['name']);
+        $name = $typeData['name'];
 
         $dataType = $this->createDataType->execute(
           new CreateDataTypeDTO(
@@ -73,7 +74,9 @@ class ProvisionProjectFromSchemaAction
       foreach ($dto->customDataTypes as $typeData) {
 
         $dataTypeId = $this->resolveDataTypeId($typeData['name']);
-        if (!$dataTypeId) continue;
+        if (! $dataTypeId) {
+          continue;
+        }
 
         $sortOrder = 1;
 
@@ -82,10 +85,11 @@ class ProvisionProjectFromSchemaAction
           if ($fieldData['type'] === 'relation') {
             $pendingRelationFields[] = [
               'data_type_id' => $dataTypeId,
-              'field'        => $fieldData,
-              'sort_order'   => $sortOrder,
+              'field' => $fieldData,
+              'sort_order' => $sortOrder,
             ];
             $sortOrder++;
+
             continue;
           }
 
@@ -166,12 +170,13 @@ class ProvisionProjectFromSchemaAction
     foreach ($variants as $variant) {
       if (isset($this->dataTypeMap[$variant])) {
         Log::info("[AI Provision] Resolved '{$identifier}' → '{$variant}' = {$this->dataTypeMap[$variant]}");
+
         return $this->dataTypeMap[$variant];
       }
     }
 
     Log::warning("[AI Provision] Could not resolve DataType: '{$identifier}'");
-    Log::warning("[AI Provision] Available keys: " . implode(', ', array_keys($this->dataTypeMap)));
+    Log::warning('[AI Provision] Available keys: ' . implode(', ', array_keys($this->dataTypeMap)));
 
     return null;
   }
@@ -180,25 +185,27 @@ class ProvisionProjectFromSchemaAction
   // معالجة حقل الـ Relation
   // =========================================================
   private function processRelationField(
-    int   $dataTypeId,
+    int $dataTypeId,
     array $fieldData,
-    int   $sortOrder,
+    int $sortOrder,
   ): void {
     $settings = $fieldData['settings'] ?? [];
 
     // ✅ حل الـ related_data_type_id بأي صيغة
     $rawRelatedId = $settings['related_data_type_id'] ?? null;
 
-    if (!$rawRelatedId) {
+    if (! $rawRelatedId) {
       Log::warning("[AI Provision] Relation field '{$fieldData['name']}' missing related_data_type_id.");
+
       return;
     }
 
     // حل الـ ID الفعلي
     $resolvedId = $this->resolveDataTypeId((string) $rawRelatedId);
 
-    if (!$resolvedId) {
+    if (! $resolvedId) {
       Log::warning("[AI Provision] Skipping relation field '{$fieldData['name']}' — could not resolve '{$rawRelatedId}'.");
+
       return;
     }
 
@@ -216,35 +223,37 @@ class ProvisionProjectFromSchemaAction
     $sourceId = $this->resolveDataTypeId($relation['source']);
     $targetId = $this->resolveDataTypeId($relation['target']);
 
-    if (!$sourceId || !$targetId) {
+    if (! $sourceId || ! $targetId) {
       Log::warning("[AI Provision] Skipping relation '{$relation['source']}' → '{$relation['target']}'.");
+
       return;
     }
 
     $fieldName = $relation['field_name'] ?? Str::snake($relation['target']) . '_id';
 
     // تحقق إذا الحقل موجود مسبقاً (أنشئ في Step 4)
-    $fieldExists = \App\Models\DataTypeField::where('data_type_id', $sourceId)
+    $fieldExists = DataTypeField::where('data_type_id', $sourceId)
       ->where('name', $fieldName)
       ->exists();
 
     if ($fieldExists) {
       Log::info("[AI Provision] Relation field '{$fieldName}' already exists — skipping.");
+
       return;
     }
 
     $this->createRegularField(
       dataTypeId: $sourceId,
       fieldData: [
-        'name'             => $fieldName,
-        'type'             => 'relation',
-        'required'         => $relation['required'] ?? false,
-        'translatable'     => false,
+        'name' => $fieldName,
+        'type' => 'relation',
+        'required' => $relation['required'] ?? false,
+        'translatable' => false,
         'validation_rules' => [],
-        'settings'         => [
-          'relation_type'        => $relation['type'],
+        'settings' => [
+          'relation_type' => $relation['type'],
           'related_data_type_id' => $targetId,
-          'multiple'             => in_array($relation['type'], ['has_many', 'many_to_many']),
+          'multiple' => in_array($relation['type'], ['has_many', 'many_to_many']),
         ],
       ],
       sortOrder: 99,
@@ -255,9 +264,9 @@ class ProvisionProjectFromSchemaAction
   // إنشاء حقل عادي
   // =========================================================
   private function createRegularField(
-    int   $dataTypeId,
+    int $dataTypeId,
     array $fieldData,
-    int   $sortOrder,
+    int $sortOrder,
   ): void {
     try {
       // ✅ نظّف الـ validation rules من القيم غير المدعومة
@@ -271,10 +280,11 @@ class ProvisionProjectFromSchemaAction
           data_type_id: $dataTypeId,
           name: $fieldData['name'],
           type: $fieldData['type'],
-          required: $fieldData['required']         ?? false,
-          translatable: $fieldData['translatable']     ?? false,
-          validation_rules: $fieldData['validation_rules'] ?? [],
-          settings: $fieldData['settings']         ?? [],
+          required: $fieldData['required'] ?? false,
+          translatable: $fieldData['translatable'] ?? false,
+          validation_rules: $fieldData['validation_rules'],
+          // validation_rules: $fieldData['validation_rules'] ?? [],
+          settings: $fieldData['settings'] ?? [],
           sort_order: $sortOrder,
         )
       );
@@ -289,7 +299,7 @@ class ProvisionProjectFromSchemaAction
   private function sanitizeValidationRules(array $rules, string $type): array
   {
     $allowedPerType = [
-      'text'    => [
+      'text' => [
         'string',
         'max',
         'min',
@@ -309,13 +319,13 @@ class ProvisionProjectFromSchemaAction
         'same',
         'starts_with',
         'ends_with',
-        'in'
+        'in',
       ],
-      'number'  => ['numeric', 'integer', 'min', 'max', 'required', 'nullable'],
+      'number' => ['numeric', 'integer', 'min', 'max', 'required', 'nullable'],
       'boolean' => ['boolean', 'required'],
-      'select'  => ['required', 'in'],
-      'file'    => ['required', 'nullable', 'mimes', 'max', 'min'],
-      'json'    => ['json', 'required', 'nullable'],
+      'select' => ['required', 'in'],
+      'file' => ['required', 'nullable', 'mimes', 'max', 'min'],
+      'json' => ['json', 'required', 'nullable'],
       'relation' => ['required', 'exists'],
     ];
 
@@ -324,6 +334,7 @@ class ProvisionProjectFromSchemaAction
     return array_filter($rules, function ($rule) use ($allowed) {
       // استخرج اسم الـ rule بدون القيم (مثل max:255 → max)
       $ruleName = explode(':', $rule)[0];
+
       return in_array($ruleName, $allowed);
     });
   }
@@ -337,35 +348,35 @@ class ProvisionProjectFromSchemaAction
 
     foreach ($this->dataTypeMap as $key => $id) {
       // فقط الأسماء الأصلية — نتجنب التكرار
-      if (!in_array($key, array_column($dto->customDataTypes, 'name'))) {
+      if (! in_array($key, array_column($dto->customDataTypes, 'name'))) {
         continue;
       }
 
-      $fields = \App\Models\DataTypeField::where('data_type_id', $id)
+      $fields = DataTypeField::where('data_type_id', $id)
         ->orderBy('sort_order')
         ->get(['id', 'name', 'type', 'required', 'translatable'])
         ->toArray();
 
       $dataTypesDetails[] = [
-        'id'     => $id,
-        'name'   => $key,
+        'id' => $id,
+        'name' => $key,
         'fields' => $fields,
       ];
     }
 
     return [
       'project' => [
-        'id'                  => $project->id,
-        'name'                => $project->name,
-        'slug'                => $project->slug,
-        'public_id'           => $project->public_id,
+        'id' => $project->id,
+        'name' => $project->name,
+        'slug' => $project->slug,
+        'public_id' => $project->public_id,
         'supported_languages' => $project->supported_languages,
-        'enabled_modules'     => $project->enabled_modules,
+        'enabled_modules' => $project->enabled_modules,
       ],
-      'data_types'   => $dataTypesDetails,
-      'total_types'  => count($dataTypesDetails),
+      'data_types' => $dataTypesDetails,
+      'total_types' => count($dataTypesDetails),
       'total_fields' => array_sum(array_map(fn($dt) => count($dt['fields']), $dataTypesDetails)),
-      'modules'      => $dto->projectInfo['modules'] ?? ['cms'],
+      'modules' => $dto->projectInfo['modules'] ?? ['cms'],
     ];
   }
 }

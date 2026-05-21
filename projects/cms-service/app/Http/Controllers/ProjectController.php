@@ -12,65 +12,66 @@ use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
+    protected $service;
 
-  protected $service;
-  public function __construct(ProjectService $service)
-  {
-    $this->service = $service;
-  }
+    public function __construct(ProjectService $service)
+    {
+        $this->service = $service;
+    }
 
-  public function resolve(Request $request)
-  {
-    return response()->json($this->service->resolve($request));
-  }
+    public function resolve(Request $request)
+    {
+        return response()->json($this->service->resolve($request));
+    }
 
-  public function store(
-    CreateProjectRequest $request,
-    ProjectService $service
-  ) {
-    
-    $dto = CreateProjectDTO::fromRequest($request);
+    public function store(
+        CreateProjectRequest $request,
+        ProjectService $service
+    ) {
 
-    $project = $service->create($dto);
+        $dto = CreateProjectDTO::fromRequest($request);
 
-    return response()->json($project, 201);
-  }
+        $project = $service->create($dto);
 
-  public function update(
-    UpdateProjectRequest $request,
-    Project $project,
-    ProjectService $service
-  ) {
-    $dto = UpdateProjectDTO::fromRequest($request);
+        return response()->json($project, 201);
+    }
 
-    $updated = $service->update($project, $dto);
+    public function update(
+        UpdateProjectRequest $request,
+        Project $project,
+        ProjectService $service
+    ) {
+        $dto = UpdateProjectDTO::fromRequest($request);
 
-    return response()->json($updated);
-  }
+        $updated = $service->update($project, $dto);
 
-  public function show(
-    Project $project,
-    ProjectService $service
-  ) {
-    $result = $service->show($project);
+        return response()->json($updated);
+    }
 
-    return response()->json($result);
-  }
+    public function show(
+        Project $project,
+        ProjectService $service
+    ) {
+        $result = $service->show($project);
 
-  public function index(ProjectService $service)
-  {
-    $projects = $service->list();
+        return response()->json($result);
+    }
 
-    return response()->json($projects);
-  }
-  public function destroy(
-    Project $project,
-    ProjectService $service
-  ) {
-    $service->delete($project);
+    public function index(ProjectService $service)
+    {
+        $projects = $service->list();
 
-    return response()->json([
-      'message' => 'Project deleted successfully'
-    ], 200);
-  }
+        return response()->json($projects);
+    }
+
+    public function destroy(
+        Project $project,
+        ProjectService $service
+    ) {
+        $service->delete($project);
+
+        return response()->json([
+            'message' => 'Project deleted successfully',
+        ], 200);
+    }
 }

@@ -35,10 +35,10 @@ class UpdateContentAccessMetadataAction
             $dto->contentId !== null
             && $dto->contentId !== $existing->content_id
         ) {
-            $contentId   = $dto->contentId;
+            $contentId = $dto->contentId;
             $contentType = $this->contentTypeResolver->resolve($contentId);
         } else {
-            $contentId   = $existing->content_id;
+            $contentId = $existing->content_id;
             $contentType = $existing->content_type;
         }
 
@@ -46,12 +46,12 @@ class UpdateContentAccessMetadataAction
             ->updateWithFeatures(
                 metadata: $existing,
                 data: [
-                    'project_id'            => $dto->projectId,
-                    'content_type'          => $contentType,
-                    'content_id'            => $contentId,
+                    'project_id' => $dto->projectId,
+                    'content_type' => $contentType,
+                    'content_id' => $contentId,
                     'requires_subscription' => $dto->requiresSubscription,
-                    'metadata'              => $dto->metadata,
-                    'is_active'             => $dto->isActive,
+                    'metadata' => $dto->metadata,
+                    'is_active' => $dto->isActive,
                 ],
                 features: $dto->features
             );

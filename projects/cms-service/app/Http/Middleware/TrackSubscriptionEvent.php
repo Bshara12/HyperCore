@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Domains\Subscription\Services\DomainEventService;
 use Closure;
 use Illuminate\Http\Request;
-use App\Support\Services\DomainEventService;
 
 class TrackSubscriptionEvent
 {
@@ -36,7 +36,7 @@ class TrackSubscriptionEvent
         $projectId = $request->project_id
             ?? $request->input('project_id');
 
-        if (!$userId) {
+        if (! $userId) {
             return $response;
         }
 

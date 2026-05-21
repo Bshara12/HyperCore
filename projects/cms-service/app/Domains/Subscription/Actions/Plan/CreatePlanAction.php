@@ -2,10 +2,10 @@
 
 namespace App\Domains\Subscription\Actions\Plan;
 
-use Exception;
 use App\Domains\Subscription\DTOs\Plan\CreatePlanDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionPlanRepositoryInterface;
 use App\Models\SubscriptionPlan;
+use Exception;
 
 class CreatePlanAction
 {

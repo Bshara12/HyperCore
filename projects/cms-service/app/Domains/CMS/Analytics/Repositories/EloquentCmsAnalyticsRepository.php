@@ -19,11 +19,16 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
 
   public function getAdminOverview(string $from, string $to): array
   {
-    // إجمالي المشاريع
-    $projectStats = Project::query()->whereNull('deleted_at')->selectRaw("
+
+    /** @var object{
+     *   total_projects:int|string|null,
+     *   new_projects:int|string|null
+     * } $projectStats
+     */
+    $projectStats = Project::query()->whereNull('deleted_at')->selectRaw('
                 COUNT(*) as total_projects,
                 SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as new_projects
-            ", [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ', [$from . ' 00:00:00', $to . ' 23:59:59'])
       ->first();
 
     // استخدام الـ modules
@@ -40,7 +45,14 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
       ->whereNull('deleted_at')
       ->count();
 
-    // إجمالي الـ Entries
+    /** @var object{
+     *     total:int|string|null,
+     *     published:int|string|null,
+     *     drafts:int|string|null,
+     *     scheduled:int|string|null,
+     *     archived:int|string|null
+     * } $entriesStats
+     */
     $entriesStats = DataEntry::query()
       ->whereNull('deleted_at')
       ->selectRaw("
@@ -52,9 +64,15 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
             ")
       ->first();
 
+
+    /** @var object{
+     *     total:int|string|null,
+     *     avg_rating:float|string|null
+     * } $ratingsStats
+     */
     // إجمالي التقييمات
     $ratingsStats = Rating::query()
-      ->selectRaw("COUNT(*) as total, ROUND(AVG(rating), 2) as avg_rating")
+      ->selectRaw('COUNT(*) as total, ROUND(AVG(rating), 2) as avg_rating')
       ->first();
 
     // إجمالي الـ Collections
@@ -62,27 +80,27 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
 
     return [
       'projects' => [
-        'total'     => (int) $projectStats->total_projects,
-        'new'       => (int) $projectStats->new_projects,
+        'total' => (int) $projectStats->total_projects,
+        'new' => (int) $projectStats->new_projects,
       ],
       'modules_usage' => [
         'ecommerce_enabled' => (int) ($modulesStats->ecommerce_enabled ?? 0),
-        'booking_enabled'   => (int) ($modulesStats->booking_enabled   ?? 0),
+        'booking_enabled' => (int) ($modulesStats->booking_enabled ?? 0),
       ],
       'content' => [
-        'total_data_types'   => $dataTypesCount,
-        'total_collections'  => $collectionsCount,
-        'total_entries'      => (int) $entriesStats->total,
-        'published_entries'  => (int) $entriesStats->published,
-        'draft_entries'      => (int) $entriesStats->drafts,
-        'scheduled_entries'  => (int) $entriesStats->scheduled,
-        'archived_entries'   => (int) $entriesStats->archived,
-        'publish_rate'       => $entriesStats->total > 0
+        'total_data_types' => $dataTypesCount,
+        'total_collections' => $collectionsCount,
+        'total_entries' => (int) $entriesStats->total,
+        'published_entries' => (int) $entriesStats->published,
+        'draft_entries' => (int) $entriesStats->drafts,
+        'scheduled_entries' => (int) $entriesStats->scheduled,
+        'archived_entries' => (int) $entriesStats->archived,
+        'publish_rate' => $entriesStats->total > 0
           ? round(($entriesStats->published / $entriesStats->total) * 100, 2)
           : 0,
       ],
       'ratings' => [
-        'total'      => (int) $ratingsStats->total,
+        'total' => (int) $ratingsStats->total,
         'avg_rating' => (float) $ratingsStats->avg_rating,
       ],
     ];
@@ -92,11 +110,16 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
   {
     $groupBy = $this->resolveGroupBy($dto->period);
 
+    /** @var \Illuminate\Support\Collection<int, object{
+     *     label:string,
+     *     count:int|string
+     * }> $rows
+     */
     $rows = Project::query()
       ->whereNull('deleted_at')
       ->whereBetween('created_at', [
         $dto->from . ' 00:00:00',
-        $dto->to   . ' 23:59:59',
+        $dto->to . ' 23:59:59',
       ])
       ->selectRaw("{$groupBy} as label, COUNT(*) as count")
       ->groupByRaw($groupBy)
@@ -105,12 +128,15 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
 
     return [
       'period' => $dto->period,
-      'from'   => $dto->from,
-      'to'     => $dto->to,
-      'data'   => $rows->map(fn($r) => [
-        'label' => $r->label,
-        'count' => (int) $r->count,
-      ])->toArray(),
+      'from' => $dto->from,
+      'to' => $dto->to,
+      'data' => $rows->map(
+        /** @param object{label:string,count:int|string} $r */
+        fn($r) => [
+          'label' => $r->label,
+          'count' => (int) $r->count,
+        ]
+      )->toArray(),
     ];
   }
 
@@ -147,6 +173,14 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
       ->orderByRaw('total_entries DESC')
       ->get();
 
+    /** @var object{
+     *     total:int|string|null,
+     *     manual:int|string|null,
+     *     dynamic:int|string|null,
+     *     offer_collections:int|string|null,
+     *     active:int|string|null
+     * } $collectionsStats
+     */
     // إجمالي الـ collections للمشروع
     $collectionsStats = DataCollection::query()
       ->where('project_id', $dto->projectId)
@@ -160,29 +194,29 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
       ->first();
 
     return [
-      'project_id'  => $dto->projectId,
-      'data_types'  => $dataTypes->map(fn($r) => [
-        'data_type_id'   => $r->data_type_id,
-        'name'           => $r->data_type_name,
-        'slug'           => $r->data_type_slug,
-        'is_active'      => (bool) $r->is_active,
-        'total_entries'  => (int) $r->total_entries,
-        'published'      => (int) $r->published,
-        'drafts'         => (int) $r->drafts,
-        'scheduled'      => (int) $r->scheduled,
-        'archived'       => (int) $r->archived,
-        'publish_rate'   => $r->total_entries > 0
+      'project_id' => $dto->projectId,
+      'data_types' => $dataTypes->map(fn($r) => [
+        'data_type_id' => $r->data_type_id,
+        'name' => $r->data_type_name,
+        'slug' => $r->data_type_slug,
+        'is_active' => (bool) $r->is_active,
+        'total_entries' => (int) $r->total_entries,
+        'published' => (int) $r->published,
+        'drafts' => (int) $r->drafts,
+        'scheduled' => (int) $r->scheduled,
+        'archived' => (int) $r->archived,
+        'publish_rate' => $r->total_entries > 0
           ? round(($r->published / $r->total_entries) * 100, 2)
           : 0,
-        'avg_rating'     => (float) $r->avg_rating,
-        'total_ratings'  => (int) $r->total_ratings,
+        'avg_rating' => (float) $r->avg_rating,
+        'total_ratings' => (int) $r->total_ratings,
       ])->toArray(),
       'collections' => [
-        'total'              => (int) $collectionsStats->total,
-        'manual'             => (int) $collectionsStats->manual,
-        'dynamic'            => (int) $collectionsStats->dynamic,
-        'offer_collections'  => (int) $collectionsStats->offer_collections,
-        'active'             => (int) $collectionsStats->active,
+        'total' => (int) $collectionsStats->total,
+        'manual' => (int) $collectionsStats->manual,
+        'dynamic' => (int) $collectionsStats->dynamic,
+        'offer_collections' => (int) $collectionsStats->offer_collections,
+        'active' => (int) $collectionsStats->active,
       ],
     ];
   }
@@ -194,28 +228,37 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
   {
     $groupBy = $this->resolveGroupBy($dto->period);
 
+
+    /** @var \Illuminate\Support\Collection<int, object{
+     *     label:string,
+     *     count:int|string
+     * }> $rows
+     */
     $rows = DataEntry::query()
       ->where('project_id', $dto->projectId)
       ->where('status', 'published')
       ->whereNotNull('published_at')
       ->whereBetween('published_at', [
         $dto->from . ' 00:00:00',
-        $dto->to   . ' 23:59:59',
+        $dto->to . ' 23:59:59',
       ])
       ->whereNull('deleted_at')
-      ->selectRaw(str_replace('created_at', 'published_at', $groupBy) . " as label, COUNT(*) as count")
+      ->selectRaw(str_replace('created_at', 'published_at', $groupBy) . ' as label, COUNT(*) as count')
       ->groupByRaw(str_replace('created_at', 'published_at', $groupBy))
       ->orderBy('label')
       ->get();
 
     return [
       'period' => $dto->period,
-      'from'   => $dto->from,
-      'to'     => $dto->to,
-      'data'   => $rows->map(fn($r) => [
-        'label' => $r->label,
-        'count' => (int) $r->count,
-      ])->toArray(),
+      'from' => $dto->from,
+      'to' => $dto->to,
+      'data' => $rows->map(
+        /** @param object{label:string,count:int|string} $r */
+        fn($r) => [
+          'label' => $r->label,
+          'count' => (int) $r->count,
+        ]
+      )->toArray(),
     ];
   }
 
@@ -229,7 +272,7 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
       ->where('de.project_id', $dto->projectId)
       ->where('de.ratings_count', '>', 0)
       ->whereNull('de.deleted_at')
-      ->selectRaw("
+      ->selectRaw('
                 de.id,
                 de.slug,
                 de.status,
@@ -237,21 +280,21 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
                 de.ratings_avg,
                 dt.name  as data_type_name,
                 dt.slug  as data_type_slug
-            ")
+            ')
       ->orderByRaw('de.ratings_avg DESC, de.ratings_count DESC')
       ->limit($dto->limit)
       ->get();
 
     return [
       'project_id' => $dto->projectId,
-      'limit'      => $dto->limit,
-      'entries'    => $entries->map(fn($r) => [
-        'id'             => $r->id,
-        'slug'           => $r->slug,
-        'status'         => $r->status,
-        'ratings_count'  => (int) $r->ratings_count,
-        'ratings_avg'    => (float) $r->ratings_avg,
-        'data_type'      => [
+      'limit' => $dto->limit,
+      'entries' => $entries->map(fn($r) => [
+        'id' => $r->id,
+        'slug' => $r->slug,
+        'status' => $r->status,
+        'ratings_count' => (int) $r->ratings_count,
+        'ratings_avg' => (float) $r->ratings_avg,
+        'data_type' => [
           'name' => $r->data_type_name,
           'slug' => $r->data_type_slug,
         ],
@@ -274,13 +317,24 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
       return $this->emptyRatingsReport($dto);
     }
 
+    /** @var object{
+     *     total_ratings:int|string|null,
+     *     avg_rating:float|string|null,
+     *     with_review:int|string|null,
+     *     five_star:int|string|null,
+     *     four_star:int|string|null,
+     *     three_star:int|string|null,
+     *     two_star:int|string|null,
+     *     one_star:int|string|null
+     * } $summary
+     */
     // ملخص عام
     $summary = Rating::query()
       ->whereIn('rateable_id', $entryIds)
       ->where('rateable_type', 'data')
       ->whereBetween('created_at', [
         $dto->from . ' 00:00:00',
-        $dto->to   . ' 23:59:59',
+        $dto->to . ' 23:59:59',
       ])
       ->selectRaw("
                 COUNT(*)                         as total_ratings,
@@ -301,7 +355,7 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
       ->where('rateable_type', 'data')
       ->whereBetween('created_at', [
         $dto->from . ' 00:00:00',
-        $dto->to   . ' 23:59:59',
+        $dto->to . ' 23:59:59',
       ])
       ->selectRaw("{$groupBy} as label, COUNT(*) as count, ROUND(AVG(rating),2) as avg")
       ->groupByRaw($groupBy)
@@ -314,37 +368,45 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
       ->where('rateable_id', $dto->projectId)
       ->whereBetween('created_at', [
         $dto->from . ' 00:00:00',
-        $dto->to   . ' 23:59:59',
+        $dto->to . ' 23:59:59',
       ])
-      ->selectRaw("
+      ->selectRaw('
                 COUNT(*) as total,
                 ROUND(AVG(rating), 2) as avg_rating
-            ")
+            ')
       ->first();
 
     $total = (int) $summary->total_ratings;
 
     return [
-      'period'          => ['from' => $dto->from, 'to' => $dto->to],
+      'period' => ['from' => $dto->from, 'to' => $dto->to],
       'content_ratings' => [
-        'total'        => $total,
-        'avg_rating'   => (float) $summary->avg_rating,
-        'with_review'  => (int)   $summary->with_review,
+        'total' => $total,
+        'avg_rating' => (float) $summary->avg_rating,
+        'with_review' => (int) $summary->with_review,
         'distribution' => [
-          5 => ['count' => (int)$summary->five_star,  'percentage' => $total > 0 ? round(($summary->five_star  / $total) * 100, 2) : 0],
-          4 => ['count' => (int)$summary->four_star,  'percentage' => $total > 0 ? round(($summary->four_star  / $total) * 100, 2) : 0],
-          3 => ['count' => (int)$summary->three_star, 'percentage' => $total > 0 ? round(($summary->three_star / $total) * 100, 2) : 0],
-          2 => ['count' => (int)$summary->two_star,   'percentage' => $total > 0 ? round(($summary->two_star   / $total) * 100, 2) : 0],
-          1 => ['count' => (int)$summary->one_star,   'percentage' => $total > 0 ? round(($summary->one_star   / $total) * 100, 2) : 0],
+          5 => ['count' => (int) $summary->five_star,  'percentage' => $total > 0 ? round(($summary->five_star / $total) * 100, 2) : 0],
+          4 => ['count' => (int) $summary->four_star,  'percentage' => $total > 0 ? round(($summary->four_star / $total) * 100, 2) : 0],
+          3 => ['count' => (int) $summary->three_star, 'percentage' => $total > 0 ? round(($summary->three_star / $total) * 100, 2) : 0],
+          2 => ['count' => (int) $summary->two_star,   'percentage' => $total > 0 ? round(($summary->two_star / $total) * 100, 2) : 0],
+          1 => ['count' => (int) $summary->one_star,   'percentage' => $total > 0 ? round(($summary->one_star / $total) * 100, 2) : 0],
         ],
-        'trend'        => $trend->map(fn($r) => [
-          'label' => $r->label,
-          'count' => (int)   $r->count,
-          'avg'   => (float) $r->avg,
-        ])->toArray(),
+        'trend' => $trend->map(
+          /** @param object{
+           *      label:string,
+           *      count:int|string,
+           *      avg:float|string|null
+           * } $r
+           */
+          fn($r) => [
+            'label' => $r->label,
+            'count' => (int) $r->count,
+            'avg' => (float) $r->avg,
+          ]
+        )->toArray(),
       ],
       'project_ratings' => [
-        'total'      => (int)   ($projectRatings->total      ?? 0),
+        'total' => (int) ($projectRatings->total ?? 0),
         'avg_rating' => (float) ($projectRatings->avg_rating ?? 0),
       ],
     ];
@@ -357,22 +419,22 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
   public function resolveGroupBy(string $period): string
   {
     return match ($period) {
-      'weekly'  => "DATE_FORMAT(created_at, '%x-W%v')",
+      'weekly' => "DATE_FORMAT(created_at, '%x-W%v')",
       'monthly' => "DATE_FORMAT(created_at, '%Y-%m')",
-      default   => "DATE(created_at)",
+      default => 'DATE(created_at)',
     };
   }
 
   public function emptyRatingsReport(AnalyticsFilterDTO $dto): array
   {
     return [
-      'period'          => ['from' => $dto->from, 'to' => $dto->to],
+      'period' => ['from' => $dto->from, 'to' => $dto->to],
       'content_ratings' => [
-        'total'        => 0,
-        'avg_rating'   => 0,
-        'with_review'  => 0,
+        'total' => 0,
+        'avg_rating' => 0,
+        'with_review' => 0,
         'distribution' => [5 => ['count' => 0, 'percentage' => 0], 4 => ['count' => 0, 'percentage' => 0], 3 => ['count' => 0, 'percentage' => 0], 2 => ['count' => 0, 'percentage' => 0], 1 => ['count' => 0, 'percentage' => 0]],
-        'trend'        => [],
+        'trend' => [],
       ],
       'project_ratings' => ['total' => 0, 'avg_rating' => 0],
     ];

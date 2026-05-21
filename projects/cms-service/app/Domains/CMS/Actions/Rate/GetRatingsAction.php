@@ -24,71 +24,71 @@ use App\Domains\CMS\Repositories\Interface\RatingRepositoryInterface;
 
 class GetRatingsAction
 {
-  public function __construct(
-    private RatingRepositoryInterface $ratings,
-    private AuthServiceClient $authClient // ⭐ جديد
-  ) {}
+    public function __construct(
+        private RatingRepositoryInterface $ratings,
+        private AuthServiceClient $authClient // ⭐ جديد
+    ) {}
 
-  // public function execute(GetRatingsDTO $dto)
-  // {
-  //     $ratings = $this->ratings->paginateByRateable(
-  //         $dto->rateableType,
-  //         $dto->rateableId,
-  //         $dto->perPage
-  //     );
+    // public function execute(GetRatingsDTO $dto)
+    // {
+    //     $ratings = $this->ratings->paginateByRateable(
+    //         $dto->rateableType,
+    //         $dto->rateableId,
+    //         $dto->perPage
+    //     );
 
-  //     // ⭐ collect user_ids
-  //     $userIds = collect($ratings->items())
-  //         ->pluck('user_id')
-  //         ->filter()
-  //         ->unique()
-  //         ->values()
-  //         ->toArray();
+    //     // ⭐ collect user_ids
+    //     $userIds = collect($ratings->items())
+    //         ->pluck('user_id')
+    //         ->filter()
+    //         ->unique()
+    //         ->values()
+    //         ->toArray();
 
-  //     // ⭐ نجيب المستخدمين دفعة وحدة
-  //     $users = $this->authClient->getUsersByIds($userIds);
+    //     // ⭐ نجيب المستخدمين دفعة وحدة
+    //     $users = $this->authClient->getUsersByIds($userIds);
 
-  //     // ⭐ نحولهم map
-  //     $usersMap = collect($users)->keyBy('id');
+    //     // ⭐ نحولهم map
+    //     $usersMap = collect($users)->keyBy('id');
 
-  //     // ⭐ نربطهم مع ratings
-  //     foreach ($ratings as $rating) {
-  //         $rating->user = $usersMap[$rating->user_id] ?? null;
-  //     }
+    //     // ⭐ نربطهم مع ratings
+    //     foreach ($ratings as $rating) {
+    //         $rating->user = $usersMap[$rating->user_id] ?? null;
+    //     }
 
-  //     return $ratings;
-  // }
-  public function execute(GetRatingsDTO $dto)
-  {
-    $ratings = $this->ratings->paginateByRateable(
-      $dto->rateableType,
-      $dto->rateableId,
-      $dto->perPage
-    );
+    //     return $ratings;
+    // }
+    public function execute(GetRatingsDTO $dto)
+    {
+        $ratings = $this->ratings->paginateByRateable(
+            $dto->rateableType,
+            $dto->rateableId,
+            $dto->perPage
+        );
 
-    // ⭐ جمع user_ids
-    $userIds = collect($ratings->items())
-      ->pluck('user_id')
-      ->filter()
-      ->unique()
-      ->values()
-      ->toArray();
+        // ⭐ جمع user_ids
+        $userIds = collect($ratings->items())
+            ->pluck('user_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
 
-    if (empty($userIds)) {
-      return $ratings;
+        if (empty($userIds)) {
+            return $ratings;
+        }
+
+        // ⭐ جلب المستخدمين
+        $users = $this->authClient->getUsersByIds($userIds);
+
+        // ⭐ تحويلهم map
+        $usersMap = collect($users)->keyBy('id');
+
+        // ⭐ ربطهم مع ratings
+        foreach ($ratings as $rating) {
+            $rating->user = $usersMap[$rating->user_id] ?? null;
+        }
+
+        return $ratings;
     }
-
-    // ⭐ جلب المستخدمين
-    $users = $this->authClient->getUsersByIds($userIds);
-
-    // ⭐ تحويلهم map
-    $usersMap = collect($users)->keyBy('id');
-
-    // ⭐ ربطهم مع ratings
-    foreach ($ratings as $rating) {
-      $rating->user = $usersMap[$rating->user_id] ?? null;
-    }
-
-    return $ratings;
-  }
 }

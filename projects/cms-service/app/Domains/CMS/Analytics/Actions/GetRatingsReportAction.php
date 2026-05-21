@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Cache;
 
 class GetRatingsReportAction
 {
-  public function __construct(
-    private AnalyticsRepositoryInterface $repository
-  ) {}
+    public function __construct(
+        private AnalyticsRepositoryInterface $repository
+    ) {}
 
-  public function execute(AnalyticsFilterDTO $dto): array
-  {
-    return Cache::remember(
-      "analytics:project:{$dto->projectId}:ratings:{$dto->period}:{$dto->from}:{$dto->to}",
-      CacheKeys::TTL_SHORT,
-      fn() => $this->repository->getRatingsReport($dto)
-    );
-  }
+    public function execute(AnalyticsFilterDTO $dto): array
+    {
+        return Cache::remember(
+            "analytics:project:{$dto->projectId}:ratings:{$dto->period}:{$dto->from}:{$dto->to}",
+            CacheKeys::TTL_SHORT,
+            fn () => $this->repository->getRatingsReport($dto)
+        );
+    }
 }

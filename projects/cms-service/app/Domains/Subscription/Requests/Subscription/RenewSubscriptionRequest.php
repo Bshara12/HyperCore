@@ -17,24 +17,24 @@ class RenewSubscriptionRequest extends FormRequest
 
             'gateway' => [
                 'required',
-                'string'
+                'string',
             ],
 
             'payment_type' => [
                 'required',
                 'string',
-                'in:full,installment'
+                'in:full,installment',
             ],
 
             'auto_renew' => [
                 'nullable',
-                'boolean'
+                'boolean',
             ],
 
             'metadata' => [
                 'nullable',
-                'array'
-            ]
+                'array',
+            ],
         ];
     }
 }

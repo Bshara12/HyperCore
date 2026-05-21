@@ -106,10 +106,10 @@ class AnalyzeSynonymsAction
                 break;
             }
 
-            // if ($coCount < self::MIN_COOCCURRENCE_COUNT) {
+            if ($coCount < self::MIN_COOCCURRENCE_COUNT) {
 
-            //   continue;
-            // }
+              continue;
+            }
 
             $pairsChecked++;
             // استخراج الكلمتين من الـ key

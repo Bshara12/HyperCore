@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\DataEntryVersion;
 use App\Models\DataEntry;
+use App\Models\DataEntryVersion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class DataEntryVersionFactory extends Factory
@@ -24,7 +24,7 @@ class DataEntryVersionFactory extends Factory
                     'scheduled_at' => null,
                     'published_at' => null,
                 ],
-                'values' => []
+                'values' => [],
             ],
         ];
     }

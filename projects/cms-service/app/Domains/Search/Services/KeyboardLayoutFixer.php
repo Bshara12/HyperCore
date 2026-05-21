@@ -11,8 +11,8 @@ namespace App\Domains\Search\Services;
 class KeyboardLayoutFixer
 {
   /*
-     * خريطة التحويل: المفتاح الإنجليزي → المقابل العربي
-     */
+       * خريطة التحويل: المفتاح الإنجليزي → المقابل العربي
+       */
   private const EN_TO_AR = [
     'q' => 'ض',
     'w' => 'ص',
@@ -72,9 +72,9 @@ class KeyboardLayoutFixer
   ];
 
   /*
-     * الاتجاه المعاكس: العربي → الإنجليزي
-     * يُبنى تلقائياً من EN_TO_AR
-     */
+       * الاتجاه المعاكس: العربي → الإنجليزي
+       * يُبنى تلقائياً من EN_TO_AR
+       */
   private array $arToEn = [];
 
   private const EN_VOWELS = ['a', 'e', 'i', 'o', 'u'];
@@ -122,9 +122,6 @@ class KeyboardLayoutFixer
   //   return $this->buildResult($query, null, 0.0, null);
   // }
 
-
-
-
   public function fix(string $query): array
   {
     $query = trim($query);
@@ -144,7 +141,6 @@ class KeyboardLayoutFixer
     }
 
     if ($analysis['dominantType'] === 'english') {
-
 
       // English طبيعي → لا تحوله لعربي
       if ($this->calculateVowelRatio($query) >= 0.20) {
@@ -166,9 +162,6 @@ class KeyboardLayoutFixer
 
     return $this->buildResult($query, null, 0.0, null);
   }
-
-
-
 
     // ─────────────────────────────────────────────────────────────────
     // ✅ NEW METHOD: كشف Arabic keyboard layout مكتوب بـ Arabic chars
@@ -215,8 +208,8 @@ class KeyboardLayoutFixer
 
     return [
       'isKeyboardMismatch' => true,
-      'convertedQuery'     => $fixResult['fixed'],
-      'confidence'         => $fixResult['confidence'],
+      'convertedQuery' => $fixResult['fixed'],
+      'confidence' => $fixResult['confidence'],
     ];
   }
 
@@ -227,24 +220,32 @@ class KeyboardLayoutFixer
   private function calculateVowelRatio(string $text): float
   {
     $letters = preg_replace('/[^a-z]/i', '', mb_strtolower($text, 'UTF-8'));
-    $len     = strlen($letters);
-    if ($len === 0) return 0.0;
+    $len = strlen($letters);
+    if ($len === 0) {
+      return 0.0;
+    }
     $vowels = preg_replace('/[^aeiou]/i', '', $letters);
+
     return strlen($vowels) / $len;
   }
 
   private function analyzeCharacters(string $text): array
   {
-    $chars   = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
-    $total   = 0;
-    $arabic  = 0;
+    $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
+    $total = 0;
+    $arabic = 0;
     $english = 0;
 
     foreach ($chars as $char) {
-      if ($char === ' ' || is_numeric($char)) continue;
+      if ($char === ' ' || is_numeric($char)) {
+        continue;
+      }
       $total++;
-      if ($this->isArabicChar($char))  $arabic++;
-      elseif ($this->isEnglishChar($char)) $english++;
+      if ($this->isArabicChar($char)) {
+        $arabic++;
+      } elseif ($this->isEnglishChar($char)) {
+        $english++;
+      }
     }
 
     if ($total === 0) {
@@ -253,43 +254,44 @@ class KeyboardLayoutFixer
         'englishRatio' => 0.0,
         'dominantType' => 'unknown',
         'mixed' => false,
-        'totalChars' => 0
+        'totalChars' => 0,
       ];
     }
 
-    $arabicRatio  = $arabic  / $total;
+    $arabicRatio = $arabic / $total;
     $englishRatio = $english / $total;
-    $mixed        = $arabicRatio > 0.2 && $englishRatio > 0.2;
+    $mixed = $arabicRatio > 0.2 && $englishRatio > 0.2;
 
     $dominantType = match (true) {
-      $arabicRatio  >= 0.7 => 'arabic',
+      $arabicRatio >= 0.7 => 'arabic',
       $englishRatio >= 0.7 => 'english',
-      default              => 'mixed',
+      default => 'mixed',
     };
 
     return [
-      'arabicRatio'  => round($arabicRatio,  4),
+      'arabicRatio' => round($arabicRatio, 4),
       'englishRatio' => round($englishRatio, 4),
       'dominantType' => $dominantType,
-      'mixed'        => $mixed,
-      'totalChars'   => $total,
+      'mixed' => $mixed,
+      'totalChars' => $total,
     ];
   }
 
   private function tryArToEn(string $query, array $analysis): array
   {
     $converted = '';
-    $chars     = preg_split('//u', $query, -1, PREG_SPLIT_NO_EMPTY);
+    $chars = preg_split('//u', $query, -1, PREG_SPLIT_NO_EMPTY);
 
     foreach ($chars as $char) {
       if ($char === ' ') {
         $converted .= ' ';
+
         continue;
       }
       $converted .= $this->arToEn[$char] ?? $char;
     }
 
-    $converted  = trim($converted);
+    $converted = trim($converted);
     $confidence = $this->scoreEnglishOutput($converted, $analysis);
 
     if ($confidence < 0.4) {
@@ -301,21 +303,22 @@ class KeyboardLayoutFixer
 
   private function tryEnToAr(string $query, array $analysis): array
   {
-    $converted  = '';
+    $converted = '';
     $lowerQuery = mb_strtolower($query, 'UTF-8');
-    $chars      = preg_split('//u', $lowerQuery, -1, PREG_SPLIT_NO_EMPTY);
+    $chars = preg_split('//u', $lowerQuery, -1, PREG_SPLIT_NO_EMPTY);
 
     foreach ($chars as $char) {
       if ($char === ' ') {
         $converted .= ' ';
+
         continue;
       }
       $converted .= self::EN_TO_AR[$char] ?? $char;
     }
 
-    $converted        = trim($converted);
+    $converted = trim($converted);
     $convertedAnalysis = $this->analyzeCharacters($converted);
-    $confidence        = $convertedAnalysis['arabicRatio'];
+    $confidence = $convertedAnalysis['arabicRatio'];
 
     if ($confidence < 0.6) {
       return $this->buildResult($query, null, 0.0, null);
@@ -326,29 +329,39 @@ class KeyboardLayoutFixer
 
   private function scoreEnglishOutput(string $output, array $originalAnalysis): float
   {
-    if (empty(trim($output))) return 0.0;
+    if (empty(trim($output))) {
+      return 0.0;
+    }
 
     $outputAnalysis = $this->analyzeCharacters($output);
-    if ($outputAnalysis['englishRatio'] < 0.7) return 0.0;
+    if ($outputAnalysis['englishRatio'] < 0.7) {
+      return 0.0;
+    }
 
     $score = 0.0;
     $score += $outputAnalysis['englishRatio'] * 0.4;
 
-    $lowerOutput  = mb_strtolower($output, 'UTF-8');
-    $outputChars  = preg_split('//u', $lowerOutput, -1, PREG_SPLIT_NO_EMPTY);
-    $vowelCount   = count(array_filter($outputChars, fn($c) => in_array($c, self::EN_VOWELS, true)));
+    $lowerOutput = mb_strtolower($output, 'UTF-8');
+    $outputChars = preg_split('//u', $lowerOutput, -1, PREG_SPLIT_NO_EMPTY);
+    $vowelCount = count(array_filter($outputChars, fn($c) => in_array($c, self::EN_VOWELS, true)));
     $totalLetters = count(array_filter($outputChars, fn($c) => ctype_alpha($c)));
 
-    if ($totalLetters > 0) {
-      $vowelRatio  = $vowelCount / $totalLetters;
-      $score      += ($vowelRatio >= 0.15 && $vowelRatio <= 0.6) ? 0.3 : 0.1;
+    // if ($totalLetters > 0) {
+    if ($totalLetters !== 0) {
+      $vowelRatio = $vowelCount / $totalLetters;
+      $score += ($vowelRatio >= 0.15 && $vowelRatio <= 0.6) ? 0.3 : 0.1;
     }
 
-    if ($outputAnalysis['arabicRatio'] === 0.0) $score += 0.2;
+    if ($outputAnalysis['arabicRatio'] === 0.0) {
+      $score += 0.2;
+    }
 
     $wordLengths = array_map('mb_strlen', explode(' ', trim($output)));
-    $avgLength   = count($wordLengths) > 0 ? array_sum($wordLengths) / count($wordLengths) : 0;
-    if ($avgLength >= 2 && $avgLength <= 15) $score += 0.1;
+    // $avgLength = count($wordLengths) > 0 ? array_sum($wordLengths) / count($wordLengths) : 0;
+    $avgLength = array_sum($wordLengths) / count($wordLengths);
+    if ($avgLength >= 2 && $avgLength <= 15) {
+      $score += 0.1;
+    }
 
     return round(min(1.0, $score), 4);
   }
@@ -356,6 +369,7 @@ class KeyboardLayoutFixer
   private function isArabicChar(string $char): bool
   {
     $code = mb_ord($char, 'UTF-8');
+
     return ($code >= 0x0600 && $code <= 0x06FF)
       || ($code >= 0xFB50 && $code <= 0xFDFF)
       || ($code >= 0xFE70 && $code <= 0xFEFF);
@@ -370,10 +384,10 @@ class KeyboardLayoutFixer
   {
 
     return [
-      'original'   => $original,
-      'fixed'      => $fixed,
+      'original' => $original,
+      'fixed' => $fixed,
       'confidence' => $confidence,
-      'direction'  => $direction,
+      'direction' => $direction,
     ];
   }
 }

@@ -14,15 +14,16 @@ class IncrementViewCountJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public int $timeout = 30;
 
     /**
-     * @param int[]  $entryIds  IDs of entries that appeared in results
-     * @param string $language  for targeting correct rows
+     * @param  int[]  $entryIds  IDs of entries that appeared in results
+     * @param  string  $language  for targeting correct rows
      */
     public function __construct(
-        private readonly array  $entryIds,
+        private readonly array $entryIds,
         private readonly string $language = 'en',
     ) {}
 
@@ -46,16 +47,16 @@ class IncrementViewCountJob implements ShouldQueue
 
         Log::debug('IncrementViewCountJob: done', [
             'entry_count' => count($ids),
-            'rows_updated'=> $affected,
-            'language'    => $this->language,
+            'rows_updated' => $affected,
+            'language' => $this->language,
         ]);
     }
 
     public function failed(\Throwable $e): void
     {
         Log::warning('IncrementViewCountJob: failed', [
-            'error'    => $e->getMessage(),
-            'entry_ids'=> array_slice($this->entryIds, 0, 10),
+            'error' => $e->getMessage(),
+            'entry_ids' => array_slice($this->entryIds, 0, 10),
         ]);
     }
 }

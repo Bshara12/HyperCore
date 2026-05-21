@@ -20,14 +20,14 @@ class SubscriptionFeatureRule extends Model
 
         'is_active',
 
-        'metadata'
+        'metadata',
     ];
 
     protected $casts = [
 
         'is_active' => 'boolean',
 
-        'metadata' => 'array'
+        'metadata' => 'array',
     ];
 
     // ─────────────────────────────────────

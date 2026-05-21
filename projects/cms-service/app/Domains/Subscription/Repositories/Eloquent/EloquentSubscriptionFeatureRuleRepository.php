@@ -2,48 +2,43 @@
 
 namespace App\Domains\Subscription\Repositories\Eloquent;
 
-use App\Models\SubscriptionFeatureRule;
 use App\Domains\Subscription\DTOs\Rule\CreateFeatureRuleDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionFeatureRuleRepositoryInterface;
+use App\Models\SubscriptionFeatureRule;
 
-class EloquentSubscriptionFeatureRuleRepository
-implements SubscriptionFeatureRuleRepositoryInterface
+class EloquentSubscriptionFeatureRuleRepository implements SubscriptionFeatureRuleRepositoryInterface
 {
-  public function create(
-    CreateFeatureRuleDTO $dto
-  ): SubscriptionFeatureRule {
+    public function create(
+        CreateFeatureRuleDTO $dto
+    ): SubscriptionFeatureRule {
 
-    return SubscriptionFeatureRule::create([
+        return SubscriptionFeatureRule::create([
 
-      'project_id' => $dto->projectId,
+            'project_id' => $dto->projectId,
 
-      'event_key' => $dto->eventKey,
+            'event_key' => $dto->eventKey,
 
-      'feature_key' => $dto->featureKey,
+            'feature_key' => $dto->featureKey,
 
-      'action' => $dto->action,
+            'action' => $dto->action,
 
-      'reset_type' => $dto->resetType,
+            'reset_type' => $dto->resetType,
 
-      'is_active' => $dto->isActive,
+            'is_active' => $dto->isActive,
 
-      'metadata' => $dto->metadata
-    ]);
-  }
+            'metadata' => $dto->metadata,
+        ]);
+    }
 
-  public function findActiveRulesByEvent(
-    ?int $projectId,
-    string $eventKey
-  ) {
+    public function findActiveRulesByEvent(
+        ?int $projectId,
+        string $eventKey
+    ) {
 
-    return SubscriptionFeatureRule::query()
-
-      ->where('project_id', $projectId)
-
-      ->where('event_key', $eventKey)
-
-      ->where('is_active', true)
-
-      ->get();
-  }
+        return SubscriptionFeatureRule::query()
+            ->where('project_id', $projectId)
+            ->where('event_key', $eventKey)
+            ->where('is_active', true)
+            ->get();
+    }
 }

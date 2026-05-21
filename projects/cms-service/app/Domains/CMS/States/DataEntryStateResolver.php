@@ -6,12 +6,12 @@ use App\Models\DataEntry;
 
 class DataEntryStateResolver
 {
-  public function resolve(DataEntry $entry): DataEntryState
+    public function resolve(DataEntry $entry): DataEntryState
     {
         return match ($entry->status) {
-            'draft' => new DraftState(),
-            'published' => new PublishedState(),
-            default => new DraftState(),
+            'draft' => new DraftState,
+            'published' => new PublishedState,
+            default => new DraftState,
         };
     }
 }

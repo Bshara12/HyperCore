@@ -11,11 +11,11 @@ class SubscriptionFeature extends Model
         'plan_id',
         'feature_key',
         'feature_type',
-        'feature_value'
+        'feature_value',
     ];
 
     protected $casts = [
-        'feature_value' => 'array'
+        'feature_value' => 'array',
     ];
 
     public function plan(): BelongsTo

@@ -15,27 +15,33 @@ class DecrementStockAction
         ->lockForUpdate()
         ->firstOrFail();
 
+      /** @var \App\Models\DataEntryValue|null $countValue */
       $countValue = $entry->values()
         ->whereHas('field', fn($q) => $q->where('name', 'count'))
         ->first();
 
+
+      if (! $countValue) {
+        throw new \Exception(
+          "Count field not found for product {$entry->id}"
+        );
+      }
       $currentStock = (int) $countValue->value;
 
       if ($currentStock < $item['quantity']) {
         throw new \Exception("Not enough stock for product {$entry->id}");
       }
 
-
-        event(new SystemLogEvent(
+      event(new SystemLogEvent(
         module: 'cms',
         eventType: 'update_count',
         userId: $entry->id,
         entityType: 'data',
-        entityId:null
+        entityId: null
       ));
 
       $countValue->update([
-        'value' => $currentStock - $item['quantity']
+        'value' => $currentStock - $item['quantity'],
       ]);
     }
   }

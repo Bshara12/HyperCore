@@ -17,8 +17,7 @@ class DataEntryFactory extends Factory
             'scheduled_at' => null,
             'published_at' => null,
             'data_type_id' => DataType::factory(),
-            'project_id' => fn (array $attrs) =>
-                DataType::find($attrs['data_type_id'])->project_id,
+            'project_id' => fn (array $attrs) => DataType::find($attrs['data_type_id'])->project_id,
         ];
     }
 }

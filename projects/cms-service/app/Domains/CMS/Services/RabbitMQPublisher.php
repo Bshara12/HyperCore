@@ -32,8 +32,6 @@ class RabbitMQPublisher
     }
 }
 
-
-
 // // audit
 // event(new SystemLogEvent(
 //     module: 'cms',

@@ -22,7 +22,7 @@ use App\Models\DataType;
 //     public function execute(
 //         int $projectId,
 //         int $dataTypeId,
-//         CreateDataEntryDto $dto,
+//         CreateDataEntryDTO $dto,
 //         ?int $userId = null
 //     ) {
 //         return DB::transaction(function () use ($projectId, $dataTypeId, $dto, $userId) {
@@ -101,13 +101,11 @@ class CreateDataEntryAction
     ?int $userId
   ) {
 
-
-
     /*
-        |--------------------------------------------------------------------------
-        | Subscription Usage Engine
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | Subscription Usage Engine
+            |--------------------------------------------------------------------------
+            */
 
     $this->domainEventService
       ->dispatch(
@@ -122,7 +120,6 @@ class CreateDataEntryAction
         )
       );
 
-
     event(new SystemLogEvent(
       module: 'cms',
       eventType: 'create_data',
@@ -136,7 +133,7 @@ class CreateDataEntryAction
       'data_type_id' => $dataType->id,
       'slug' => $slug,
       'status' => 'draft',
-      'created_by' => $userId
+      'created_by' => $userId,
     ]);
   }
 }
