@@ -17,8 +17,6 @@ class CMSApiClient
     {
         $response = Http::acceptJson()
             ->withHeaders($this->projectHeaders())
-            ->timeout(10)
-            ->retry(2, 200)
             ->get("{$this->baseUrl}/api/projects/resolve");
 
         if ($response->failed()) {
