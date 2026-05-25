@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Domains\Search\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @property int $id
+ * @property int|null $user_id
+ * @property int $project_id
+ * @property string $keyword
+ */
+class UserSearchLog extends Model
+{
+  use HasFactory;
+  public $timestamps = false;
+
+  protected $fillable = [
+    'user_id',
+    'project_id',
+    'keyword',
+    'language',
+    'detected_intent',
+    'intent_confidence',
+    'results_count',
+    'session_id',
+    'searched_at',
+  ];
+
+  protected $casts = [
+    'searched_at' => 'datetime',
+  ];
+
+  public function clicks()
+  {
+    return $this->hasMany(UserClickLog::class, 'search_log_id');
+  }
+}
