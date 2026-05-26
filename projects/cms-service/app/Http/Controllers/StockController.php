@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Domains\CMS\Requests\StockRequest;
 use App\Domains\CMS\Services\Stock\DecrementStockService;
+use App\Models\DataEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\DataEntry;
 
 // class StockController extends Controller
 // {
@@ -50,12 +50,12 @@ use App\Models\DataEntry;
 
 class StockController extends Controller
 {
-  public function decrement(StockRequest $request, DecrementStockService $service)
-  {
-    $service->execute($request->items());
+    public function decrement(StockRequest $request, DecrementStockService $service)
+    {
+        $service->execute($request->items());
 
-    return response()->json([
-      'message' => 'Stock updated successfully'
-    ]);
-  }
+        return response()->json([
+            'message' => 'Stock updated successfully',
+        ]);
+    }
 }

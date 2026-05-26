@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DataCollection extends Model
 {
+  use HasFactory;
   protected $fillable = [
     'project_id',
     'data_type_id',
@@ -41,7 +43,9 @@ class DataCollection extends Model
 
   public function orderedItems()
   {
-    return $this->collectionItems()->orderBy('sort_order');
+    // return $this->collectionItems()->orderBy('sort_order');
+    return $this->items()
+      ->orderBy('sort_order');
   }
 
   public function items()

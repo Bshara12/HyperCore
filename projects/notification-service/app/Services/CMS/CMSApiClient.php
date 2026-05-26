@@ -17,15 +17,13 @@ class CMSApiClient
     {
         $response = Http::acceptJson()
             ->withHeaders($this->projectHeaders())
-            ->timeout(10)
-            ->retry(2, 200)
             ->get("{$this->baseUrl}/api/projects/resolve");
 
         if ($response->failed()) {
             $error = $response->json('message')
                 ?? substr($response->body(), 0, 200);
 
-            throw new \Exception('Failed to resolve project in CMS: ' . $error);
+            throw new \Exception('Failed to resolve project in CMS: '.$error);
         }
 
         return $response->json('original')

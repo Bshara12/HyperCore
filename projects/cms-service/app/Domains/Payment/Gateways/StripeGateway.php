@@ -30,31 +30,32 @@ class StripeGateway implements PaymentGatewayInterface
   {
     try {
       $charge = Charge::create([
-        'amount'      => (int) round($amount * 100),
-        'currency'    => strtolower($dto->currency),
-        'source'      => $dto->gatewayToken ?? 'tok_visa',
+        'amount' => (int) round($amount * 100),
+        'currency' => strtolower($dto->currency),
+        'source' => $dto->gatewayToken ?? 'tok_visa',
         'description' => $dto->description ?? "Project #{$dto->projectId}",
-        'metadata'    => [
-          'customer_name' => $dto->userName,
-          'project_id'    => $dto->projectId,
+        'metadata' => [
+          'customer_name' => (string) $dto->userName,
+          'project_id' => (string) $dto->projectId,
         ],
       ]);
 
       return [
-        'success'        => $charge->status === 'succeeded',
+        'success' => $charge->status === 'succeeded',
         'transaction_id' => $charge->id ?? '',
-        'amount'         => $amount,
-        'status'         => $charge->status,
-        'raw'            => $charge->toArray(),
+        'amount' => $amount,
+        'status' => $charge->status,
+        'raw' => $charge->toArray(),
       ];
     } catch (\Exception $e) {
       Log::error('Stripe chargeAmount exception', ['error' => $e->getMessage()]);
+
       return [
-        'success'        => false,
+        'success' => false,
         'transaction_id' => '',
-        'amount'         => $amount,
-        'status'         => 'failed',
-        'raw'            => ['error' => $e->getMessage()],
+        'amount' => $amount,
+        'status' => 'failed',
+        'raw' => ['error' => $e->getMessage()],
       ];
     }
   }
@@ -65,20 +66,22 @@ class StripeGateway implements PaymentGatewayInterface
   {
     try {
       $refund = Refund::create([
-        'charge'   => $dto->transactionId,
-        'amount'   => (int) round($dto->amount * 100),
-        'reason'   => $this->mapRefundReason($dto->reason),
-        'metadata' => $dto->metadata ?? [],
+        'charge' => $dto->transactionId,
+        'amount' => (int) round($dto->amount * 100),
+        'reason' => $this->mapRefundReason($dto->reason),
+        'metadata' => $dto->metadata,
+        // 'metadata' => $dto->metadata ?? [],
       ]);
 
       return [
-        'success'   => $refund->status === 'succeeded',
+        'success' => $refund->status === 'succeeded',
         'refund_id' => $refund->id,
-        'status'    => $refund->status,
-        'raw'       => $refund->toArray(),
+        'status' => $refund->status,
+        'raw' => $refund->toArray(),
       ];
     } catch (\Exception $e) {
       Log::error('Stripe refund exception', ['error' => $e->getMessage()]);
+
       return ['success' => false, 'refund_id' => '', 'status' => 'failed', 'raw' => ['error' => $e->getMessage()]];
     }
   }
@@ -89,6 +92,7 @@ class StripeGateway implements PaymentGatewayInterface
   {
     try {
       $charge = Charge::retrieve($transactionId);
+
       return ['status' => $charge->status, 'raw' => $charge->toArray()];
     } catch (\Exception $e) {
       return ['status' => 'unknown', 'raw' => ['error' => $e->getMessage()]];
@@ -100,15 +104,16 @@ class StripeGateway implements PaymentGatewayInterface
   public function getBalance(): array
   {
     $balance = Balance::retrieve();
+
     return ['success' => true, 'balance' => $balance->available[0]->amount / 100];
   }
 
   private function mapRefundReason(?string $reason): string
   {
     return match (true) {
-      str_contains((string) $reason, 'duplicate')  => 'duplicate',
+      str_contains((string) $reason, 'duplicate') => 'duplicate',
       str_contains((string) $reason, 'fraudulent') => 'fraudulent',
-      default                                       => 'requested_by_customer',
+      default => 'requested_by_customer',
     };
   }
 }

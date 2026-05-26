@@ -20,7 +20,6 @@ class FeatureAccessService
     }
 }
 
-
 /*
 how to use:
 
@@ -37,5 +36,5 @@ if (!$hasAccess) {
 
     abort(403, 'Feature unavailable.');
 }
-    
+
 */

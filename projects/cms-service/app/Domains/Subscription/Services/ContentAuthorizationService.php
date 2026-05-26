@@ -2,9 +2,8 @@
 
 namespace App\Domains\Subscription\Services;
 
-use App\Domains\Subscription\DTOs\Authorization\AuthorizeContentDTO;
-
 use App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction;
+use App\Domains\Subscription\DTOs\Authorization\AuthorizeContentDTO;
 
 class ContentAuthorizationService
 {

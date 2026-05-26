@@ -10,6 +10,7 @@ class BuildRefundContextAction
 {
   public function execute(Payment $payment, RefundDTO $dto): RefundDTO
   {
+    /** @var Transaction|null $transaction */
     $transaction = $payment->transactions()
       ->where('type', Transaction::TYPE_CHARGE)
       ->where('status', Transaction::STATUS_SUCCESS)

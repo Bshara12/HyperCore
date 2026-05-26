@@ -6,8 +6,8 @@ use App\Domains\CMS\DTOs\DataType\CreateDataTypeDTO;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
-use Illuminate\Support\Facades\Cache;
 use App\Events\SystemLogEvent;
+use Illuminate\Support\Facades\Cache;
 
 class CreateDataTypeAction extends Action
 {
@@ -24,13 +24,12 @@ class CreateDataTypeAction extends Action
   {
     return $this->run(function () use ($dto) {
       $this->repository->ensureSlugIsUnique(
-        projectId: $dto->project_id,
+        projectId: (int) $dto->project_id,
         slug: $dto->slug
       );
 
       $dataType = $this->repository->create($dto);
-      Cache::forget(CacheKeys::dataTypes($dto->project_id));
-
+      Cache::forget(CacheKeys::dataTypes( (int)$dto->project_id));
 
       event(new SystemLogEvent(
         module: 'cms',

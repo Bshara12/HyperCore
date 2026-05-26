@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Domains\Subscription\Services\UsageResetService;
+use Illuminate\Console\Command;
 
 class ResetSubscriptionUsagesCommand extends Command
 {

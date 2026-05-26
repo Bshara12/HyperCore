@@ -7,11 +7,6 @@ use Illuminate\Validation\Rule;
 
 class StoreNotificationSubscriptionRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     protected function prepareForValidation(): void
     {
         $this->merge([

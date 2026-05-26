@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domains\CMS\Read\Actions;
 
 use App\Domains\CMS\Read\Repositories\EntryProjectReadRepositoryInterface;
@@ -42,7 +43,7 @@ class GetProjectEntriesAction
                 'last_page' => $entriesCollection->lastPage(),
                 'total' => $entriesCollection->total(),
                 'per_page' => $entriesCollection->perPage(),
-            ]
+            ],
         ];
     }
 }

@@ -5,6 +5,7 @@ namespace App\Domains\Notifications\Channels;
 use App\Domains\Notifications\Contracts\NotificationChannelDriver;
 use App\Domains\Notifications\Mail\NotificationMail;
 use App\Domains\Notifications\Services\NotificationDeliveryService;
+use App\Models\Domains\Notifications\Models\Notification;
 use App\Models\Domains\Notifications\Models\NotificationDelivery;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -17,12 +18,24 @@ class EmailChannelDriver implements NotificationChannelDriver
 
     public function send(NotificationDelivery $delivery): void
     {
+        /** @var Notification|null $notification */
         $notification = $delivery->notification;
+
+        if (! $notification) {
+            $this->deliveryService->markFailed(
+                delivery: $delivery,
+                code: 'notification_missing',
+                message: 'Notification relation is missing.'
+            );
+
+            return;
+        }
 
         $email = data_get($notification->metadata, 'email.to');
 
         if (! $email) {
             $this->deliveryService->markSkipped($delivery, 'Recipient email is missing.');
+
             return;
         }
 

@@ -6,19 +6,20 @@ use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 
 class InCollectionConditionStrategy implements ValueConditionStrategy
 {
-  public function __construct(
-    protected DataEntryValueRepository $valueRepository
-  ) {}
+    public function __construct(
+        protected DataEntryValueRepository $valueRepository
+    ) {}
 
-  public function apply(string $field, $value, int $projectId, int $dataTypeId): array
-  {
-    $collectionIds =  $this->valueRepository->pluckEntryIdsByFieldInCollection($projectId, $dataTypeId, $value);
+    public function apply(string $field, $value, int $projectId, int $dataTypeId): array
+    {
+        $collectionIds = $this->valueRepository->pluckEntryIdsByFieldInCollection($projectId, $dataTypeId, $value);
 
-    if (empty($collectionIds)) {
-      return [];
+        if (empty($collectionIds)) {
+            return [];
+        }
+
+        $entryIds = $this->valueRepository->returnEntryIdsFromCollectionItems($collectionIds);
+
+        return $entryIds;
     }
-
-    $entryIds = $this->valueRepository->returnEntryIdsFromCollectionItems($collectionIds);
-    return $entryIds;
-  }
 }

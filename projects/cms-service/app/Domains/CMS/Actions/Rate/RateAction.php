@@ -48,7 +48,6 @@ class RateAction
   //   }
   // }
 
-
   public function execute(RateDTO $dto)
   {
     DB::beginTransaction();
@@ -57,9 +56,9 @@ class RateAction
 
       // ⭐ جيب المشروع الحالي
       $project = CurrentProject::get();
-      if (!$project) {
-        throw new \Exception('Project not resolved');
-      }
+      // if (! $project) {
+      //     throw new \Exception('Project not resolved');
+      // }
 
       // ⭐ تحقق العلاقة
       $this->validateRelation($dto, $project->id);
@@ -86,7 +85,7 @@ class RateAction
         eventType: 'rate',
         userId: $dto->userId,
         entityType: 'rate',
-        entityId:$existing->id??null
+        entityId: $existing->id ?? null
       ));
 
       return true;
@@ -95,8 +94,6 @@ class RateAction
       throw $e;
     }
   }
-
-
 
   // private function validateRelation(RateDTO $dto, int $projectId): void
   // {
@@ -141,9 +138,6 @@ class RateAction
     throw new \Exception('Invalid rateable type');
   }
 
-
-
-
   private function updateStats(RateDTO $dto)
   {
     $stats = $this->ratings->getStats(
@@ -153,17 +147,32 @@ class RateAction
 
     $data = [
       'ratings_count' => $stats->count,
-      'ratings_avg'   => round($stats->avg, 2)
+      'ratings_avg' => round($stats->avg, 2),
     ];
 
+    // match ($dto->rateableType) {
+    //     'project' => $this->projects->updateRatingStats(
+    //         $this->projects->findById($dto->rateableId)->id,
+    //         $data
+    //     ),
+    //     'data' => $this->dataEntries->updateRatingStats(
+    //         $dto->rateableId,
+    //         $data
+    //     ),
+    // };
     match ($dto->rateableType) {
       'project' => $this->projects->updateRatingStats(
         $this->projects->findById($dto->rateableId)->id,
         $data
       ),
+
       'data' => $this->dataEntries->updateRatingStats(
         $dto->rateableId,
         $data
+      ),
+
+      default => throw new \InvalidArgumentException(
+        "Invalid rateable type: {$dto->rateableType}"
       ),
     };
 

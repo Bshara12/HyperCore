@@ -2,106 +2,100 @@
 
 namespace App\Domains\Subscription\Actions\Usage;
 
-use Carbon\Carbon;
-use App\Models\SubscriptionUsage;
-use App\Models\SubscriptionFeatureRule;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use App\Models\SubscriptionFeatureRule;
+use App\Models\SubscriptionUsage;
+use App\Models\Subscription;
 
 class ResetSubscriptionUsageAction
 {
-    public function __construct(
+  public function __construct(
 
-        private SubscriptionRepositoryInterface
-        $repository
-    ) {}
+    private SubscriptionRepositoryInterface $repository
+  ) {}
 
-    public function execute(): void
-    {
-        SubscriptionUsage::query()
+  public function execute(): void
+  {
+    SubscriptionUsage::query()
 
-            ->whereNotNull('reset_at')
+      ->whereNotNull('reset_at')
 
-            ->where('reset_at', '<=', now())
+      ->where('reset_at', '<=', now())
 
-            ->chunkById(100, function ($usages) {
+      ->chunkById(100, function ($usages) {
 
-                foreach ($usages as $usage) {
+        foreach ($usages as $usage) {
 
-                    $this->resetUsage(
-                        $usage
-                    );
-                }
-            });
-    }
-
-    // ─────────────────────────────────────
-
-    private function resetUsage(
-        SubscriptionUsage $usage
-    ): void {
-
-        $subscription = $usage
-            ->subscription;
-
-        if (!$subscription) {
-            return;
+          $this->resetUsage(
+            $usage
+          );
         }
+      });
+  }
 
-        $rule = SubscriptionFeatureRule::query()
+  // ─────────────────────────────────────
 
-            ->where(
-                'project_id',
-                $subscription->project_id
-            )
+  private function resetUsage(
+    SubscriptionUsage $usage
+  ): void {
+    /** @var Subscription|null $subscription */
 
-            ->where(
-                'feature_key',
-                $usage->feature_key
-            )
+    $subscription = $usage
+      ->subscription;
 
-            ->where('is_active', true)
-
-            ->first();
-
-        if (!$rule) {
-            return;
-        }
-
-        $nextResetAt = $this->resolveNextResetDate(
-            $rule->reset_type
-        );
-
-        $this->repository->resetUsage(
-
-            subscriptionId:
-                $subscription->id,
-
-            featureKey:
-                $usage->feature_key,
-
-            nextResetAt:
-                $nextResetAt
-        );
+    if (! $subscription) {
+      return;
     }
 
-    // ─────────────────────────────────────
+    $rule = SubscriptionFeatureRule::query()
 
-    private function resolveNextResetDate(
-        string $resetType
-    ): ?string {
+      ->where(
+        'project_id',
+        $subscription->project_id
+      )
 
-        return match ($resetType) {
+      ->where(
+        'feature_key',
+        $usage->feature_key
+      )
 
-            SubscriptionFeatureRule::RESET_DAILY =>
-                now()->addDay(),
+      ->where('is_active', true)
 
-            SubscriptionFeatureRule::RESET_MONTHLY =>
-                now()->addMonth(),
+      ->first();
 
-            SubscriptionFeatureRule::RESET_YEARLY =>
-                now()->addYear(),
-
-            default => null
-        };
+    if (! $rule) {
+      return;
     }
+
+    $nextResetAt = $this->resolveNextResetDate(
+      $rule->reset_type
+    );
+
+    $this->repository->resetUsage(
+
+      subscriptionId: $subscription->id,
+
+      featureKey: $usage->feature_key,
+
+      nextResetAt: $nextResetAt
+    );
+  }
+
+  // ─────────────────────────────────────
+
+  private function resolveNextResetDate(
+    string $resetType
+  ): ?\Carbon\Carbon {
+
+    return match ($resetType) {
+
+      SubscriptionFeatureRule::RESET_DAILY => now()->addDay(),
+
+      SubscriptionFeatureRule::RESET_MONTHLY => now()->addMonth(),
+
+      SubscriptionFeatureRule::RESET_YEARLY => now()->addYear(),
+
+      default => null
+    };
+  }
 }

@@ -34,7 +34,7 @@ class GetEntryVersionsAction
                     ? json_decode($row['snapshot'], true)
                     : $row['snapshot'];
 
-                if (!is_array($snapshot)) {
+                if (! is_array($snapshot)) {
                     $snapshot = null;
                 }
             }

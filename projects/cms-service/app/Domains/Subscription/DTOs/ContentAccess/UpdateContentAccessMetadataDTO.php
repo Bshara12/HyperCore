@@ -7,50 +7,57 @@ use App\Models\ContentAccessMetadata;
 
 class UpdateContentAccessMetadataDTO
 {
-  public function __construct(
+    public function __construct(
 
-    public readonly ?int $projectId,
+        public readonly ?int $projectId,
 
-    public readonly string $contentType,
+        /*
+         * content_id is nullable on update.
+         * If null, the Action keeps the existing content_id from the model.
+         */
+        public readonly ?int $contentId,
 
-    public readonly int $contentId,
+        public readonly bool $requiresSubscription,
 
-    public readonly bool $requiresSubscription,
+        /**
+         * Full replacement list of allowed feature keys.
+         * Empty array removes all feature restrictions.
+         *
+         * @var string[]
+         */
+        public readonly array $features,
 
-    public readonly ?string $requiredFeature,
+        public readonly bool $isActive,
 
-    public readonly bool $isActive,
+        public readonly ?array $metadata,
 
-    public readonly ?array $metadata,
+        public readonly ContentAccessMetadata $contentAccessMetadata
+    ) {}
 
-    public readonly ContentAccessMetadata $contentAccessMetadata
-  ) {}
+    public static function fromRequest(
+        UpdateContentAccessMetadataRequest $request,
+        ContentAccessMetadata $metadata
+    ): self {
 
-  public static function fromRequest(
-    UpdateContentAccessMetadataRequest $request,
-    ContentAccessMetadata $metadata
-  ): self {
+        return new self(
 
-    return new self(
+            projectId: $request->project_id,
 
-      projectId: $request->project_id,
+            contentId: $request->input('content_id') !== null
+                ? (int) $request->content_id
+                : null,
 
-      contentType: $request->content_type,
+            requiresSubscription: $request->boolean(
+                'requires_subscription'
+            ),
 
-      contentId: $request->content_id,
+            features: $request->input('features', []),
 
-      requiresSubscription: $request->requires_subscription,
+            isActive: $request->boolean('is_active', true),
 
-      requiredFeature: $request->required_feature,
+            metadata: $request->input('metadata'),
 
-      isActive: $request->boolean(
-        'is_active',
-        true
-      ),
-
-      // metadata: $request->metadata,
-      metadata: $request->input('metadata'),
-      contentAccessMetadata: $metadata
-    );
-  }
+            contentAccessMetadata: $metadata,
+        );
+    }
 }

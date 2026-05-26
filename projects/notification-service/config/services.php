@@ -50,5 +50,5 @@ return [
             'X-App-Source' => env('NOTIFICATION_WEBHOOK_SOURCE', 'notification-service'),
         ],
     ],
-    
+
 ];

@@ -5,13 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property \App\Models\DataType|null $dataType
+ * @property-read \App\Models\Project|null $project
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\DataEntryValue> $values
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property \Illuminate\Support\Carbon|null $scheduled_at
+ */
 class DataEntry extends Model
 {
-  use SoftDeletes;
   use HasFactory;
+  use SoftDeletes;
+
   protected $guarded = [];
+
+
+
+  protected $casts = [
+    'published_at' => 'datetime',
+    'scheduled_at' => 'datetime',
+  ];
 
   // public function resolveRouteBinding($value, $field = null)
   // {
@@ -29,19 +45,19 @@ class DataEntry extends Model
   //     ->firstOrFail();
   // }
 
-
   // test*************************
   public function project()
   {
     return $this->belongsTo(Project::class);
   }
+
   // ******************
-  public function dataType()
+  public function dataType(): BelongsTo
   {
     return $this->belongsTo(DataType::class);
   }
 
-  public function values()
+  public function values(): HasMany
   {
     return $this->hasMany(DataEntryValue::class, 'data_entry_id');
   }

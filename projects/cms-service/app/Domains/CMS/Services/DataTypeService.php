@@ -3,10 +3,10 @@
 namespace App\Domains\CMS\Services;
 
 use App\Domains\CMS\Actions\DataType\CreateDataTypeAction;
-use App\Domains\CMS\Actions\DataType\UpdateDataTypeAction;
 use App\Domains\CMS\Actions\DataType\DeleteDataTypeAction;
 use App\Domains\CMS\Actions\DataType\ForceDeleteAction;
 use App\Domains\CMS\Actions\DataType\RestoreDataTypeAction;
+use App\Domains\CMS\Actions\DataType\UpdateDataTypeAction;
 use App\Domains\CMS\DTOs\DataType\CreateDataTypeDTO;
 use App\Domains\CMS\DTOs\DataType\UpdateDataTypeDTO;
 use App\Domains\CMS\Repositories\Interface\DataTypeRepositoryInterface;
@@ -35,16 +35,19 @@ class DataTypeService
 
   public function delete(DataType $dataType)
   {
-    return $this->deleteAction->execute($dataType);
+    $this->deleteAction->execute($dataType);
+    // return $this->deleteAction->execute($dataType);
   }
 
   public function restore(int $dataTypeId)
   {
-    return $this->restoreAction->execute($dataTypeId);
+    $this->restoreAction->execute($dataTypeId);
+    // return $this->restoreAction->execute($dataTypeId);
   }
 
   public function forceDelete(int $dataTypeId)
   {
-    return $this->forceDeleteAction->execute($dataTypeId);
+    $this->forceDeleteAction->execute($dataTypeId);
+    // return $this->forceDeleteAction->execute($dataTypeId);
   }
 }

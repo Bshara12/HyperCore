@@ -12,39 +12,40 @@ use Illuminate\Support\Facades\Cache;
 
 class UpdateDataTypeAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataType.update';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'dataType.update';
+    }
 
-  public function __construct(
-    protected DataTypeRepositoryInterface $repository
-  ) {}
+    public function __construct(
+        protected DataTypeRepositoryInterface $repository
+    ) {}
 
-  public function execute(DataType $dataType, UpdateDataTypeDTO $dto)
-  {
-    return $this->run(function () use ($dataType, $dto) {
-      $this->repository->ensureSlugIsUniqueForUpdate(
-        projectId: $dataType->project_id,
-        slug: $dto->slug,
-        ignoreId: $dataType->id
-      );
+    public function execute(DataType $dataType, UpdateDataTypeDTO $dto)
+    {
+        return $this->run(function () use ($dataType, $dto) {
+            $this->repository->ensureSlugIsUniqueForUpdate(
+                projectId: $dataType->project_id,
+                slug: $dto->slug,
+                ignoreId: $dataType->id
+            );
 
-      $updated = $this->repository->update($dataType, $dto);
-      Cache::forget(CacheKeys::dataType($dataType->id));
-      Cache::forget(CacheKeys::dataTypeBySlug($dataType->slug, $dataType->project_id));
-      Cache::forget(CacheKeys::dataTypes($dataType->project_id));
+            $updated = $this->repository->update($dataType, $dto);
+            Cache::forget(CacheKeys::dataType($dataType->id));
+            Cache::forget(CacheKeys::dataTypeBySlug($dataType->slug, $dataType->project_id));
+            Cache::forget(CacheKeys::dataTypes($dataType->project_id));
 
-      event(new SystemLogEvent(
-        module: 'cms',
-        eventType: 'update_datatype',
-        userId: null,
-        entityType: 'datatype',
-        entityId: $dataType->id ?? null
-      ));
-      return $updated;
+            event(new SystemLogEvent(
+                module: 'cms',
+                eventType: 'update_datatype',
+                userId: null,
+                entityType: 'datatype',
+                entityId: $dataType->id ?? null
+            ));
 
-      // return $this->repository->update($dataType, $dto);
-    });
-  }
+            return $updated;
+
+            // return $this->repository->update($dataType, $dto);
+        });
+    }
 }

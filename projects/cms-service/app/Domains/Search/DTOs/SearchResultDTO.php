@@ -1,11 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Search\DTOs;
 
-class SearchResultDTO
+/**
+ * SearchResultDTO — immutable
+ *
+ * debug_trace: optional metadata أُضيف فقط عند SearchQueryDTO::$debug = true
+ * لا يُملأ في production requests — صفر overhead.
+ */
+final class SearchResultDTO
 {
     /**
      * @param  SearchResultItemDTO[]  $items
+     * @param  array<string, mixed>  $debugTrace  — فارغ في production
      */
     public function __construct(
         public readonly string $keyword,
@@ -16,8 +25,9 @@ class SearchResultDTO
         public readonly array $items,
         public readonly bool $aiEnhanced = false,
         public readonly ?string $aiQuery = null,
-        public readonly bool $keyboardFixed = false,   // ← جديد
-        public readonly ?string $keyboardQuery = null,    // ← جديد
+        public readonly bool $keyboardFixed = false,
+        public readonly ?string $keyboardQuery = null,
+        public readonly array $debugTrace = [],   // ← جديد، فارغ افتراضياً
     ) {}
 
     public function toArray(): array

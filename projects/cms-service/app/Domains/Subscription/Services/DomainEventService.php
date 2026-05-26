@@ -2,7 +2,6 @@
 
 namespace App\Domains\Subscription\Services;
 
-use App\Domains\Subscription\Services\UsageEngineService;
 use App\Domains\Subscription\DTOs\Usage\ProcessUsageEventDTO;
 
 class DomainEventService

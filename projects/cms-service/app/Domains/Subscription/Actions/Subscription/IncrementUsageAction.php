@@ -2,9 +2,9 @@
 
 namespace App\Domains\Subscription\Actions\Usage;
 
-use Exception;
 use App\Domains\Subscription\DTOs\Usage\CheckUsageLimitDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use Exception;
 
 class IncrementUsageAction
 {
@@ -22,7 +22,7 @@ class IncrementUsageAction
                 $dto->projectId
             );
 
-        if (!$subscription) {
+        if (! $subscription) {
 
             throw new Exception(
                 'No active subscription.'

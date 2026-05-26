@@ -2,13 +2,13 @@
 
 namespace App\Domains\Subscription\Actions\Subscription;
 
-use Exception;
-use App\Models\Payment;
-use App\Models\Subscription;
 use App\Domains\Payment\DTOs\PaymentDTO;
 use App\Domains\Payment\Services\PaymentService;
 use App\Domains\Subscription\DTOs\Subscription\RenewSubscriptionDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use App\Models\Payment;
+use App\Models\Subscription;
+use Exception;
 
 class RenewSubscriptionAction
 {
@@ -57,7 +57,7 @@ class RenewSubscriptionAction
                 'metadata' => array_merge(
                     $subscription->metadata ?? [],
                     $dto->metadata ?? []
-                )
+                ),
             ]
         );
     }
@@ -70,7 +70,7 @@ class RenewSubscriptionAction
         $plan = $subscription->plan;
 
         // FREE PLAN
-        if ((float)$plan->price <= 0) {
+        if ((float) $plan->price <= 0) {
             return;
         }
 
@@ -93,13 +93,13 @@ class RenewSubscriptionAction
             'description' => sprintf(
                 'Renew subscription for %s',
                 $plan->name
-            )
+            ),
         ]);
 
         $result = $this->paymentService
             ->processPayment($paymentDTO);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
 
             throw new Exception(
                 'Payment failed.'

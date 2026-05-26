@@ -11,138 +11,139 @@ use Illuminate\Support\Facades\DB;
 
 class ProcessPaymentAction
 {
-  public function __construct(
-    private readonly PaymentRepositoryInterface $repository,
-  ) {}
+    public function __construct(
+        private readonly PaymentRepositoryInterface $repository,
+    ) {}
 
-  public function execute(PaymentDTO $dto): array
-  {
-    return DB::transaction(function () use ($dto) {
+    public function execute(PaymentDTO $dto): array
+    {
+        return DB::transaction(function () use ($dto) {
 
-      $payment = $this->repository->createPayment($dto);
+            $payment = $this->repository->createPayment($dto);
 
-      try {
-        if ($dto->gateway === 'wallet') {
-          return $this->processWalletPayment($payment, $dto);
+            try {
+                if ($dto->gateway === 'wallet') {
+                    return $this->processWalletPayment($payment, $dto);
+                }
+
+                return $this->processGatewayPayment($payment, $dto);
+            } catch (\Throwable $e) {
+                $this->repository->updatePaymentStatus($payment, Payment::STATUS_FAILED);
+                throw $e;
+            }
+        });
+    }
+
+    // ─── Gateway ──────────────────────────────────────────────────────────────
+
+    private function processGatewayPayment(Payment $payment, PaymentDTO $dto): array
+    {
+        $gateway = app(PaymentGatewayInterface::class, ['gatewayName' => $dto->gateway]);
+
+        if (! $dto->isInstallment()) {
+            // دفع كامل — يستخدم charge() بالمبلغ الكامل
+            $result = $gateway->charge($dto);
+
+            return $this->handleGatewayResult($payment, $dto, $result, null);
         }
 
-        return $this->processGatewayPayment($payment, $dto);
-      } catch (\Throwable $e) {
-        $this->repository->updatePaymentStatus($payment, Payment::STATUS_FAILED);
-        throw $e;
-      }
-    });
-  }
+        // تقسيط — ينشئ الخطة أولاً ثم يدفع الدفعة الأولى
+        $this->repository->createInstallmentPlan($payment, $dto);
 
-  // ─── Gateway ──────────────────────────────────────────────────────────────
+        $firstAmount = $dto->downPayment ?? $dto->installmentAmount;
+        $result = $gateway->chargeAmount($dto, $firstAmount);
 
-  private function processGatewayPayment(Payment $payment, PaymentDTO $dto): array
-  {
-    $gateway = app(PaymentGatewayInterface::class, ['gatewayName' => $dto->gateway]);
-
-    if (! $dto->isInstallment()) {
-      // دفع كامل — يستخدم charge() بالمبلغ الكامل
-      $result = $gateway->charge($dto);
-      return $this->handleGatewayResult($payment, $dto, $result, null);
+        return $this->handleGatewayResult($payment, $dto, $result, 0); // 0 = down payment
     }
 
-    // تقسيط — ينشئ الخطة أولاً ثم يدفع الدفعة الأولى
-    $this->repository->createInstallmentPlan($payment, $dto);
+    // ─── Wallet ───────────────────────────────────────────────────────────────
 
-    $firstAmount = $dto->downPayment ?? $dto->installmentAmount;
-    $result      = $gateway->chargeAmount($dto, $firstAmount);
+    private function processWalletPayment(Payment $payment, PaymentDTO $dto): array
+    {
+        $fromWallet = $this->repository->findWalletByUserId($dto->userId);
 
-    return $this->handleGatewayResult($payment, $dto, $result, 0); // 0 = down payment
-  }
+        throw_if(! $fromWallet, \Exception::class, 'Wallet not found.');
 
-  // ─── Wallet ───────────────────────────────────────────────────────────────
+        $amountToCharge = $dto->isInstallment()
+          ? ($dto->downPayment ?? $dto->installmentAmount)
+          : $dto->amount;
 
-  private function processWalletPayment(Payment $payment, PaymentDTO $dto): array
-  {
-    $fromWallet = $this->repository->findWalletByUserId($dto->userId);
+        throw_if(
+            ! $fromWallet->hasSufficientBalance($amountToCharge),
+            \Exception::class,
+            "Insufficient balance. Available: {$fromWallet->balance}, Required: {$amountToCharge}."
+        );
 
-    throw_if(! $fromWallet, \Exception::class, 'Wallet not found.');
+        if ($dto->isInstallment()) {
+            $this->repository->createInstallmentPlan($payment, $dto);
+        }
 
-    $amountToCharge = $dto->isInstallment()
-      ? ($dto->downPayment ?? $dto->installmentAmount)
-      : $dto->amount;
+        $this->repository->debitWallet($fromWallet, $amountToCharge);
+        $this->repository->creditWallet($dto->toWallet, $amountToCharge);
 
-    throw_if(
-      ! $fromWallet->hasSufficientBalance($amountToCharge),
-      \Exception::class,
-      "Insufficient balance. Available: {$fromWallet->balance}, Required: {$amountToCharge}."
-    );
+        $installmentNumber = $dto->isInstallment() ? 0 : null;
 
-    if ($dto->isInstallment()) {
-      $this->repository->createInstallmentPlan($payment, $dto);
+        $transaction = $this->repository->createWalletTransaction(
+            payment: $payment,
+            type: Transaction::TYPE_CHARGE,
+            fromWalletId: $fromWallet->id,
+            toWalletId: $dto->toWallet?->id,
+            amount: $amountToCharge,
+            currency: $dto->currency,
+            status: Transaction::STATUS_SUCCESS,
+            installmentNumber: $installmentNumber,
+        );
+
+        $paymentStatus = $dto->isInstallment()
+          ? Payment::STATUS_PENDING
+          : Payment::STATUS_PAID;
+
+        $payment = $this->repository->updatePaymentStatus($payment, $paymentStatus);
+
+        return [
+            'success' => true,
+            'payment_id' => $payment->id,
+            'transaction_id' => $transaction->id,
+            'payment_method' => 'wallet',
+            'status' => $payment->status,
+            'installment_number' => $installmentNumber,
+        ];
     }
 
-    $this->repository->debitWallet($fromWallet, $amountToCharge);
-    $this->repository->creditWallet($dto->toWallet, $amountToCharge);
+    // ─── Helper ───────────────────────────────────────────────────────────────
 
-    $installmentNumber = $dto->isInstallment() ? 0 : null;
+    private function handleGatewayResult(Payment $payment, PaymentDTO $dto, array $result, ?int $installmentNumber): array
+    {
+        $status = $result['success']
+          ? Transaction::STATUS_SUCCESS
+          : Transaction::STATUS_FAILED;
 
-    $transaction = $this->repository->createWalletTransaction(
-      payment: $payment,
-      type: Transaction::TYPE_CHARGE,
-      fromWalletId: $fromWallet->id,
-      toWalletId: $dto->toWallet?->id,
-      amount: $amountToCharge,
-      currency: $dto->currency,
-      status: Transaction::STATUS_SUCCESS,
-      installmentNumber: $installmentNumber,
-    );
+        $this->repository->createGatewayTransaction(
+            payment: $payment,
+            type: Transaction::TYPE_CHARGE,
+            gatewayTransactionId: $result['transaction_id'],
+            amount: $result['amount'] ?? $dto->amount,
+            currency: $dto->currency,
+            status: $status,
+            gatewayResponse: $result['raw'],
+            installmentNumber: $installmentNumber,
+        );
 
-    $paymentStatus = $dto->isInstallment()
-      ? Payment::STATUS_PENDING
-      : Payment::STATUS_PAID;
+        $paymentStatus = match (true) {
+            ! $result['success'] => Payment::STATUS_FAILED,
+            is_null($installmentNumber) => Payment::STATUS_PAID,     // دفع كامل
+            default => Payment::STATUS_PENDING,   // أول قسط
+        };
 
-    $payment = $this->repository->updatePaymentStatus($payment, $paymentStatus);
+        $payment = $this->repository->updatePaymentStatus($payment, $paymentStatus);
 
-    return [
-      'success'            => true,
-      'payment_id'         => $payment->id,
-      'transaction_id'     => $transaction->id,
-      'payment_method'     => 'wallet',
-      'status'             => $payment->status,
-      'installment_number' => $installmentNumber,
-    ];
-  }
-
-  // ─── Helper ───────────────────────────────────────────────────────────────
-
-  private function handleGatewayResult(Payment $payment, PaymentDTO $dto, array $result, ?int $installmentNumber): array
-  {
-    $status = $result['success']
-      ? Transaction::STATUS_SUCCESS
-      : Transaction::STATUS_FAILED;
-
-    $this->repository->createGatewayTransaction(
-      payment: $payment,
-      type: Transaction::TYPE_CHARGE,
-      gatewayTransactionId: $result['transaction_id'],
-      amount: $result['amount'] ?? $dto->amount,
-      currency: $dto->currency,
-      status: $status,
-      gatewayResponse: $result['raw'],
-      installmentNumber: $installmentNumber,
-    );
-
-    $paymentStatus = match (true) {
-      ! $result['success']       => Payment::STATUS_FAILED,
-      is_null($installmentNumber) => Payment::STATUS_PAID,     // دفع كامل
-      default                    => Payment::STATUS_PENDING,   // أول قسط
-    };
-
-    $payment = $this->repository->updatePaymentStatus($payment, $paymentStatus);
-
-    return [
-      'success'            => $result['success'],
-      'payment_id'         => $payment->id,
-      'transaction_id'     => $result['transaction_id'],
-      'payment_method'     => 'gateway',
-      'status'             => $payment->status,
-      'installment_number' => $installmentNumber,
-    ];
-  }
+        return [
+            'success' => $result['success'],
+            'payment_id' => $payment->id,
+            'transaction_id' => $result['transaction_id'],
+            'payment_method' => 'gateway',
+            'status' => $payment->status,
+            'installment_number' => $installmentNumber,
+        ];
+    }
 }

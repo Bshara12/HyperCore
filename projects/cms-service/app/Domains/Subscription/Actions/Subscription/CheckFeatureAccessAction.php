@@ -2,9 +2,9 @@
 
 namespace App\Domains\Subscription\Actions\Feature;
 
-use App\Models\SubscriptionFeature;
 use App\Domains\Subscription\DTOs\Feature\CheckFeatureAccessDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use App\Models\SubscriptionFeature;
 
 class CheckFeatureAccessAction
 {
@@ -22,7 +22,7 @@ class CheckFeatureAccessAction
                 $dto->projectId
             );
 
-        if (!$subscription) {
+        if (! $subscription) {
             return false;
         }
 
@@ -34,7 +34,7 @@ class CheckFeatureAccessAction
                 $dto->featureKey
             );
 
-        if (!$feature) {
+        if (! $feature) {
             return false;
         }
 
@@ -55,7 +55,7 @@ class CheckFeatureAccessAction
             'number' => (int)
                 $feature->feature_value > 0,
 
-            'json' => !empty(
+            'json' => ! empty(
                 $feature->feature_value
             ),
 

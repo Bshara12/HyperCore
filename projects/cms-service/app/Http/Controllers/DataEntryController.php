@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Domains\CMS\Actions\Data\CreateDataEntryAction;
-use App\Domains\CMS\DTOs\Data\CreateDataEntryDto;
-use App\Domains\CMS\Read\Services\EntryReadService;
+use App\Domains\CMS\DTOs\Data\CreateDataEntryDTO;
 use App\Domains\CMS\Requests\DataEntryRequest;
 use App\Domains\CMS\Services\DataEntryService;
 use App\Domains\CMS\Services\FileUploadService;
@@ -13,14 +11,11 @@ use App\Models\DataEntry;
 use App\Models\DataType;
 use App\Support\CurrentProject;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class DataEntryController extends Controller
 {
-
   public function __construct(
     private VersionRestoreService $versionRestoreService,
     private DataEntryService $service,
@@ -39,7 +34,7 @@ class DataEntryController extends Controller
     } elseif (is_object($authUser) && isset($authUser->id)) {
       $userId = (int) $authUser->id;
     }
-    
+
     $values = $request->input('values', []);
     // dd($values);
     $files = $request->filesInput();
@@ -72,7 +67,7 @@ class DataEntryController extends Controller
       )->format('Y-m-d H:i:s');
     }
 
-    $dto = new CreateDataEntryDto(
+    $dto = new CreateDataEntryDTO(
       values: $values,
       seo: $request->input('seo'),
       relations: $request->input('relations'),
@@ -91,7 +86,6 @@ class DataEntryController extends Controller
     return response()->json($entry, 201);
   }
 
-
   public function update(DataEntryRequest $request, DataType $dataType, $entryslug)
   {
     $entry = DataEntry::query()->where('slug', $entryslug)->first();
@@ -106,45 +100,46 @@ class DataEntryController extends Controller
     // $userId = $userId ?? auth()->id();
     $user = $request->attributes->get('auth_user');
     $userId = $user->id;
-    $dto = CreateDataEntryDto::fromRequest($request);
+    $dto = CreateDataEntryDTO::fromRequest($request);
     $entry = $this->service->update(
       $request,
       dto: $dto,
       userId: $userId
     );
 
-
     return response()->json([
       'message' => 'Data updated successfully',
-      'entry' => $entry
+      'entry' => $entry,
     ]);
   }
 
   public function destroy(string $entry)
   {
-    $projectId =  CurrentProject::id();
+    $projectId = CurrentProject::id();
     $entryModel = DataEntry::query()
       ->where('project_id', $projectId)
       ->where('slug', $entry)
       ->firstOrFail();
 
     $this->service->destroy($entryModel->id, $projectId);
+
     return response()->json(['message' => 'Data deleted successfully']);
   }
 
   public function destroyByType(DataType $dataType, string $entry)
   {
-    $projectId =  CurrentProject::id();
+    $projectId = CurrentProject::id();
     $entryModel = DataEntry::query()
       ->where('project_id', $projectId)
       ->where('slug', $entry)
       ->firstOrFail();
 
     $this->service->destroy($entryModel->id, $projectId);
+
     return response()->json(['message' => 'Data deleted successfully']);
   }
 
-  public function restore(Request $request,int $versionId)
+  public function restore(Request $request, int $versionId)
   {
     $user = $request->attributes->get('auth_user');
     $userId = $user->id;
@@ -152,7 +147,7 @@ class DataEntryController extends Controller
       ->restore($versionId, $userId);
 
     return response()->json([
-      'message' => 'Version restored successfully'
+      'message' => 'Version restored successfully',
     ]);
   }
 }

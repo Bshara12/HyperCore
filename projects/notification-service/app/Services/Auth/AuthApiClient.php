@@ -6,80 +6,56 @@ use Illuminate\Support\Facades\Http;
 
 class AuthApiClient
 {
-    protected string $baseUrl;
+  protected string $baseUrl;
 
-    public function __construct()
-    {
-        $this->baseUrl = rtrim(config('services.auth.url'), '/');
+  public function __construct()
+  {
+    $this->baseUrl = rtrim(config('services.auth.url'), '/');
+  }
+
+  public function getUserFromToken(string $token): array
+  {
+    $response = Http::withToken($token)
+      ->get("{$this->baseUrl}/api/my-profile");
+
+    if ($response->failed()) {
+      $error = $response->json('message')
+        ?? substr($response->body(), 0, 200);
+
+      throw new \Exception(
+        'Failed to fetch user from auth service: ' . $error
+      );
     }
 
-    public function getUserFromToken(string $token): array
-    {
-        $response = Http::acceptJson()
-            ->withToken($token)
-            ->timeout(10)
-            ->retry(2, 200)
-            ->get("{$this->baseUrl}/api/my-profile");
+    $user = $response->json()['data'];
 
-        // $response = Http::withToken($token)
-        //     ->get("{$this->baseUrl}/api/my-profile");
+    $permissions = collect($user['roles'])
+      ->flatMap(fn($role) => $role['permessions'])
+      ->pluck('name')
+      ->unique()
+      ->values()
+      ->toArray();
 
-        if ($response->failed()) {
-            $error = $response->json('message')
-                ?? substr($response->body(), 0, 200);
+    $user['permissions'] = $permissions;
 
-            throw new \Exception(
-                'Failed to fetch user from auth service: ' . $error
-            );
-        }
+    return $user;
+  }
 
-        $user = $response->json('data') ?? [];
+  public function getServiceFromToken(string $token): array
+  {
+    $response = Http::withToken($token)
+      ->get("{$this->baseUrl}/api/get-service");
 
-        $permessions = collect(data_get($user, 'roles', []))
-            ->flatMap(fn ($role) => data_get($role, 'permessions', []))
-            ->pluck('name')
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
+    if ($response->failed()) {
+      $error = $response->json('message')
+        ?? substr($response->body(), 0, 200);
 
-        $user['permessions'] = $permessions;
-
-        return $user;
+      throw new \Exception(
+        'Failed to fetch user from auth service: ' . $error
+      );
     }
 
-    public function getServiceFromToken(string $token): array
-    {
-        $response = Http::acceptJson()
-            ->withToken($token)
-            ->timeout(10)
-            ->retry(2, 200)
-            ->get("{$this->baseUrl}/api/get-service");
-
-        // $response = Http::withToken($token)
-        //     ->get("{$this->baseUrl}/api/my-profile");
-
-        if ($response->failed()) {
-            $error = $response->json('message')
-                ?? substr($response->body(), 0, 200);
-
-            throw new \Exception(
-                'Failed to fetch user from auth service: ' . $error
-            );
-        }
-
-        $service = $response->json('data') ?? [];
-
-        // $permessions = collect(data_get($user, 'roles', []))
-        //     ->flatMap(fn ($role) => data_get($role, 'permessions', []))
-        //     ->pluck('name')
-        //     ->filter()
-        //     ->unique()
-        //     ->values()
-        //     ->toArray();
-
-        // $user['permessions'] = $permessions;
-
-        return $service;
-    }
+    $service = $response->json('data') ?? [];
+    return $service;
+  }
 }

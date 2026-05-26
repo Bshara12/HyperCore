@@ -13,6 +13,7 @@ class MySession extends Model
 
     public $incrementing = false;
 
+    protected $guarded = [];
     protected static function booted()
     {
         static::creating(function ($model) {

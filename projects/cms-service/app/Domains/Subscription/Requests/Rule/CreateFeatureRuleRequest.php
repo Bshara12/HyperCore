@@ -2,11 +2,10 @@
 
 namespace App\Domains\Subscription\Requests\Rule;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class CreateFeatureRuleRequest
-extends FormRequest
+class CreateFeatureRuleRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -19,19 +18,19 @@ extends FormRequest
 
             'project_id' => [
                 'nullable',
-                'exists:projects,id'
+                'exists:projects,id',
             ],
 
             'event_key' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
 
             'feature_key' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
 
             'action' => [
@@ -40,8 +39,8 @@ extends FormRequest
                 Rule::in([
                     'check',
                     'increment',
-                    'both'
-                ])
+                    'both',
+                ]),
             ],
 
             'reset_type' => [
@@ -51,18 +50,18 @@ extends FormRequest
                     'never',
                     'daily',
                     'monthly',
-                    'yearly'
-                ])
+                    'yearly',
+                ]),
             ],
 
             'is_active' => [
-                'boolean'
+                'boolean',
             ],
 
             'metadata' => [
                 'nullable',
-                'array'
-            ]
+                'array',
+            ],
         ];
     }
 }

@@ -20,15 +20,14 @@ class MaterializeNotificationBatchJob implements ShouldQueue
     use HasNotificationJobMiddleware;
 
     public int $tries = 3;
+
     public int $timeout = 120;
 
-    public function __construct(public string $batchId)
-    {
-    }
+    public function __construct(public string $batchId) {}
 
     protected function overlapKey(): string
     {
-        return 'batch:' . $this->batchId;
+        return 'batch:'.$this->batchId;
     }
 
     protected function overlapReleaseAfter(): int
@@ -89,7 +88,7 @@ class MaterializeNotificationBatchJob implements ShouldQueue
                     ],
                     'dedupe_key' => hash(
                         'sha256',
-                        $batch->id . ':' . $recipient['type'] . ':' . $recipient['id']
+                        $batch->id.':'.$recipient['type'].':'.$recipient['id']
                     ),
                 ]);
 

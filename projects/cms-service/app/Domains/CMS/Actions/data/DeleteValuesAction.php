@@ -8,26 +8,26 @@ use App\Events\SystemLogEvent;
 
 class DeleteValuesAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataEntry.deleteValues';
-  }
-  public function __construct(
-    private DataEntryValueRepository $values
-  ) {}
+    protected function circuitServiceName(): string
+    {
+        return 'dataEntry.deleteValues';
+    }
 
-  public function execute(int $entryId): void
-  {
-    $this->run(function () use ($entryId) {
-      $this->values->deleteForEntry($entryId);
-    });
-     event(new SystemLogEvent(
-     module: 'cms',
-     eventType: 'create_data_value',
-     userId: null,
-     entityType: 'data',
-     entityId: $entryId
- ));
-  }
-  
+    public function __construct(
+        private DataEntryValueRepository $values
+    ) {}
+
+    public function execute(int $entryId): void
+    {
+        $this->run(function () use ($entryId) {
+            $this->values->deleteForEntry($entryId);
+        });
+        event(new SystemLogEvent(
+            module: 'cms',
+            eventType: 'create_data_value',
+            userId: null,
+            entityType: 'data',
+            entityId: $entryId
+        ));
+    }
 }

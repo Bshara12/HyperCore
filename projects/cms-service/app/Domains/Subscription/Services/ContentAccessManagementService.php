@@ -13,64 +13,63 @@ use App\Domains\Subscription\DTOs\ContentAccess\CreateContentAccessDTO;
 use App\Domains\Subscription\DTOs\ContentAccess\UpdateContentAccessMetadataDTO;
 use App\Models\ContentAccessMetadata;
 
-
 class ContentAccessManagementService
 {
-  public function __construct(
+    public function __construct(
 
-    private CreateContentAccessAction $createAction,
-    private UpdateContentAccessMetadataAction $updateAction,
-    private DisableContentAccessMetadataAction $disableAction,
-    private ActivateContentAccessAction $activateAction,
-    private ListContentAccessAction $listAction,
-    private ShowContentAccessAction $showAction
-  ) {}
+        private CreateContentAccessAction $createAction,
+        private UpdateContentAccessMetadataAction $updateAction,
+        private DisableContentAccessMetadataAction $disableAction,
+        private ActivateContentAccessAction $activateAction,
+        private ListContentAccessAction $listAction,
+        private ShowContentAccessAction $showAction
+    ) {}
 
-  public function create(
-    CreateContentAccessDTO $dto
-  ): ContentAccessMetadata {
+    public function create(
+        CreateContentAccessDTO $dto
+    ): ContentAccessMetadata {
 
-    return $this->createAction
-      ->execute($dto);
-  }
+        return $this->createAction
+            ->execute($dto);
+    }
 
-  public function update(
-    UpdateContentAccessMetadataDTO $dto
-  ): ContentAccessMetadata {
+    public function update(
+        UpdateContentAccessMetadataDTO $dto
+    ): ContentAccessMetadata {
 
-    return $this->updateAction
-      ->execute($dto);
-  }
+        return $this->updateAction
+            ->execute($dto);
+    }
 
-  public function disable(
-    ContentAccessMetadata $metadata
-  ): ContentAccessMetadata {
+    public function disable(
+        ContentAccessMetadata $metadata
+    ): ContentAccessMetadata {
 
-    return $this->disableAction
-      ->execute($metadata);
-  }
+        return $this->disableAction
+            ->execute($metadata);
+    }
 
-  public function activate(
-    ActivateContentAccessDTO $dto
-  ): ContentAccessMetadata {
+    public function activate(
+        ActivateContentAccessDTO $dto
+    ): ContentAccessMetadata {
 
-    return $this->activateAction
-      ->execute($dto);
-  }
+        return $this->activateAction
+            ->execute($dto);
+    }
 
-  public function list(
-    ?int $projectId = null
-  ) {
+    public function list(
+        ?int $projectId = null
+    ) {
 
-    return $this->listAction
-      ->execute($projectId);
-  }
+        return $this->listAction
+            ->execute($projectId);
+    }
 
-  public function show(
-    int $id
-  ): ContentAccessMetadata {
+    public function show(
+        int $id
+    ): ContentAccessMetadata {
 
-    return $this->showAction
-      ->execute($id);
-  }
+        return $this->showAction
+            ->execute($id);
+    }
 }

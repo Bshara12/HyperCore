@@ -8,8 +8,7 @@ class ListContentAccessAction
 {
     public function __construct(
 
-        private ContentAccessMetadataRepositoryInterface
-        $repository
+        private ContentAccessMetadataRepositoryInterface $repository
     ) {}
 
     public function execute(

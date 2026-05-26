@@ -2,9 +2,9 @@
 
 namespace App\Domains\Subscription\Services;
 
-use App\Models\SubscriptionFeatureRule;
 use App\Domains\Subscription\Actions\Rule\CreateFeatureRuleAction;
 use App\Domains\Subscription\DTOs\Rule\CreateFeatureRuleDTO;
+use App\Models\SubscriptionFeatureRule;
 
 class SubscriptionFeatureRuleService
 {

@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class SearchSignalsCheckCommand extends Command
 {
-    protected $signature   = 'search:check-signals {--project=1}';
+    protected $signature = 'search:check-signals {--project=1}';
+
     protected $description = 'Check search signals health (view_count, click_count, scores)';
 
     public function handle(): int
@@ -17,7 +18,7 @@ class SearchSignalsCheckCommand extends Command
         // ─── إحصائيات شاملة ──────────────────────────────────────────
         $stats = DB::table('search_indices')
             ->where('project_id', $projectId)
-            ->selectRaw("
+            ->selectRaw('
                 COUNT(*) as total_rows,
                 SUM(click_count)  as total_clicks,
                 SUM(view_count)   as total_views,
@@ -26,7 +27,7 @@ class SearchSignalsCheckCommand extends Command
                 AVG(freshness_score)  as avg_freshness,
                 SUM(CASE WHEN view_count = 0 THEN 1 ELSE 0 END) as zero_views,
                 SUM(CASE WHEN click_count = 0 THEN 1 ELSE 0 END) as zero_clicks
-            ")
+            ')
             ->first();
 
         $this->table(
@@ -54,7 +55,7 @@ class SearchSignalsCheckCommand extends Command
 
         $this->table(
             ['Entry', 'Title', 'Clicks', 'Views', 'CTR', 'Popularity'],
-            $top->map(fn($r) => [
+            $top->map(fn ($r) => [
                 $r->entry_id,
                 mb_substr($r->title ?? '', 0, 30),
                 $r->click_count,

@@ -5,8 +5,8 @@ namespace App\Domains\CMS\Actions\DataCollection;
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
-use Illuminate\Support\Facades\Cache;
 use App\Events\SystemLogEvent;
+use Illuminate\Support\Facades\Cache;
 
 class DeactivateCollectionAction extends Action
 {
@@ -26,16 +26,21 @@ class DeactivateCollectionAction extends Action
       eventType: 'deactivate_collection',
       userId: null,
       entityType: 'collection',
-      entityId: $dto->slug??null
+      entityId: $dto->slug ?? null
     ));
+
     return $this->run(function () use ($dto) {
 
-      $result = $this->repository->deactivate($dto);
+      // $result = $this->repository->deactivate($dto);
+
+      // Cache::forget(CacheKeys::collection($dto->project_id, $dto->slug));
+      // Cache::forget(CacheKeys::collections($dto->project_id));
+
+      // return $result;
+      $this->repository->deactivate($dto);
 
       Cache::forget(CacheKeys::collection($dto->project_id, $dto->slug));
       Cache::forget(CacheKeys::collections($dto->project_id));
-
-      return $result;
     });
   }
 }

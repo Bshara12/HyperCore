@@ -23,64 +23,64 @@ class CreatePlanRequest extends FormRequest
             'name' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
 
             'slug' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
 
             'description' => [
                 'nullable',
-                'string'
+                'string',
             ],
 
             'price' => [
                 'required',
                 'numeric',
-                'min:0'
+                'min:0',
             ],
 
             'currency' => [
                 'required',
                 'string',
-                'size:3'
+                'size:3',
             ],
 
             'duration_days' => [
                 'required',
                 'integer',
-                'min:1'
+                'min:1',
             ],
 
             'is_active' => [
-                'boolean'
+                'boolean',
             ],
 
             'metadata' => [
                 'nullable',
-                'array'
+                'array',
             ],
 
             'features' => [
-                'array'
+                'array',
             ],
 
             'features.*.feature_key' => [
                 'required',
-                'string'
+                'string',
             ],
 
             'features.*.feature_type' => [
                 'required',
-                'string'
+                'string',
             ],
 
             'features.*.feature_value' => [
-                'required'
-            ]
+                'required',
+            ],
         ];
     }
 }

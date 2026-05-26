@@ -5,8 +5,8 @@ namespace App\Domains\CMS\Actions\DataCollection;
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
-use Illuminate\Support\Facades\Cache;
 use App\Events\SystemLogEvent;
+use Illuminate\Support\Facades\Cache;
 
 class DeleteDataCollectionAction extends Action
 {
@@ -21,7 +21,7 @@ class DeleteDataCollectionAction extends Action
 
   public function execute($collectionSlug)
   {
-    $this->run(function () use ($collectionSlug) {
+     $this->run(function () use ($collectionSlug) {
 
       $collection = $this->repository->getBySlug($collectionSlug);
 
@@ -40,7 +40,8 @@ class DeleteDataCollectionAction extends Action
         entityType: 'collection',
         entityId: $collection->id
       ));
-      return $this->repository->delete($collection->id);
+
+      // return $this->repository->delete($collection->id);
     });
   }
 }

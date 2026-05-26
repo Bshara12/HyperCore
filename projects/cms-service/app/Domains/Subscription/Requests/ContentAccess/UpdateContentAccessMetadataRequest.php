@@ -2,79 +2,62 @@
 
 namespace App\Domains\Subscription\Requests\ContentAccess;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateContentAccessMetadataRequest
-extends FormRequest
+class UpdateContentAccessMetadataRequest extends FormRequest
 {
-  public function authorize(): bool
-  {
-    return true;
-  }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
-  public function rules(): array
-  {
-    $metadata = $this->route('metadata');
+    public function rules(): array
+    {
+        return [
 
-    $metadataId = is_object($metadata)
-      ? $metadata->id
-      : $metadata;
+            'project_id' => [
+                'nullable',
+                'exists:projects,id',
+            ],
 
-    return [
+            /*
+            |----------------------------------------------------------
+            | content_type removed from API.
+            | content_id is optional on update — if not provided,
+            | the existing value on the model is kept as-is.
+            | If provided, must exist in data_entries.
+            |----------------------------------------------------------
+            */
+            'content_id' => [
+                'nullable',
+                'integer',
+                'exists:data_entries,id',
+            ],
 
-      'project_id' => [
-        'nullable',
-        'exists:projects,id'
-      ],
+            'requires_subscription' => [
+                'required',
+                'boolean',
+            ],
 
-      'content_type' => [
-        'required',
-        'string',
-        'max:100'
-      ],
+            'features' => [
+                'nullable',
+                'array',
+            ],
 
-      // 'content_id' => [
+            'features.*' => [
+                'string',
+                'max:100',
+            ],
 
-      //   'required',
+            'is_active' => [
+                'nullable',
+                'boolean',
+            ],
 
-      //   'integer',
-
-      //   Rule::unique(
-      //     'content_access_metadata',
-      //     'content_id'
-      //   )->ignore($metadataId)
-      //     ->where(function ($query) {
-
-      //       return $query
-      //         ->where(
-      //           'project_id',
-      //           request('project_id')
-      //         )
-      //         ->where(
-      //           'content_type',
-      //           request('content_type')
-      //         );
-      //     })
-      // ],
-
-    
-    
-      'requires_subscription' => [
-        'required',
-        'boolean'
-      ],
-
-      'required_feature' => [
-        'nullable',
-        'string',
-        'max:100'
-      ],
-
-      'metadata' => [
-        'nullable',
-        'array'
-      ]
-    ];
-  }
+            'metadata' => [
+                'nullable',
+                'array',
+            ],
+        ];
+    }
 }

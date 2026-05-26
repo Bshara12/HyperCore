@@ -8,21 +8,20 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class DataTypeFactory extends Factory
 {
-  protected $model = DataType::class;
+    protected $model = DataType::class;
 
-  public function definition()
-  {
-    return [
-      'project_id' => Project::factory(),
-      'name' => $this->faker->word(),
-      'slug' => $this->faker->slug(),
-      'description' => $this->faker->sentence(),
-      'is_active' => true,
-      'settings' => [],
-    ];
-  }
+    public function definition()
+    {
+        return [
+            'project_id' => Project::factory(),
+            'name' => $this->faker->word(),
+            'slug' => $this->faker->slug(),
+            'description' => $this->faker->sentence(),
+            'is_active' => true,
+            'settings' => [],
+        ];
+    }
 }
-use Illuminate\Support\Str;
 
 // class DataTypeFactory extends Factory
 // {
