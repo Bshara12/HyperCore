@@ -12,15 +12,13 @@ use App\Domains\CMS\Actions\data\MergeFilesAction;
 use App\Domains\CMS\Actions\data\NormalizeScheduledAtAction;
 use App\Domains\CMS\Actions\data\ResolveStateAction;
 use App\Domains\CMS\Actions\data\ValidateFieldsAction;
-use App\Domains\CMS\DTOs\Data\CreateDataEntryDto;
+use App\Domains\CMS\DTOs\Data\CreateDataEntryDTO;
 use App\Domains\CMS\Repositories\Interface\DataEntryRepositoryInterface;
 use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\CMS\Requests\DataEntryRequest;
 use App\Events\DataEntrySavedEvent;
 use App\Events\EntryChanged;
 use App\Models\DataType;
-use App\Support\CurrentProject;
-use DomainException;
 use Illuminate\Support\Facades\DB;
 
 class DataEntryService
@@ -41,11 +39,10 @@ class DataEntryService
 
   ) {}
 
-
   // public function create(
   //   int $projectId,
   //   int $dataTypeId,
-  //   CreateDataEntryDto $dto,
+  //   CreateDataEntryDTO $dto,
   //   ?int $userId
   // ) {
   //   return $this->createAction->execute(
@@ -59,7 +56,7 @@ class DataEntryService
     int $projectId,
     DataType $dataType,
     string $slug,
-    CreateDataEntryDto $dto,
+    CreateDataEntryDTO $dto,
     ?int $userId
   ) {
     return DB::transaction(function () use ($projectId, $dataType, $slug, $dto, $userId) {
@@ -101,34 +98,28 @@ class DataEntryService
 
       // event(new EntryChanged($entry, $userId));
       event(new DataEntrySavedEvent($entry));
+
       return $entry;
     });
   }
 
-
-
-
-  public function update(DataEntryRequest $request, CreateDataEntryDto $dto, ?int $userId)
+  public function update(DataEntryRequest $request, CreateDataEntryDTO $dto, ?int $userId)
   {
     return DB::transaction(function () use ($request, $dto, $userId) {
       $entryId = $request->entryId();
 
-
       $projectId = $request->projectId();
 
       // $dataTypeId = $request->dataTypeId();
-
-
 
       $entry = $this->entries->findForProjectOrFail($entryId, $projectId);
       $dataTypeId = $entry->data_type_id;
 
       $dto->values = $this->mergeFiles->execute($dto->values, $request->filesInput(), $projectId, $dataTypeId);
 
-
       $dto->scheduled_at = $this->normalizeScheduledAt->execute($dto->scheduled_at, $dto->status);
 
-      $enforceRequired = !$request->isMethod('patch');
+      $enforceRequired = ! $request->isMethod('patch');
       $this->validateFields->execute($dataTypeId, $dto->values, $enforceRequired);
 
       if ($request->filled('status')) {
@@ -136,7 +127,7 @@ class DataEntryService
       }
 
       if ($request->isMethod('patch')) {
-        if (!empty($dto->values)) {
+        if (! empty($dto->values)) {
           $this->datavalue->replacePartial($entryId, $dataTypeId, $dto->values);
         }
       } else {

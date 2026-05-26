@@ -10,46 +10,49 @@ use Illuminate\Support\Str;
 
 class Project extends Model
 {
-  use SoftDeletes;
-  use HasFactory;
-  protected $fillable = ['name', 'owner_id', 'slug', 'supported_languages', 'enabled_modules', 'public_id'];
+    use HasFactory;
+    use SoftDeletes;
 
+    protected $fillable = ['name', 'owner_id', 'slug', 'supported_languages', 'enabled_modules', 'public_id'];
 
-  protected $casts = [
-    'supported_languages' => 'array',
-    'enabled_modules' => 'array',
-  ];
+    protected $casts = [
+        'supported_languages' => 'array',
+        'enabled_modules' => 'array',
+    ];
 
-  // public function users()
-  // {
-  //   return $this->belongsToMany(User::class, 'project_user');
-  // }
+    // public function users()
+    // {
+    //   return $this->belongsToMany(User::class, 'project_user');
+    // }
 
-  public function getRouteKeyName()
-  {
-    return 'slug';
-  }
-  protected static function boot()
-  {
-    parent::boot();
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
 
-    static::creating(function ($project) {
-      $project->slug = Str::slug($project->name);
-    });
-  }
+    protected static function boot()
+    {
+        parent::boot();
 
-  public function payments()
-  {
-    return $this->hasMany(Payment::class);
-  }
+        static::creating(function ($project) {
+            $project->slug = Str::slug($project->name);
+        });
+    }
 
-  public function collections()
-  {
-    return $this->hasMany(DataCollection::class);
-  }
-  public function ratings()
-  {
-    return $this->morphMany(Rating::class, 'rateable');
-  }
-  use TraitsBelongsToProject; // يضمن أي عملية create تحوي project_id
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function collections()
+    {
+        return $this->hasMany(DataCollection::class);
+    }
+
+    public function ratings()
+    {
+        return $this->morphMany(Rating::class, 'rateable');
+    }
+
+    use TraitsBelongsToProject; // يضمن أي عملية create تحوي project_id
 }

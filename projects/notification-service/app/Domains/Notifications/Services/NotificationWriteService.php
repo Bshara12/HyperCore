@@ -28,7 +28,7 @@ class NotificationWriteService
             $this->authorizationService->ensureCanCreate($actor);
         }
 
-        $lockKey = 'notifications:write:' . ($payload['dedupe_key'] ?? $this->makeDedupeKey($payload));
+        $lockKey = 'notifications:write:'.($payload['dedupe_key'] ?? $this->makeDedupeKey($payload));
 
         return Cache::lock($lockKey, 15)->block(5, function () use ($actor, $payload) {
             return DB::transaction(function () use ($actor, $payload) {
@@ -161,10 +161,10 @@ class NotificationWriteService
 
         foreach ($variables as $key => $value) {
             if ($subject !== null) {
-                $subject = str_replace('{{' . $key . '}}', (string) $value, $subject);
+                $subject = str_replace('{{'.$key.'}}', (string) $value, $subject);
             }
 
-            $body = str_replace('{{' . $key . '}}', (string) $value, $body);
+            $body = str_replace('{{'.$key.'}}', (string) $value, $body);
         }
 
         return [

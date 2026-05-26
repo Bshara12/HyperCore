@@ -40,7 +40,7 @@ return new class extends Migration
 
                 $table->unique([
                     'project_id',
-                    'event_key'
+                    'event_key',
                 ]);
             }
         );

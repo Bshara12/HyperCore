@@ -6,73 +6,73 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-  /**
-   * Run the migrations.
-   */
-  public function up(): void
-  {
-    Schema::create('content_access_metadata', function (Blueprint $table) {
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('content_access_metadata', function (Blueprint $table) {
 
-      $table->id();
+            $table->id();
 
-      $table->foreignId('project_id')
-        ->nullable()
-        ->constrained()
-        ->nullOnDelete();
+            $table->foreignId('project_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
 
-      /*
+            /*
     |--------------------------------------------------------------------------
     | Polymorphic Content
     |--------------------------------------------------------------------------
     */
 
-      $table->string('content_type');
+            $table->string('content_type');
 
-      $table->unsignedBigInteger('content_id');
+            $table->unsignedBigInteger('content_id');
 
-      /*
+            /*
     |--------------------------------------------------------------------------
     | Access
     |--------------------------------------------------------------------------
     */
 
-      $table->boolean('requires_subscription')
-        ->default(false);
+            $table->boolean('requires_subscription')
+                ->default(false);
 
-      $table->string('required_feature')
-        ->nullable();
+            $table->string('required_feature')
+                ->nullable();
 
-      /*
+            /*
     |--------------------------------------------------------------------------
     | Optional
     |--------------------------------------------------------------------------
     */
 
-      $table->json('metadata')
-        ->nullable();
+            $table->json('metadata')
+                ->nullable();
 
-      $table->timestamps();
+            $table->timestamps();
 
-      $table->boolean('is_active')
-        ->default(true);
+            $table->boolean('is_active')
+                ->default(true);
 
-      $table->index(
-        ['content_type', 'content_id'],
-        'cam_content_idx'
-      );
+            $table->index(
+                ['content_type', 'content_id'],
+                'cam_content_idx'
+            );
 
-      $table->unique(
-        ['project_id', 'content_type', 'content_id'],
-        'cam_project_content_unique'
-      );
-    });
-  }
+            $table->unique(
+                ['project_id', 'content_type', 'content_id'],
+                'cam_project_content_unique'
+            );
+        });
+    }
 
-  /**
-   * Reverse the migrations.
-   */
-  public function down(): void
-  {
-    //
-  }
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        //
+    }
 };

@@ -4,7 +4,7 @@ namespace App\Domains\CMS\Actions\Field\CreationStrategy;
 
 interface FieldTypeStrategy
 {
-  public function validateRules(array $rules): void;
+    public function validateRules(array $rules): void;
 
-  public function normalizeSettings(array $settings): array;
+    public function normalizeSettings(array $settings): array;
 }

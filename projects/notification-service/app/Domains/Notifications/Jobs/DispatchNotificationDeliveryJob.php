@@ -19,15 +19,14 @@ class DispatchNotificationDeliveryJob implements ShouldQueue
     use HasNotificationJobMiddleware;
 
     public int $tries = 3;
+
     public int $timeout = 30;
 
-    public function __construct(public string $deliveryId)
-    {
-    }
+    public function __construct(public string $deliveryId) {}
 
     protected function overlapKey(): string
     {
-        return 'delivery:' . $this->deliveryId;
+        return 'delivery:'.$this->deliveryId;
     }
 
     public function handle(): void

@@ -19,7 +19,7 @@ class CmsEventSeeder extends Seeder
                 ->where('slug', 'pulse360')
                 ->first();
 
-            if (!$project) {
+            if (! $project) {
                 $projectId = DB::table('projects')->insertGetId([
                     'public_id' => Str::uuid(),
                     'slug' => 'pulse360',
@@ -37,7 +37,7 @@ class CmsEventSeeder extends Seeder
                 ->where('slug', 'event')
                 ->value('id');
 
-            if (!$eventType) {
+            if (! $eventType) {
                 $eventType = DB::table('data_types')->insertGetId([
                     'project_id' => $projectId,
                     'name' => 'Event',
@@ -78,7 +78,9 @@ class CmsEventSeeder extends Seeder
                     ->where('slug', $slug)
                     ->exists();
 
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $entryId = DB::table('data_entries')->insertGetId([
                     'project_id' => $projectId,

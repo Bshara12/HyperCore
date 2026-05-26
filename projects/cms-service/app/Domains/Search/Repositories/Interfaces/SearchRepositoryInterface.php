@@ -8,24 +8,24 @@ use App\Domains\Search\Support\ProcessedKeyword;
 
 interface SearchRepositoryInterface
 {
-  /**
-   * البحث الفعلي - يرجع array خام من DB
-   * الـ Action هو من يحوّله إلى DTOs
-   *
-   * @return array{items: array, total: int}
-   */
+    /**
+     * البحث الفعلي - يرجع array خام من DB
+     * الـ Action هو من يحوّله إلى DTOs
+     *
+     * @return array{items: array, total: int}
+     */
 
-  // public function search(SearchQueryDTO $dto): array;
-  public function search(
-    SearchQueryDTO $dto,
-    ProcessedKeyword $processed,
-    UserPreferenceDTO $preference   // ← إضافة
-  ): array;
+    // public function search(SearchQueryDTO $dto): array;
+    public function search(
+        SearchQueryDTO $dto,
+        ProcessedKeyword $processed,
+        UserPreferenceDTO $preference   // ← إضافة
+    ): array;
 
-  public function searchWithExclusions(
-    SearchQueryDTO    $dto,
-    ProcessedKeyword  $processed,
-    UserPreferenceDTO $preference,
-    array             $excludeTerms = []
-  ): array;
+    public function searchWithExclusions(
+        SearchQueryDTO $dto,
+        ProcessedKeyword $processed,
+        UserPreferenceDTO $preference,
+        array $excludeTerms = []
+    ): array;
 }

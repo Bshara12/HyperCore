@@ -2,20 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SubscriptionFeature extends Model
 {
+  use HasFactory;
     protected $fillable = [
         'plan_id',
         'feature_key',
         'feature_type',
-        'feature_value'
+        'feature_value',
     ];
 
     protected $casts = [
-        'feature_value' => 'array'
+        'feature_value' => 'array',
     ];
 
     public function plan(): BelongsTo

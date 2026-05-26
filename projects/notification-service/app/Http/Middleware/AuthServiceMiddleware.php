@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Domains\Notifications\Models\NotificationServiceClient;
 use App\Services\Auth\AuthApiClient;
 use Closure;
 use Illuminate\Http\Request;
@@ -35,10 +34,6 @@ class AuthServiceMiddleware
                 'message' => 'Invalid or expired token',
             ], 401);
         }
-
-
-
-
 
         return $next($request);
     }

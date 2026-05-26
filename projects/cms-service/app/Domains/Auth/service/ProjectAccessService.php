@@ -7,12 +7,12 @@ use App\Domains\Auth\DTOs\CheckProjectAccessDto;
 
 class ProjectAccessService
 {
-  public function __construct(
-    private CheckProjectAccessAction $action
-  ) {}
+    public function __construct(
+        private CheckProjectAccessAction $action
+    ) {}
 
-  public function check(CheckProjectAccessDto $dto): bool
-  {
-    return $this->action->execute($dto);
-  }
+    public function check(CheckProjectAccessDto $dto): bool
+    {
+        return $this->action->execute($dto);
+    }
 }

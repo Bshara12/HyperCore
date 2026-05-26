@@ -4,35 +4,42 @@ namespace App\Domains\Notifications\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Models\Domains\Notifications\Models\Notification;
 
+/**
+ * @property Notification $resource
+ */
 class NotificationResource extends JsonResource
 {
-    public function toArray(Request $request): array
-    {
-        return [
-            'id' => $this->id,
-            'project_id' => $this->project_id,
-            'recipient_type' => $this->recipient_type,
-            'recipient_id' => $this->recipient_id,
+  public function toArray(Request $request): array
+  {
+    /** @var Notification $batch */
+    $batch = $this->resource;
 
-            'title' => $this->title,
-            'body' => $this->body,
-            'status' => $this->status->value,
-            'priority' => $this->priority,
+    return [
+      'id' =>  $batch->id,
+      'project_id' =>  $batch->project_id,
+      'recipient_type' =>  $batch->recipient_type,
+      'recipient_id' =>  $batch->recipient_id,
 
-            'topic_key' => $this->topic_key,
-            'data' => $this->data,
-            'metadata' => $this->metadata,
+      'title' =>  $batch->title,
+      'body' =>  $batch->body,
+      'status' =>  $batch->status->value,
+      'priority' =>  $batch->priority,
 
-            'source' => [
-                'type' => $this->source_type,
-                'service' => $this->source_service,
-                'id' => $this->source_id,
-            ],
+      'topic_key' =>  $batch->topic_key,
+      'data' =>  $batch->data,
+      'metadata' =>  $batch->metadata,
 
-            'read_at' => optional($this->read_at)?->toISOString(),
-            'created_at' => optional($this->created_at)?->toISOString(),
-            'updated_at' => optional($this->updated_at)?->toISOString(),
-        ];
-    }
+      'source' => [
+        'type' =>  $batch->source_type,
+        'service' =>  $batch->source_service,
+        'id' =>  $batch->source_id,
+      ],
+
+      'read_at' => optional( $batch->read_at)?->toISOString(),
+      'created_at' => optional( $batch->created_at)?->toISOString(),
+      'updated_at' => optional( $batch->updated_at)?->toISOString(),
+    ];
+  }
 }

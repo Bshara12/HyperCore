@@ -8,27 +8,27 @@ use App\Events\SystemLogEvent;
 
 class ForceDeleteAction extends Action
 {
+    protected function circuitServiceName(): string
+    {
+        return 'dataTypeField.forceDelete';
+    }
 
-  protected function circuitServiceName(): string
-  {
-    return 'dataTypeField.forceDelete';
-  }
+    public function __construct(
+        protected FieldRepositoryInterface $repository
+    ) {}
 
-  public function __construct(
-    protected FieldRepositoryInterface $repository
-  ) {}
+    public function execute(int $fieldId)
+    {
+        return $this->run(function () use ($fieldId) {
+            event(new SystemLogEvent(
+                module: 'cms',
+                eventType: 'force_delete_field',
+                userId: null,
+                entityType: 'field',
+                entityId: $fieldId
+            ));
 
-  public function execute(int $fieldId)
-  {
-    return $this->run(function () use ($fieldId) {
-      event(new SystemLogEvent(
-        module: 'cms',
-        eventType: 'force_delete_field',
-        userId: null,
-        entityType: 'field',
-        entityId: $fieldId
-      ));
-      return $this->repository->forceDelete($fieldId);
-    });
-  }
+           $this->repository->forceDelete($fieldId);
+        });
+    }
 }

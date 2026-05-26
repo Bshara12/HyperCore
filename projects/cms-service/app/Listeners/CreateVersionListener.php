@@ -4,8 +4,6 @@ namespace App\Listeners;
 
 use App\Domains\CMS\Services\Versioning\VersionCreator;
 use App\Events\EntryChanged;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class CreateVersionListener
 {

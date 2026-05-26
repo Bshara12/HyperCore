@@ -20,8 +20,10 @@ use Illuminate\Support\Facades\Log;
 class AIQueryInterpreter
 {
     private const CACHE_TTL = 3600;
-    private const TIMEOUT   = 8;
-    private const API_URL   = 'https://openrouter.ai/api/v1/chat/completions';
+
+    private const TIMEOUT = 8;
+
+    private const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
     // ─────────────────────────────────────────────────────────────────
 
@@ -40,7 +42,7 @@ class AIQueryInterpreter
      */
     public function interpret(string $query, string $language): array
     {
-        $cacheKey = 'ai_interpret:' . md5(mb_strtolower(trim($query)) . ':' . $language);
+        $cacheKey = 'ai_interpret:'.md5(mb_strtolower(trim($query)).':'.$language);
 
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
@@ -48,13 +50,14 @@ class AIQueryInterpreter
         }
 
         Log::info('AIQueryInterpreter: calling API', [
-            'query'    => $query,
+            'query' => $query,
             'language' => $language,
         ]);
 
         try {
             $result = $this->callAPI($query, $language);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return array_merge($result, ['source' => 'api']);
 
         } catch (\Throwable $e) {
@@ -62,6 +65,7 @@ class AIQueryInterpreter
                 'query' => $query,
                 'error' => $e->getMessage(),
             ]);
+
             return $this->buildFallback($query);
         }
     }
@@ -71,24 +75,24 @@ class AIQueryInterpreter
     private function callAPI(string $query, string $language): array
     {
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . config('services.openrouter.key'),
-            'Content-Type'  => 'application/json',
+            'Authorization' => 'Bearer '.config('services.openrouter.key'),
+            'Content-Type' => 'application/json',
         ])
-        ->timeout(self::TIMEOUT)
-        ->post(self::API_URL, [
-            'model'      => config('services.openrouter.model', 'mistralai/mistral-7b-instruct'),
-            'max_tokens' => 400,
-            'messages'   => [
-                ['role' => 'user', 'content' => $this->buildPrompt($query, $language)],
-            ],
-        ]);
+            ->timeout(self::TIMEOUT)
+            ->post(self::API_URL, [
+                'model' => config('services.openrouter.model', 'mistralai/mistral-7b-instruct'),
+                'max_tokens' => 400,
+                'messages' => [
+                    ['role' => 'user', 'content' => $this->buildPrompt($query, $language)],
+                ],
+            ]);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             Log::error('AIQueryInterpreter: API error', [
                 'status' => $response->status(),
-                'body'   => $response->body(),
+                'body' => $response->body(),
             ]);
-            throw new \RuntimeException('API error: ' . $response->status());
+            throw new \RuntimeException('API error: '.$response->status());
         }
 
         $content = $response->json()['choices'][0]['message']['content'] ?? '';
@@ -122,9 +126,9 @@ class AIQueryInterpreter
      */
     private function buildPrompt(string $query, string $language): string
     {
-        $langName = match($language) {
-            'ar'    => 'Arabic',
-            'fr'    => 'French',
+        $langName = match ($language) {
+            'ar' => 'Arabic',
+            'fr' => 'French',
             default => 'English',
         };
 
@@ -172,47 +176,48 @@ PROMPT;
 
     private function parseResponse(string $content, string $originalQuery): array
     {
-        $clean  = preg_replace('/```(?:json)?\s*|\s*```/', '', trim($content));
+        $clean = preg_replace('/```(?:json)?\s*|\s*```/', '', trim($content));
         $parsed = json_decode(trim($clean), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($parsed)) {
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($parsed)) {
             Log::warning('AIQueryInterpreter: parse failed', [
                 'content' => $content,
-                'error'   => json_last_error_msg(),
+                'error' => json_last_error_msg(),
             ]);
+
             return $this->buildFallback($originalQuery);
         }
 
-        $include    = $this->sanitizeTokens($parsed['include']    ?? []);
-        $exclude    = $this->sanitizeTokens($parsed['exclude']    ?? []);
-        $expanded   = $this->sanitizeTokens($parsed['expanded']   ?? []);
-        $intent     = $this->sanitizeIntent($parsed['intent']     ?? 'general');
-        $corrected  = trim(strip_tags($parsed['corrected']         ?? ''));
+        $include = $this->sanitizeTokens($parsed['include'] ?? []);
+        $exclude = $this->sanitizeTokens($parsed['exclude'] ?? []);
+        $expanded = $this->sanitizeTokens($parsed['expanded'] ?? []);
+        $intent = $this->sanitizeIntent($parsed['intent'] ?? 'general');
+        $corrected = trim(strip_tags($parsed['corrected'] ?? ''));
         $confidence = min(1.0, max(0.0, (float) ($parsed['confidence'] ?? 0.5)));
 
         // Safety: إذا include فارغة لكن confidence عالي → استخدم corrected
-        if (empty($include) && !empty($corrected) && $confidence > 0.5) {
+        if (empty($include) && ! empty($corrected) && $confidence > 0.5) {
             $include = array_filter(
                 explode(' ', mb_strtolower($corrected)),
-                fn($w) => mb_strlen($w) >= 2
+                fn ($w) => mb_strlen($w) >= 2
             );
             $include = array_values($include);
         }
 
         Log::debug('AIQueryInterpreter: parsed result', [
-            'original'   => $originalQuery,
-            'include'    => $include,
-            'exclude'    => $exclude,
-            'intent'     => $intent,
+            'original' => $originalQuery,
+            'include' => $include,
+            'exclude' => $exclude,
+            'intent' => $intent,
             'confidence' => $confidence,
         ]);
 
         return [
-            'include'    => $include,
-            'exclude'    => $exclude,
-            'intent'     => $intent,
-            'expanded'   => $expanded,
-            'corrected'  => $corrected,
+            'include' => $include,
+            'exclude' => $exclude,
+            'intent' => $intent,
+            'expanded' => $expanded,
+            'corrected' => $corrected,
             'confidence' => $confidence,
         ];
     }
@@ -237,7 +242,7 @@ PROMPT;
             }
 
             // إذا أكثر من كلمتين → خذ أول كلمتين فقط
-            $words = array_filter(explode(' ', $token), fn($w) => mb_strlen($w) >= 2);
+            $words = array_filter(explode(' ', $token), fn ($w) => mb_strlen($w) >= 2);
 
             if (count($words) > 2) {
                 // phrase طويلة → خذ أول 2 كلمات
@@ -254,19 +259,20 @@ PROMPT;
     private function sanitizeIntent(string $intent): string
     {
         $valid = ['buy', 'compare', 'learn', 'avoid', 'repair', 'general'];
+
         return in_array($intent, $valid, true) ? $intent : 'general';
     }
 
     private function buildFallback(string $query): array
     {
         return [
-            'include'    => [],
-            'exclude'    => [],
-            'intent'     => 'general',
-            'expanded'   => [],
-            'corrected'  => $query,
+            'include' => [],
+            'exclude' => [],
+            'intent' => 'general',
+            'expanded' => [],
+            'corrected' => $query,
             'confidence' => 0.0,
-            'source'     => 'fallback',
+            'source' => 'fallback',
         ];
     }
 }

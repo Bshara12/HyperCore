@@ -13,50 +13,50 @@ use Illuminate\Support\Facades\Cache;
 
 class UpdateFieldAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataTypeField.update';
-  }
-
-  public function __construct(
-    protected FieldRepositoryInterface $repository,
-    protected CreateFieldAction $createFieldAction
-  ) {}
-
-  public function execute(DataTypeField $field, CreateFieldDTO $dto): DataTypeField
-  {
-    if ($field->type !== $dto->type) {
-      abort(422, 'Changing field type is not allowed.');
+    protected function circuitServiceName(): string
+    {
+        return 'dataTypeField.update';
     }
 
-    return $this->run(function () use ($dto, $field) {
-      $this->repository->ensureUpdatedFieldIsUnique($dto->data_type_id, $dto->name, $field->id);
+    public function __construct(
+        protected FieldRepositoryInterface $repository,
+        protected CreateFieldAction $createFieldAction
+    ) {}
 
-      $strategy = FieldTypeFactory::make($dto->type);
+    public function execute(DataTypeField $field, CreateFieldDTO $dto): DataTypeField
+    {
+        if ($field->type !== $dto->type) {
+            abort(422, 'Changing field type is not allowed.');
+        }
 
-      $strategy->validateRules($dto->validation_rules);
+        return $this->run(function () use ($dto, $field) {
+            $this->repository->ensureUpdatedFieldIsUnique($dto->data_type_id, $dto->name, $field->id);
 
-      $normalizedSettings = $strategy->normalizeSettings($dto->settings);
+            $strategy = FieldTypeFactory::make($dto->type);
 
-      if ($dto->type === 'relation') {
-        $normalizedSettings['data_type_relation_id'] = $this->createFieldAction->ensureDataTypeRelationExists($dto, $normalizedSettings);
-      }
+            $strategy->validateRules($dto->validation_rules);
 
-      $updated = $this->repository->update($dto, $field, $normalizedSettings);
-      Cache::forget(CacheKeys::fields($dto->data_type_id));
+            $normalizedSettings = $strategy->normalizeSettings($dto->settings);
 
-      return $updated;
-      event(new SystemLogEvent(
-        module: 'cms',
-        eventType: 'update_field',
-        userId: null,
-        entityType: 'field',
-        entityId: $field->id ?? null
-      ));
-      return $updated;
+            if ($dto->type === 'relation') {
+                $normalizedSettings['data_type_relation_id'] = $this->createFieldAction->ensureDataTypeRelationExists($dto, $normalizedSettings);
+            }
 
-      // return $this->repository->update($dto, $field, $normalizedSettings);
-  
-    });
-  }
+            $updated = $this->repository->update($dto, $field, $normalizedSettings);
+            Cache::forget(CacheKeys::fields($dto->data_type_id));
+
+            event(new SystemLogEvent(
+                module: 'cms',
+                eventType: 'update_field',
+                userId: null,
+                entityType: 'field',
+                entityId: $field->id
+            ));
+
+            return $updated;
+
+            // return $this->repository->update($dto, $field, $normalizedSettings);
+
+        });
+    }
 }

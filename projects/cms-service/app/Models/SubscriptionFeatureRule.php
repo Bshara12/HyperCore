@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SubscriptionFeatureRule extends Model
 {
+  use HasFactory;
     protected $fillable = [
 
         'project_id',
@@ -20,14 +22,14 @@ class SubscriptionFeatureRule extends Model
 
         'is_active',
 
-        'metadata'
+        'metadata',
     ];
 
     protected $casts = [
 
         'is_active' => 'boolean',
 
-        'metadata' => 'array'
+        'metadata' => 'array',
     ];
 
     // ─────────────────────────────────────

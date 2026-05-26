@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domains\CMS\DTOs;
 
 use App\Domains\CMS\Requests\CreateProjectRequest;
@@ -25,7 +26,7 @@ class CreateProjectDTO
             $userId = (int) $user->id;
         }
 
-        if (!$userId) {
+        if (! $userId) {
             abort(401, 'Unauthorized');
         }
 

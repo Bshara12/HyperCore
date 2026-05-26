@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property array|null $supported_languages
+ */
 class DataTypeField extends Model
 {
-  use SoftDeletes;
   use HasFactory;
+  use SoftDeletes;
 
   protected $fillable = [
     'data_type_id',

@@ -3,46 +3,59 @@
 namespace App\Models\Domains\Notifications\Models;
 
 use App\Domains\Notifications\Enums\DeliveryStatus;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\MassPrunable;
+use Illuminate\Database\Eloquent\Builder;
 
 class NotificationDelivery extends Model
 {
-    use HasUlids;
+  use HasUlids;
+  use MassPrunable;
 
-    protected $table = 'notification_deliveries';
 
-    protected $fillable = [
-        'notification_id',
-        'channel',
-        'provider',
-        'status',
-        'attempts',
-        'max_attempts',
-        'last_attempt_at',
-        'next_retry_at',
-        'provider_message_id',
-        'payload_snapshot',
-        'error_code',
-        'error_message',
-        'sent_at',
-        'delivered_at',
-    ];
+  protected $table = 'notification_deliveries';
 
-    protected $casts = [
-        'status' => DeliveryStatus::class,
-        'attempts' => 'integer',
-        'max_attempts' => 'integer',
-        'last_attempt_at' => 'datetime',
-        'next_retry_at' => 'datetime',
-        'payload_snapshot' => 'array',
-        'sent_at' => 'datetime',
-        'delivered_at' => 'datetime',
-    ];
+  protected $fillable = [
+    'notification_id',
+    'channel',
+    'provider',
+    'status',
+    'attempts',
+    'max_attempts',
+    'last_attempt_at',
+    'next_retry_at',
+    'provider_message_id',
+    'payload_snapshot',
+    'error_code',
+    'error_message',
+    'sent_at',
+    'delivered_at',
+  ];
 
-    public function notification(): BelongsTo
-    {
-        return $this->belongsTo(Notification::class);
-    }
+  protected $casts = [
+    'status' => DeliveryStatus::class,
+    'attempts' => 'integer',
+    'max_attempts' => 'integer',
+    'last_attempt_at' => 'datetime',
+    'next_retry_at' => 'datetime',
+    'payload_snapshot' => 'array',
+    'sent_at' => 'datetime',
+    'delivered_at' => 'datetime',
+  ];
+
+/**
+ * @return BelongsTo<Notification, $this>
+ */
+  public function notification(): BelongsTo
+  {
+    return $this->belongsTo(Notification::class);
+  }
+
+  public function prunable(): Builder
+  {
+    return static::query()
+      ->where('created_at', '<', now()->subDays(30));
+  }
 }

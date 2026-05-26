@@ -14,7 +14,8 @@ class UpdateSearchSignalsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public int $timeout = 300;
 
     public function handle(): void
@@ -42,14 +43,14 @@ class UpdateSearchSignalsJob implements ShouldQueue
      */
     private function updateCtrScore(): void
     {
-        DB::statement("
+        DB::statement('
             UPDATE search_indices
             SET ctr_score = ROUND(
                 CAST(click_count AS DECIMAL(10,4))
                 / (CAST(view_count AS DECIMAL(10,4)) + 1.0),
                 4
             )
-        ");
+        ');
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ class UpdateSearchSignalsJob implements ShouldQueue
      */
     private function updateFreshnessScore(): void
     {
-        DB::statement("
+        DB::statement('
             UPDATE search_indices
             SET freshness_score = ROUND(
                 1.0 / (
@@ -74,7 +75,7 @@ class UpdateSearchSignalsJob implements ShouldQueue
                 ),
                 4
             )
-        ");
+        ');
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -93,7 +94,7 @@ class UpdateSearchSignalsJob implements ShouldQueue
      */
     private function updatePopularityScore(): void
     {
-        DB::statement("
+        DB::statement('
             UPDATE search_indices
             SET popularity_score = ROUND(
                 (LOG(click_count  + 1) * 0.6)
@@ -101,7 +102,7 @@ class UpdateSearchSignalsJob implements ShouldQueue
                 + (freshness_score     * 0.1),
                 4
             )
-        ");
+        ');
     }
 
     public function failed(\Throwable $e): void

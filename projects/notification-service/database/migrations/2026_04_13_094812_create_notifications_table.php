@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('correlation_id')->nullable()->index();
             $table->string('causation_id')->nullable()->index();
             $table->string('request_id')->nullable()->index();
-            
+
             $table->json('actor_snapshot')->nullable();
             $table->json('source_snapshot')->nullable();
             $table->json('audit_meta')->nullable();

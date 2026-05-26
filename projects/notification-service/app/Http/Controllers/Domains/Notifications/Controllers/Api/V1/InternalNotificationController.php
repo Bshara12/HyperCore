@@ -10,7 +10,6 @@ use App\Domains\Notifications\Services\NotificationWriteService;
 use App\Http\Requests\Domains\Notifications\Requests\CreateBulkNotificationRequest;
 use App\Http\Requests\Domains\Notifications\Requests\CreateNotificationRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class InternalNotificationController extends Controller

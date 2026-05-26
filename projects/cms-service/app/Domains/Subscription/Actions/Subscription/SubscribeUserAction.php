@@ -2,14 +2,14 @@
 
 namespace App\Domains\Subscription\Actions\Subscription;
 
-use Exception;
-use App\Models\Payment;
-use App\Models\Subscription;
-use App\Models\SubscriptionPlan;
 use App\Domains\Payment\DTOs\PaymentDTO;
 use App\Domains\Payment\Services\PaymentService;
 use App\Domains\Subscription\DTOs\Subscription\SubscribeUserDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
+use App\Models\Payment;
+use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
+use Exception;
 
 class SubscribeUserAction
 {
@@ -50,11 +50,11 @@ class SubscribeUserAction
     ): array {
 
         // FREE PLAN
-        if ((float)$plan->price <= 0) {
+        if ((float) $plan->price <= 0) {
 
             return [
                 'success' => true,
-                'payment_id' => null
+                'payment_id' => null,
             ];
         }
 
@@ -77,13 +77,13 @@ class SubscribeUserAction
             'description' => sprintf(
                 'Subscription payment for %s',
                 $plan->name
-            )
+            ),
         ]);
 
         $result = $this->paymentService
             ->processPayment($paymentDTO);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
 
             throw new Exception(
                 'Payment failed.'
@@ -108,7 +108,7 @@ class SubscribeUserAction
         SubscriptionPlan $plan
     ): void {
 
-        if (!$plan->is_active) {
+        if (! $plan->is_active) {
 
             throw new Exception(
                 'Subscription plan is inactive.'

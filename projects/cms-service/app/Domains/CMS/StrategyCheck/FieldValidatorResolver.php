@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domains\CMS\StrategyCheck;
 
 class FieldValidatorResolver
@@ -6,13 +7,14 @@ class FieldValidatorResolver
     public function resolve(string $type): FieldValidator
     {
         return match ($type) {
-            'number' => new NumberFieldValidator(),
-            'string' => new StringFieldValidator(),
-            'text' => new StringFieldValidator(),
-            'textarea' => new StringFieldValidator(),
-            'select' => new StringFieldValidator(),
-            'relation' => new StringFieldValidator(),
-            'json' => new class implements FieldValidator {
+            'number' => new NumberFieldValidator,
+            'string' => new StringFieldValidator,
+            'text' => new StringFieldValidator,
+            'textarea' => new StringFieldValidator,
+            'select' => new StringFieldValidator,
+            'relation' => new StringFieldValidator,
+            'json' => new class implements FieldValidator
+            {
                 public function validate($value, array $fieldConfig): void
                 {
                     if (is_array($value)) {
@@ -30,7 +32,8 @@ class FieldValidatorResolver
                     throw new \Exception("Field {$name} must be valid JSON.");
                 }
             },
-            'boolean' => new class implements FieldValidator {
+            'boolean' => new class implements FieldValidator
+            {
                 public function validate($value, array $fieldConfig): void
                 {
                     if (is_bool($value)) {
@@ -49,7 +52,7 @@ class FieldValidatorResolver
                     throw new \Exception("Field {$name} must be boolean.");
                 }
             },
-            'file'   => new FileFieldValidator(),
+            'file' => new FileFieldValidator,
             default => throw new \Exception("Unsupported field type: {$type}")
         };
     }

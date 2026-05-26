@@ -20,7 +20,9 @@ use App\Models\DataEntry;
 class DynamicCollectionQueryBuilder
 {
   protected $projectId;
+
   protected $dataTypeId;
+
   protected array $operatorStrategies = [];
 
   public function __construct(
@@ -106,10 +108,13 @@ class DynamicCollectionQueryBuilder
     $projectId = $this->projectId;
     $dataTypeId = $this->dataTypeId;
 
-    if (!$operator === 'inCollection') {
+    // if (! $operator === 'inCollection') {
+    if ($operator !== 'incollection') {
       $fieldInfo = $this->fieldRepository->findByDataTypeAndName($dataTypeId, $field);
 
-      if (!$fieldInfo) return [];
+      if (! $fieldInfo) {
+        return [];
+      }
 
       // ============================
       // 1) Field is a relation
@@ -117,15 +122,19 @@ class DynamicCollectionQueryBuilder
       if ($fieldInfo->type === 'relation') {
 
         $relatedDataTypeId = $fieldInfo->settings['related_data_type_id'] ?? null;
-        if (!$relatedDataTypeId) return [];
+        if (! $relatedDataTypeId) {
+          return [];
+        }
 
         $relatedEntryIds = $this->entryRepository->pluckIdsByProjectTypeAndValues(
           $projectId,
           $relatedDataTypeId,
-          (array)$value
+          (array) $value
         );
 
-        if (!$relatedEntryIds) return [];
+        if (! $relatedEntryIds) {
+          return [];
+        }
 
         $directEntryIds = $this->relationRepository->pluckEntryIdsByRelatedIds($relatedEntryIds);
 
@@ -143,7 +152,7 @@ class DynamicCollectionQueryBuilder
 
     $strategy = $this->operatorStrategies[$operator] ?? null;
 
-    if (!$strategy instanceof ValueConditionStrategy) {
+    if (! $strategy instanceof ValueConditionStrategy) {
       return [];
     }
 

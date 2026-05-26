@@ -11,29 +11,29 @@ use Illuminate\Support\Facades\Cache;
 
 class DeleteDataTypeAction extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataType.delete';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'dataType.delete';
+    }
 
-  public function __construct(
-    protected DataTypeRepositoryInterface $repository
-  ) {}
+    public function __construct(
+        protected DataTypeRepositoryInterface $repository
+    ) {}
 
-  public function execute(DataType $dataType): void
-  {
-    $this->run(function () use ($dataType) {
-      $this->repository->delete($dataType);
-      Cache::forget(CacheKeys::dataType($dataType->id));
-      Cache::forget(CacheKeys::dataTypeBySlug($dataType->slug, $dataType->project_id));
-      Cache::forget(CacheKeys::dataTypes($dataType->project_id));
-        event(new SystemLogEvent(
-        module: 'cms',
-        eventType: 'delete_datatype',
-        userId: null,
-        entityType: 'datatype',
-        entityId: $dataType->id
-      ));
-    });
-  }
+    public function execute(DataType $dataType): void
+    {
+        $this->run(function () use ($dataType) {
+            $this->repository->delete($dataType);
+            Cache::forget(CacheKeys::dataType($dataType->id));
+            Cache::forget(CacheKeys::dataTypeBySlug($dataType->slug, $dataType->project_id));
+            Cache::forget(CacheKeys::dataTypes($dataType->project_id));
+            event(new SystemLogEvent(
+                module: 'cms',
+                eventType: 'delete_datatype',
+                userId: null,
+                entityType: 'datatype',
+                entityId: $dataType->id
+            ));
+        });
+    }
 }

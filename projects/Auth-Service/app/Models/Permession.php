@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Permession extends Model
 {
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class);
-    }
+  protected $guarded = [];
+
+  public function roles()
+  {
+    return $this->belongsToMany(Role::class);
+  }
 }

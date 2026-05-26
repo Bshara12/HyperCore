@@ -37,19 +37,20 @@ class IndexDataEntryListener implements ShouldQueue
         $entry = $event->entry;
 
         Log::info('SearchIndex: received indexing job', [
-            'entry_id'     => $entry->id,
+            'entry_id' => $entry->id,
             'data_type_id' => $entry->data_type_id,
-            'project_id'   => $entry->project_id,
-            'status'       => $entry->status,
+            'project_id' => $entry->project_id,
+            'status' => $entry->status,
         ]);
 
         // فقط الـ entries المنشورة تُفهرس
         // الـ draft و scheduled لا تظهر في نتائج البحث
-        if (!in_array($entry->status, ['published', 'archived'], true)) {
+        if (! in_array($entry->status, ['published', 'archived'], true)) {
             Log::info('SearchIndex: skipping non-published entry', [
                 'entry_id' => $entry->id,
-                'status'   => $entry->status,
+                'status' => $entry->status,
             ]);
+
             return;
         }
 
@@ -67,8 +68,8 @@ class IndexDataEntryListener implements ShouldQueue
     {
         Log::error('SearchIndex: listener failed permanently', [
             'entry_id' => $event->entry->id,
-            'error'    => $exception->getMessage(),
-            'trace'    => $exception->getTraceAsString(),
+            'error' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
         ]);
     }
 }

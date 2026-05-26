@@ -17,28 +17,28 @@ class SubscribeUserRequest extends FormRequest
 
             'plan_id' => [
                 'required',
-                'exists:subscription_plans,id'
+                'exists:subscription_plans,id',
             ],
 
             'gateway' => [
                 'required',
-                'string'
+                'string',
             ],
 
             'payment_type' => [
                 'required',
                 'string',
-                'in:full,installment'
+                'in:full,installment',
             ],
 
             'auto_renew' => [
-                'boolean'
+                'boolean',
             ],
 
             'metadata' => [
                 'nullable',
-                'array'
-            ]
+                'array',
+            ],
         ];
     }
 }

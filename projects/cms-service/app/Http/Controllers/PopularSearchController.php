@@ -17,22 +17,22 @@ class PopularSearchController extends Controller
     {
         $projectId = CurrentProject::id();
 
-        if (!$projectId) {
+        if (! $projectId) {
             return response()->json(['message' => 'X-Project-Id header is required.'], 400);
         }
 
         $result = $this->service->getPopular(
             projectId: $projectId,
-            language:  $request->language(),
-            window:    $request->window(),
-            type:      $request->type(),
-            limit:     $request->limit(),
+            language: $request->language(),
+            window: $request->window(),
+            type: $request->type(),
+            limit: $request->limit(),
         );
 
         return response()
             ->json($result->toArray())
             ->header('Cache-Control', 'public, max-age=300')
             ->header('X-Popular-Source', $result->source)
-            ->header('X-Popular-Took', round($result->tookMs, 2) . 'ms');
+            ->header('X-Popular-Took', round($result->tookMs, 2).'ms');
     }
 }

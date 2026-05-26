@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
@@ -26,19 +26,24 @@ class Payment extends Model
   protected $casts = ['amount' => 'float'];
 
   // ─── Statuses ─────────────────────────────────────────────────────────────
-  const STATUS_PENDING  = 'pending';
-  const STATUS_PAID     = 'paid';
-  const STATUS_FAILED   = 'failed';
+  const STATUS_PENDING = 'pending';
+
+  const STATUS_PAID = 'paid';
+
+  const STATUS_FAILED = 'failed';
+
   const STATUS_REFUNDED = 'refunded';
 
   // ─── Types ────────────────────────────────────────────────────────────────
-  const TYPE_FULL        = 'full';
+  const TYPE_FULL = 'full';
+
   const TYPE_INSTALLMENT = 'installment';
 
   // ─── Relationships ────────────────────────────────────────────────────────
   public function project(): BelongsTo
   {
-    return $this->belongTo(Project::class);
+    // return $this->belongTo(Project::class);
+    return $this->belongsTo(Project::class);
   }
 
   public function transactions(): HasMany
@@ -69,9 +74,19 @@ class Payment extends Model
       ->where('status', Transaction::STATUS_SUCCESS)
       ->sum('amount') >= $this->amount;
   }
+
+  // public function latestTransaction(): ?Transaction
+  // {
+  //     return $this->transactions()->latest()->first();
+  // }
   public function latestTransaction(): ?Transaction
   {
-    return $this->transactions()->latest()->first();
+    /** @var Transaction|null $transaction */
+    $transaction = $this->transactions()
+      ->latest()
+      ->first();
+
+    return $transaction;
   }
 
   public function refundedAmount(): float

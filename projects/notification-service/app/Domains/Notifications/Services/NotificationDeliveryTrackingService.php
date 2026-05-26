@@ -5,14 +5,13 @@ namespace App\Domains\Notifications\Services;
 use App\Domains\Notifications\DTOs\NotificationActor;
 use App\Models\Domains\Notifications\Models\Notification;
 use App\Models\Domains\Notifications\Models\NotificationDelivery;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class NotificationDeliveryTrackingService
 {
     public function __construct(
-        private readonly NotificationAuthorizationService $authorizationService
+        // private readonly NotificationAuthorizationService $authorizationService
     ) {}
 
     public function listForNotification(NotificationActor $actor, string $notificationId): Collection
@@ -44,7 +43,7 @@ class NotificationDeliveryTrackingService
             ->whereKey($notificationId)
             ->when($actor->isUser(), function ($q) use ($actor) {
                 $q->where('recipient_type', 'user')
-                  ->where('recipient_id', $actor->id);
+                    ->where('recipient_id', $actor->id);
             })
             ->when($actor->projectId, fn ($q) => $q->where('project_id', $actor->projectId));
 

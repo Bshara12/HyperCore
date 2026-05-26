@@ -4,7 +4,7 @@ namespace App\Domains\CMS\DTOs\Data;
 
 use App\Domains\CMS\Requests\DataEntryRequest;
 
-class CreateDataEntryDto
+class CreateDataEntryDTO
 {
   public function __construct(
     public array $values,
@@ -25,24 +25,24 @@ class CreateDataEntryDto
   //   );
   // }
   public static function fromRequest(DataEntryRequest $request): self
-{
+  {
     $values = $request->input('values', []);
 
     foreach ($values as $key => $value) {
-        // إذا القيمة مو array → لفّها بشكل موحد
-        if (!is_array($value)) {
-            $values[$key] = [
-                null => $value
-            ];
-        }
+      // إذا القيمة مو array → لفّها بشكل موحد
+      if (! is_array($value)) {
+        $values[$key] = [
+          null => $value,
+        ];
+      }
     }
 
     return new self(
-        values: $values,
-        seo: $request->input('seo'),
-        relations: $request->input('relations'),
-        status: $request->input('status', 'draft'),
-        scheduled_at: $request->input('scheduled_at'),
+      values: $values,
+      seo: $request->input('seo'),
+      relations: $request->input('relations'),
+      status: $request->input('status', 'draft'),
+      scheduled_at: $request->input('scheduled_at'),
     );
-}
+  }
 }

@@ -10,13 +10,17 @@ class CreateContentAccessDTO
 
         public readonly ?int $projectId,
 
-        public readonly string $contentType,
-
         public readonly int $contentId,
 
         public readonly bool $requiresSubscription,
 
-        public readonly ?string $requiredFeature,
+        /**
+         * List of allowed feature keys.
+         * User needs at least ONE to access the content.
+         *
+         * @var string[]
+         */
+        public readonly array $features,
 
         public readonly ?array $metadata
     ) {}
@@ -29,17 +33,15 @@ class CreateContentAccessDTO
 
             projectId: $request->project_id,
 
-            contentType: $request->content_type,
-
-            contentId: $request->content_id,
+            contentId: (int) $request->content_id,
 
             requiresSubscription: $request->boolean(
                 'requires_subscription'
             ),
 
-            requiredFeature: $request->required_feature,
+            features: $request->input('features', []),
 
-            metadata: $request->metadata
+            metadata: $request->input('metadata'),
         );
     }
 }

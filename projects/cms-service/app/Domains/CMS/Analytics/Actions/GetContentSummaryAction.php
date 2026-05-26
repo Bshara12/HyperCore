@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Cache;
 
 class GetContentSummaryAction
 {
-  public function __construct(
-    private AnalyticsRepositoryInterface $repository
-  ) {}
+    public function __construct(
+        private AnalyticsRepositoryInterface $repository
+    ) {}
 
-  public function execute(AnalyticsFilterDTO $dto): array
-  {
-    return Cache::remember(
-      "analytics:project:{$dto->projectId}:content_summary",
-      CacheKeys::TTL_SHORT,
-      fn() => $this->repository->getContentSummary($dto)
-    );
-  }
+    public function execute(AnalyticsFilterDTO $dto): array
+    {
+        return Cache::remember(
+            "analytics:project:{$dto->projectId}:content_summary",
+            CacheKeys::TTL_SHORT,
+            fn () => $this->repository->getContentSummary($dto)
+        );
+    }
 }

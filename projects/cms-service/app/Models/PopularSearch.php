@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PopularSearch extends Model
 {
+  use HasFactory;
     protected $table = 'popular_searches';
 
     protected $fillable = [
@@ -48,12 +50,6 @@ class PopularSearch extends Model
 
         // ─── +2 يمنع division by zero عندما ageHours = 0 ──────────
         $denominator = pow($ageHours + 2, 1.5);
-
-        // ─── تأكد من عدم division by zero ────────────────────────────
-        if ($denominator <= 0) {
-            return 0.0;
-        }
-
         $score = $weightedCount / $denominator;
 
         // ─── تأكد من أن النتيجة رقم حقيقي ───────────────────────────

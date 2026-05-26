@@ -18,8 +18,8 @@ class CancelSubscriptionRequest extends FormRequest
             'reason' => [
                 'nullable',
                 'string',
-                'max:1000'
-            ]
+                'max:1000',
+            ],
         ];
     }
 }

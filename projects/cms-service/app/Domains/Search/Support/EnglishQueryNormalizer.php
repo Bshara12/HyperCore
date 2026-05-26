@@ -25,16 +25,16 @@ class EnglishQueryNormalizer
      */
     private const NEGATION_PATTERNS = [
         'not including' => 2,
-        'other than'    => 2,
-        'aside from'    => 2,
-        'apart from'    => 2,
-        'excluding'     => 1,
-        'without'       => 1,
-        'except'        => 1,
-        'exclude'       => 1,
-        'minus'         => 1,
-        'not'           => 1,
-        'no'            => 1,
+        'other than' => 2,
+        'aside from' => 2,
+        'apart from' => 2,
+        'excluding' => 1,
+        'without' => 1,
+        'except' => 1,
+        'exclude' => 1,
+        'minus' => 1,
+        'not' => 1,
+        'no' => 1,
     ];
 
     /**
@@ -69,23 +69,23 @@ class EnglishQueryNormalizer
         $includeWords = $this->splitWords($includeText);
 
         // ─── حذف الحشو ────────────────────────────────────────────────
-        $fillers      = array_flip(self::FILLER_WORDS);
+        $fillers = array_flip(self::FILLER_WORDS);
         $includeWords = array_values(array_filter(
             $includeWords,
-            fn($w) => ! isset($fillers[$w]) && mb_strlen($w, 'UTF-8') >= 2
+            fn ($w) => ! isset($fillers[$w]) && mb_strlen($w, 'UTF-8') >= 2
         ));
 
         // ─── تنظيف excludeWords ───────────────────────────────────────
         $excludeTerms = array_values(array_unique(array_filter(
             $excludeWords,
-            fn($w) => mb_strlen(trim($w), 'UTF-8') >= 1
+            fn ($w) => mb_strlen(trim($w), 'UTF-8') >= 1
         )));
 
         return [
-            'normalized'        => implode(' ', $includeWords),
-            'excludeTerms'      => $excludeTerms,
+            'normalized' => implode(' ', $includeWords),
+            'excludeTerms' => $excludeTerms,
             'isNaturalLanguage' => $hadNegation,
-            'cleanWords'        => $includeWords,
+            'cleanWords' => $includeWords,
         ];
     }
 
@@ -95,7 +95,7 @@ class EnglishQueryNormalizer
 
     /**
      * @return array{0: string, 1: string[], 2: bool}
-     *         [includeText, excludeWords, hadNegation]
+     *                                                [includeText, excludeWords, hadNegation]
      *
      * نفس منطق ArabicQueryNormalizer::extractNegations() بالضبط:
      *
@@ -114,7 +114,7 @@ class EnglishQueryNormalizer
         // فرز تنازلي بالطول لمنع partial match
         // مثال: "not including" يُطابَق قبل "not"
         $patterns = self::NEGATION_PATTERNS;
-        uksort($patterns, fn($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
+        uksort($patterns, fn ($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
 
         foreach (array_keys($patterns) as $pattern) {
             $pos = mb_strpos($text, $pattern, 0, 'UTF-8');
@@ -127,7 +127,7 @@ class EnglishQueryNormalizer
             $charBefore = $pos > 0
                 ? mb_substr($text, $pos - 1, 1, 'UTF-8')
                 : ' ';
-            $charAfter  = mb_substr($text, $pos + mb_strlen($pattern, 'UTF-8'), 1, 'UTF-8');
+            $charAfter = mb_substr($text, $pos + mb_strlen($pattern, 'UTF-8'), 1, 'UTF-8');
 
             if ($charBefore !== ' ' && $pos !== 0) {
                 continue; // الـ pattern داخل كلمة → تجاهل
@@ -136,20 +136,21 @@ class EnglishQueryNormalizer
                 continue; // الـ pattern داخل كلمة → تجاهل
             }
 
-            $beforeText  = trim(mb_substr($text, 0, $pos, 'UTF-8'));
+            $beforeText = trim(mb_substr($text, 0, $pos, 'UTF-8'));
             $afterOffset = $pos + mb_strlen($pattern, 'UTF-8');
-            $afterText   = trim(mb_substr($text, $afterOffset, null, 'UTF-8'));
-            $afterWords  = $this->splitWords($afterText);
+            $afterText = trim(mb_substr($text, $afterOffset, null, 'UTF-8'));
+            $afterWords = $this->splitWords($afterText);
 
             if ($beforeText !== '') {
                 // CASE A: كلمات قبل النفي → include، بعده → exclude
                 $excludeWords = array_slice($afterWords, 0, 4);
+
                 return [$beforeText, $excludeWords, true];
             }
 
             // CASE B or C: النفي في البداية
             $productWords = [];
-            $numberWords  = [];
+            $numberWords = [];
 
             foreach ($afterWords as $word) {
                 if (is_numeric($word)) {
@@ -176,11 +177,14 @@ class EnglishQueryNormalizer
 
     private function splitWords(string $text): array
     {
-        if (empty(trim($text))) return [];
+        if (empty(trim($text))) {
+            return [];
+        }
         $words = preg_split('/[\s\-_,\.]+/u', $text, -1, PREG_SPLIT_NO_EMPTY);
+
         return array_values(array_filter(
             $words,
-            fn($w) => mb_strlen(trim($w), 'UTF-8') >= 1
+            fn ($w) => mb_strlen(trim($w), 'UTF-8') >= 1
         ));
     }
 
@@ -190,18 +194,20 @@ class EnglishQueryNormalizer
      */
     public function hasNegation(string $query): bool
     {
-        $lower    = mb_strtolower(trim($query), 'UTF-8');
+        $lower = mb_strtolower(trim($query), 'UTF-8');
         $patterns = array_keys(self::NEGATION_PATTERNS);
 
         // فرز تنازلي
-        usort($patterns, fn($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
+        usort($patterns, fn ($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
 
         foreach ($patterns as $pattern) {
             $pos = mb_strpos($lower, $pattern, 0, 'UTF-8');
-            if ($pos === false) continue;
+            if ($pos === false) {
+                continue;
+            }
 
             $charBefore = $pos > 0 ? mb_substr($lower, $pos - 1, 1, 'UTF-8') : ' ';
-            $charAfter  = mb_substr($lower, $pos + mb_strlen($pattern, 'UTF-8'), 1, 'UTF-8');
+            $charAfter = mb_substr($lower, $pos + mb_strlen($pattern, 'UTF-8'), 1, 'UTF-8');
 
             if (($charBefore === ' ' || $pos === 0) && ($charAfter === '' || $charAfter === ' ')) {
                 return true;

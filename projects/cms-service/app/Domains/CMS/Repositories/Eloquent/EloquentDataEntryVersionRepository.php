@@ -2,8 +2,8 @@
 
 namespace App\Domains\CMS\Repositories\Eloquent;
 
-use Illuminate\Support\Facades\DB;
 use App\Domains\CMS\Repositories\Interface\DataEntryVersionRepository;
+use Illuminate\Support\Facades\DB;
 
 class EloquentDataEntryVersionRepository implements DataEntryVersionRepository
 {

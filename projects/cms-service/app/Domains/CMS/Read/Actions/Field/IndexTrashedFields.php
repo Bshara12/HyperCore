@@ -8,19 +8,19 @@ use App\Models\DataType;
 
 class IndexTrashedFields extends Action
 {
-  protected function circuitServiceName(): string
-  {
-    return 'dataTypeField.indexTrashed';
-  }
+    protected function circuitServiceName(): string
+    {
+        return 'dataTypeField.indexTrashed';
+    }
 
-  public function __construct(
-    protected FieldRepositoryRead $repository
-  ) {}
+    public function __construct(
+        protected FieldRepositoryRead $repository
+    ) {}
 
-  public function execute(DataType $dataType)
-  {
-    return $this->run(function () use ($dataType) {
-      return $this->repository->indexTrashed($dataType);
-    });
-  }
+    public function execute(DataType $dataType)
+    {
+        return $this->run(function () use ($dataType) {
+            return $this->repository->indexTrashed($dataType);
+        });
+    }
 }
