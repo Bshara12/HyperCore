@@ -24,7 +24,7 @@ class KeyMiddleware
             return response()->json(['error' => 'Missing token'], 401);
         }
 
-        $publicKey = file_get_contents(storage_path('keys/auth_public.pem'));
+        $publicKey = file_get_contents(storage_path('keys/public.key'));
 
         try {
 

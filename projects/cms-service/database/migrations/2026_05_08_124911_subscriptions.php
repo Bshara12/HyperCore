@@ -41,7 +41,7 @@ return new class extends Migration
 
       $table->timestamp('starts_at');
 
-      $table->timestamp('ends_at');
+      $table->timestamp('ends_at')->nullable();
 
       $table->timestamp('current_period_start')
         ->nullable();
