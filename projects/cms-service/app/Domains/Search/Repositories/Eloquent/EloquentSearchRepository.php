@@ -12,7 +12,7 @@ use App\Domains\Search\Support\SearchResultRanker;
 use App\Domains\Search\Support\SqlFragment;
 use Illuminate\Support\Facades\DB;
 
-final class EloquentSearchRepository implements SearchRepositoryInterface
+class EloquentSearchRepository implements SearchRepositoryInterface
 {
     private const DB_FETCH_LIMIT = 100;
 

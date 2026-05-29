@@ -2,17 +2,10 @@
 
 namespace App\Domains\CMS\Requests;
 
-use App\Models\DataCollection;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class InsertCollectionItemsRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         return [

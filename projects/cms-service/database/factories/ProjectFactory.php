@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -18,7 +19,7 @@ class ProjectFactory extends Factory
       'public_id' => Str::uuid(), // يولد UUID فريد (36 حرف)
       'slug'      => $this->faker->unique()->slug(),
       'name'      => $this->faker->company(),
-      'owner_id'  => $this->faker->numberBetween(1, 100),
+      'owner_id'  => User::factory(),
   
       // بيانات JSON
       'supported_languages' => ['en', 'ar'],

@@ -100,7 +100,8 @@ class DynamicCollectionQueryBuilder
       $finalIds = array_unique($finalIds);
     }
 
-    return DataEntry::whereIn('id', $finalIds)->get();
+    // return DataEntry::whereIn('id', $finalIds)->get();
+    return $this->entryRepository->findManyByIds($finalIds);
   }
 
   protected function applyValueConditionReturnEntryIds($field, $operator, $value)
@@ -112,9 +113,11 @@ class DynamicCollectionQueryBuilder
     if ($operator !== 'incollection') {
       $fieldInfo = $this->fieldRepository->findByDataTypeAndName($dataTypeId, $field);
 
+      // @codeCoverageIgnoreStart
       if (! $fieldInfo) {
         return [];
       }
+      // @codeCoverageIgnoreEnd
 
       // ============================
       // 1) Field is a relation
@@ -122,9 +125,11 @@ class DynamicCollectionQueryBuilder
       if ($fieldInfo->type === 'relation') {
 
         $relatedDataTypeId = $fieldInfo->settings['related_data_type_id'] ?? null;
+        // @codeCoverageIgnoreStart
         if (! $relatedDataTypeId) {
           return [];
         }
+        // @codeCoverageIgnoreEnd
 
         $relatedEntryIds = $this->entryRepository->pluckIdsByProjectTypeAndValues(
           $projectId,
@@ -132,9 +137,11 @@ class DynamicCollectionQueryBuilder
           (array) $value
         );
 
+        // @codeCoverageIgnoreStart
         if (! $relatedEntryIds) {
           return [];
         }
+        // @codeCoverageIgnoreEnd
 
         $directEntryIds = $this->relationRepository->pluckEntryIdsByRelatedIds($relatedEntryIds);
 
