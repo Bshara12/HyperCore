@@ -21,7 +21,7 @@ class DeleteDataCollectionAction extends Action
 
   public function execute($collectionSlug)
   {
-     $this->run(function () use ($collectionSlug) {
+    $this->run(function () use ($collectionSlug) {
 
       $collection = $this->repository->getBySlug($collectionSlug);
 

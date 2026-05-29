@@ -22,12 +22,6 @@ class EntryReadService
         private GetEntriesByDataTypeSlugAction $getEntriesByDataTypeSlugAction
 
     ) {}
-
-    // public function getDetail(int $entryId, ?string $lang)
-    // {
-    //   return $this->getEntryDetailAction->execute($entryId, $lang);
-    // }
-
     public function getDetail(
         GetEntryDetailDTO $dto
     ) {
@@ -40,10 +34,6 @@ class EntryReadService
         return $this->getEntryWithRelationsAction->execute($entryId, $lang);
     }
 
-    // public function getSameType(int $entryId, ?string $lang)
-    // {
-    //   return $this->getEntriesBySameTypeAction->execute($entryId, $lang);
-    // }
     public function getSameType(
         int $entryId,
         ?string $lang,

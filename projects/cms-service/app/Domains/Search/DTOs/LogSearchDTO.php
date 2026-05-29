@@ -9,8 +9,8 @@ class LogSearchDTO
         public readonly string $keyword,
         public readonly string $language,
         public readonly int $resultsCount,
-        public readonly ?string $detectedIntent,
-        public readonly ?float $intentConfidence,
+        public readonly ?string $detectedIntent = null,
+        public readonly ?float $intentConfidence = null,
         public readonly ?int $userId = null,
         public readonly ?string $sessionId = null,
     ) {}

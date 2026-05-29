@@ -8,80 +8,80 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Transaction extends Model
 {
-    use HasFactory;
+  use HasFactory;
 
-    protected $fillable = [
-        'payment_id',
-        'type',
-        'payment_method',
-        'gateway_transaction_id',
-        'gateway_response',
-        'from_wallet_id',
-        'to_wallet_id',
-        'installment_number',
-        'amount',
-        'currency',
-        'status',
-        'processed_at',
-    ];
+  protected $fillable = [
+    'payment_id',
+    'type',
+    'payment_method',
+    'gateway_transaction_id',
+    'gateway_response',
+    'from_wallet_id',
+    'to_wallet_id',
+    'installment_number',
+    'amount',
+    'currency',
+    'status',
+    'processed_at',
+  ];
 
-    protected $casts = [
-        'amount' => 'float',
-        'gateway_response' => 'array',
-        'processed_at' => 'datetime',
-    ];
+  protected $casts = [
+    'amount' => 'float',
+    'gateway_response' => 'array',
+    'processed_at' => 'datetime',
+  ];
 
-    // ─── Types ────────────────────────────────────────────────────────────────
-    const TYPE_CHARGE = 'charge';
+  // ─── Types ────────────────────────────────────────────────────────────────
+  const TYPE_CHARGE = 'charge';
+  const TYPE_TRANSFER = 'transfer';
+  const TYPE_REFUND = 'refund';
 
-    const TYPE_REFUND = 'refund';
+  // ─── Payment Methods ──────────────────────────────────────────────────────
+  const METHOD_GATEWAY = 'gateway';
 
-    // ─── Payment Methods ──────────────────────────────────────────────────────
-    const METHOD_GATEWAY = 'gateway';
+  const METHOD_WALLET = 'wallet';
 
-    const METHOD_WALLET = 'wallet';
+  // ─── Statuses ─────────────────────────────────────────────────────────────
+  const STATUS_PENDING = 'pending';
 
-    // ─── Statuses ─────────────────────────────────────────────────────────────
-    const STATUS_PENDING = 'pending';
+  const STATUS_SUCCESS = 'success';
 
-    const STATUS_SUCCESS = 'success';
+  const STATUS_FAILED = 'failed';
 
-    const STATUS_FAILED = 'failed';
+  // ─── Relationships ────────────────────────────────────────────────────────
+  public function payment(): BelongsTo
+  {
+    return $this->belongsTo(Payment::class);
+  }
 
-    // ─── Relationships ────────────────────────────────────────────────────────
-    public function payment(): BelongsTo
-    {
-        return $this->belongsTo(Payment::class);
-    }
+  public function fromWallet(): BelongsTo
+  {
+    return $this->belongsTo(Wallet::class, 'from_wallet_id');
+  }
 
-    public function fromWallet(): BelongsTo
-    {
-        return $this->belongsTo(Wallet::class, 'from_wallet_id');
-    }
+  public function toWallet(): BelongsTo
+  {
+    return $this->belongsTo(Wallet::class, 'to_wallet_id');
+  }
 
-    public function toWallet(): BelongsTo
-    {
-        return $this->belongsTo(Wallet::class, 'to_wallet_id');
-    }
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  public function isSuccess(): bool
+  {
+    return $this->status === self::STATUS_SUCCESS;
+  }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-    public function isSuccess(): bool
-    {
-        return $this->status === self::STATUS_SUCCESS;
-    }
+  public function isGateway(): bool
+  {
+    return $this->payment_method === self::METHOD_GATEWAY;
+  }
 
-    public function isGateway(): bool
-    {
-        return $this->payment_method === self::METHOD_GATEWAY;
-    }
+  public function isWallet(): bool
+  {
+    return $this->payment_method === self::METHOD_WALLET;
+  }
 
-    public function isWallet(): bool
-    {
-        return $this->payment_method === self::METHOD_WALLET;
-    }
-
-    public function isDownPayment(): bool
-    {
-        return $this->installment_number === 0;
-    }
+  public function isDownPayment(): bool
+  {
+    return $this->installment_number === 0;
+  }
 }
