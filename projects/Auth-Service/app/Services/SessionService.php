@@ -44,28 +44,36 @@ class SessionService
     */
     private function detectDevice(?string $agent): string
     {
-        if (! $agent) {
-            return 'Unknown device';
-        }
+        if (!$agent) return 'Unknown device';
 
         $agent = strtolower($agent);
 
-        if (str_contains($agent, 'windows')) {
-            return 'Windows device';
-        }
-        if (str_contains($agent, 'mac')) {
-            return 'Mac device';
-        }
-        if (str_contains($agent, 'iphone')) {
-            return 'iPhone';
-        }
-        if (str_contains($agent, 'android')) {
-            return 'Android device';
-        }
-        if (str_contains($agent, 'linux')) {
-            return 'Linux device';
-        }
+        if (str_contains($agent, 'windows')) return 'Windows device';
+        if (str_contains($agent, 'mac')) return 'Mac device';
+        if (str_contains($agent, 'iphone')) return 'iPhone';
+        if (str_contains($agent, 'android')) return 'Android device';
+        if (str_contains($agent, 'linux')) return 'Linux device';
 
         return 'Browser device';
+    }
+
+    public function createServiceSession(
+        string $client_id,
+        int $service_client_id
+    ): string {
+
+        $sessionId = (string) Str::ulid();
+
+        DB::table('service_sessions')->insert([
+            'id' => $sessionId,
+            'client_id' => $client_id,
+            'service_client_id' => $service_client_id,
+            'last_activity_at' => now(),
+            'expires_at' => now()->addDays(30),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $sessionId;
     }
 }

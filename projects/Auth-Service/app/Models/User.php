@@ -9,7 +9,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Models\Project;
 
 class User extends Authenticatable
 {
@@ -56,24 +55,6 @@ class User extends Authenticatable
       'otp_expires_at' => 'datetime',
       'locked_until' => 'datetime',
     ];
-  }
-
-    // public function projects() {
-    //     return $this->belongsToMany(Project::class)
-    //         ->withPivot('role_id')
-    //         ->withTimestamps();
-    // }
-
-
-  /**
-   * @return BelongsToMany<Project, $this>
-   */
-  public function projects(): BelongsToMany
-  {
-    return $this->belongsToMany(
-      Project::class,
-      'project_user'
-    )->withPivot('role_id');
   }
 
   public function roles()
@@ -147,5 +128,5 @@ class User extends Authenticatable
     return false;
   }
 
-  
+
 }
