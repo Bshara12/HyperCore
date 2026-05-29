@@ -21,7 +21,7 @@ class MeController extends Controller
     {
         $token = $request->bearerToken();
 
-        $publicKey = file_get_contents(storage_path('keys/jwt_public.pem'));
+        $publicKey = file_get_contents(storage_path('keys/public_key'));
 
         $decoded = JWT::decode($token, new Key($publicKey, 'RS256'));
 

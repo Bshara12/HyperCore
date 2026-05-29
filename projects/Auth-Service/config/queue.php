@@ -89,6 +89,31 @@ return [
             ],
         ],
 
+        // ... أي اتصالات أخرى لديك
+        'rabbitmq' => [
+            'driver' => 'rabbitmq',
+            'queue' => env('RABBITMQ_QUEUE', 'default'),
+            'hosts' => [
+                [
+                    'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+                    'port' => env('RABBITMQ_PORT', 5672),
+                    'user' => env('RABBITMQ_USER', 'guest'),
+                    'password' => env('RABBITMQ_PASSWORD', 'guest'),
+                    'vhost' => env('RABBITMQ_VHOST', '/'),
+                ],
+            ],
+            'options' => [
+                'queue' => [
+                    'declare' => true, // التأكد من وجودها هنا
+                    'exchange' => env('RABBITMQ_EXCHANGE_NAME', null),
+                    'exchange_type' => env('RABBITMQ_EXCHANGE_TYPE', 'direct'),
+                    'exchange_routing_key' => env('RABBITMQ_EXCHANGE_ROUTING_KEY', '%s'),
+                ],
+            ],
+            // إضافة خيار التصريح التلقائي للـ Worker أيضاً خارج الـ options في بعض إصدارات الحزمة
+            'queue_declare_on_connect' => true,
+            'worker' => env('RABBITMQ_WORKER', 'default'),
+        ],
     ],
 
     /*
