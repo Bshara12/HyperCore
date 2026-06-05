@@ -27,9 +27,3 @@ class AuthUserMiddleware
         return $next($request);
     }
 }
-
-// // how to use this middelware
-// $user = request()->attributes->get('auth_user');
-
-// $userId = $user['id'];
-// $userName = $user['name'];
