@@ -220,7 +220,7 @@ class CMSApiClient
 
         $response = Http::withHeaders(
             $this->projectHeaders()
-        )->get("{$this->baseUrl}/api/cms/projects/{$project['id']}/data-types/{$dataTypeSlug}/entries");
+        )->get("{$this->baseUrl}/api/projects/{$project['id']}/data-types/{$dataTypeSlug}/entries");
 
         if ($response->failed()) {
             throw new \Exception('Failed to fetch entries by data type');
