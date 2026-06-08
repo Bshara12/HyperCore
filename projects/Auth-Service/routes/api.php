@@ -47,3 +47,12 @@ Route::middleware('service.auth')->group(function () {
     Route::get('/me', [MeController::class, 'index']);
     Route::get('/profile/{id}', [MeController::class, 'profile']); // new خدمة تصل إلى مستخدم محدد باستخدام التوكن الخاص بالخدمة و رقم المستخدم id
 });
+
+
+
+Route::get('/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'time' => now()
+    ]);
+});
