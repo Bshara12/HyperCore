@@ -1,634 +1,286 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>
-            Dashboard for C:\Users\dell\Desktop\CMS-Servise\app\Domains\CMS\DTOs
-        </title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link
-            href="../../../_css/bootstrap.min.css?v=11.0.12"
-            rel="stylesheet"
-            type="text/css"
-        />
-        <link
-            href="../../../_css/nv.d3.min.css?v=11.0.12"
-            rel="stylesheet"
-            type="text/css"
-        />
-        <link
-            href="../../../_css/style.css?v=11.0.12"
-            rel="stylesheet"
-            type="text/css"
-        />
-        <link
-            href="../../../_css/custom.css"
-            rel="stylesheet"
-            type="text/css"
-        />
-    </head>
-    <body>
-        <header>
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-md-12">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a href="../../../index.html"
-                                        >C:\Users\dell\Desktop\CMS-Servise\app</a
-                                    >
-                                </li>
-                                <li class="breadcrumb-item">
-                                    <a href="../../index.html">Domains</a>
-                                </li>
-                                <li class="breadcrumb-item">
-                                    <a href="../index.html">CMS</a>
-                                </li>
-                                <li class="breadcrumb-item">
-                                    <a href="index.html">DTOs</a>
-                                </li>
-                                <li class="breadcrumb-item active">
-                                    (Dashboard)
-                                </li>
-                            </ol>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        </header>
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-12">
-                    <h2>Classes</h2>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <h3>Coverage Distribution</h3>
-                    <div id="classCoverageDistribution" style="height: 300px">
-                        <svg></svg>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <h3>Complexity</h3>
-                    <div id="classComplexity" style="height: 300px">
-                        <svg></svg>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <h3>Insufficient Coverage</h3>
-                    <div class="scrollbox">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Class</th>
-                                    <th class="text-right">Coverage</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <a href="CreateDataEntryDTO.php.html#4"
-                                            >App\Domains\CMS\DTOs\CreateDataEntryDTO</a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="Data/CreateDataEntryDTO.php.html#7"
-                                            >App\Domains\CMS\DTOs\Data\CreateDataEntryDTO</a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="project/UpdateProjectDTO.php.html#7"
-                                            >App\Domains\CMS\DTOs\Project\UpdateProjectDTO</a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="project/DeleteProjectAction.php.html#8"
-                                            >App\Domains\CMS\DTOs\Project\DeleteProjectAction</a
-                                        >
-                                    </td>
-                                    <td class="text-right">50%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <h3>Project Risks</h3>
-                    <div class="scrollbox">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Class</th>
-                                    <th class="text-right">
-                                        <abbr
-                                            title="Change Risk Anti-Patterns (CRAP) Index"
-                                            >CRAP</abbr
-                                        >
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <h2>Methods</h2>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <h3>Coverage Distribution</h3>
-                    <div id="methodCoverageDistribution" style="height: 300px">
-                        <svg></svg>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <h3>Complexity</h3>
-                    <div id="methodComplexity" style="height: 300px">
-                        <svg></svg>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <h3>Insufficient Coverage</h3>
-                    <div class="scrollbox">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Method</th>
-                                    <th class="text-right">Coverage</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <a href="CreateDataEntryDTO.php.html#6"
-                                            ><abbr
-                                                title="App\Domains\CMS\DTOs\CreateDataEntryDTO::__construct"
-                                                >__construct</abbr
-                                            ></a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="Data/CreateDataEntryDTO.php.html#9"
-                                            ><abbr
-                                                title="App\Domains\CMS\DTOs\Data\CreateDataEntryDTO::__construct"
-                                                >__construct</abbr
-                                            ></a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="Data/CreateDataEntryDTO.php.html#17"
-                                            ><abbr
-                                                title="App\Domains\CMS\DTOs\Data\CreateDataEntryDTO::fromRequest"
-                                                >fromRequest</abbr
-                                            ></a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="project/DeleteProjectAction.php.html#14"
-                                            ><abbr
-                                                title="App\Domains\CMS\DTOs\Project\DeleteProjectAction::execute"
-                                                >execute</abbr
-                                            ></a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="project/UpdateProjectDTO.php.html#9"
-                                            ><abbr
-                                                title="App\Domains\CMS\DTOs\Project\UpdateProjectDTO::__construct"
-                                                >__construct</abbr
-                                            ></a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="project/UpdateProjectDTO.php.html#15"
-                                            ><abbr
-                                                title="App\Domains\CMS\DTOs\Project\UpdateProjectDTO::fromRequest"
-                                                >fromRequest</abbr
-                                            ></a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a
-                                            href="project/UpdateProjectDTO.php.html#24"
-                                            ><abbr
-                                                title="App\Domains\CMS\DTOs\Project\UpdateProjectDTO::toArray"
-                                                >toArray</abbr
-                                            ></a
-                                        >
-                                    </td>
-                                    <td class="text-right">0%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <h3>Project Risks</h3>
-                    <div class="scrollbox">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Method</th>
-                                    <th class="text-right">
-                                        <abbr
-                                            title="Change Risk Anti-Patterns (CRAP) Index"
-                                            >CRAP</abbr
-                                        >
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <footer>
-                <hr />
-                <p>
-                    <small
-                        >Generated by
-                        <a
-                            href="https://github.com/sebastianbergmann/php-code-coverage"
-                            target="_top"
-                            >php-code-coverage 11.0.12</a
-                        >
-                        using
-                        <a href="https://www.php.net/" target="_top"
-                            >PHP 8.2.12</a
-                        >
-                        and <a href="https://phpunit.de/">PHPUnit 11.5.48</a> at
-                        Wed Feb 18 22:46:19 UTC 2026.</small
-                    >
-                </p>
-            </footer>
-        </div>
-        <script
-            src="../../../_js/jquery.min.js?v=11.0.12"
-            type="text/javascript"
-        ></script>
-        <script
-            src="../../../_js/d3.min.js?v=11.0.12"
-            type="text/javascript"
-        ></script>
-        <script
-            src="../../../_js/nv.d3.min.js?v=11.0.12"
-            type="text/javascript"
-        ></script>
-        <script type="text/javascript">
-            $(document).ready(function () {
-                nv.addGraph(function () {
-                    var chart = nv.models.multiBarChart();
-                    chart
-                        .tooltips(false)
-                        .showControls(false)
-                        .showLegend(false)
-                        .reduceXTicks(false)
-                        .staggerLabels(true)
-                        .yAxis.tickFormat(d3.format("d"));
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /var/www/app/Domains/CMS/DTOs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../../../_css/bootstrap.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/nv.d3.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/style.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../../../index.html">/var/www/app</a></li>
+         <li class="breadcrumb-item"><a href="../../index.html">Domains</a></li>
+         <li class="breadcrumb-item"><a href="../index.html">CMS</a></li>
+         <li class="breadcrumb-item"><a href="index.html">DTOs</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
 
-                    d3.select("#classCoverageDistribution svg")
-                        .datum(
-                            getCoverageDistributionData(
-                                [3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 5],
-                                "Class Coverage",
-                            ),
-                        )
-                        .transition()
-                        .duration(500)
-                        .call(chart);
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
 
-                    nv.utils.windowResize(chart.update);
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
 
-                    return chart;
-                });
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
 
-                nv.addGraph(function () {
-                    var chart = nv.models.multiBarChart();
-                    chart
-                        .tooltips(false)
-                        .showControls(false)
-                        .showLegend(false)
-                        .reduceXTicks(false)
-                        .staggerLabels(true)
-                        .yAxis.tickFormat(d3.format("d"));
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
 
-                    d3.select("#methodCoverageDistribution svg")
-                        .datum(
-                            getCoverageDistributionData(
-                                [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13],
-                                "Method Coverage",
-                            ),
-                        )
-                        .transition()
-                        .duration(500)
-                        .call(chart);
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.12</a> using <a href="https://www.php.net/" target="_top">PHP 8.2.30</a> and <a href="https://phpunit.de/">PHPUnit 11.5.50</a> at Fri Jun 5 14:44:08 UTC 2026.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../../../_js/jquery.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/nv.d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
 
-                    nv.utils.windowResize(chart.update);
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([0,0,0,0,0,0,0,0,0,0,0,15], "Class Coverage"))
+      .transition().duration(500).call(chart);
 
-                    return chart;
-                });
+    nv.utils.windowResize(chart.update);
 
-                function getCoverageDistributionData(data, label) {
-                    var labels = [
-                        "0%",
-                        "0-10%",
-                        "10-20%",
-                        "20-30%",
-                        "30-40%",
-                        "40-50%",
-                        "50-60%",
-                        "60-70%",
-                        "70-80%",
-                        "80-90%",
-                        "90-100%",
-                        "100%",
-                    ];
-                    var values = [];
-                    $.each(labels, function (key) {
-                        values.push({ x: labels[key], y: data[key] });
-                    });
+    return chart;
+  });
 
-                    return [
-                        {
-                            key: label,
-                            values: values,
-                            color: "#4572A7",
-                        },
-                    ];
-                }
-                nv.addGraph(function () {
-                    var chart = nv.models
-                        .scatterChart()
-                        .showDistX(true)
-                        .showDistY(true)
-                        .showLegend(false)
-                        .forceX([0, 100]);
-                    chart.tooltipContent(function (graph) {
-                        return "<p>" + graph.point.class + "</p>";
-                    });
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
 
-                    chart.xAxis.axisLabel("Code Coverage (in percent)");
-                    chart.yAxis.axisLabel("Cyclomatic Complexity");
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([0,0,0,0,0,0,0,0,0,0,0,36], "Method Coverage"))
+      .transition().duration(500).call(chart);
 
-                    d3.select("#classComplexity svg")
-                        .datum(
-                            getComplexityData(
-                                [
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="CreateDataEntryDTO.php.html#4">App\\Domains\\CMS\\DTOs\\CreateDataEntryDTO<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        3,
-                                        '<a href="CreateProjectDTO.php.html#6">App\\Domains\\CMS\\DTOs\\CreateProjectDTO<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        2,
-                                        '<a href="DataType\/CreateDataTypeDTO.php.html#8">App\\Domains\\CMS\\DTOs\\DataType\\CreateDataTypeDTO<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        2,
-                                        '<a href="DataType\/ShowDataTypeDTOProperities.php.html#5">App\\Domains\\CMS\\DTOs\\DataType\\ShowDataTypeDTOProperities<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        2,
-                                        '<a href="DataType\/UpdateDataTypeDTO.php.html#7">App\\Domains\\CMS\\DTOs\\DataType\\UpdateDataTypeDTO<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        2,
-                                        '<a href="Data\/CreateDataEntryDTO.php.html#7">App\\Domains\\CMS\\DTOs\\Data\\CreateDataEntryDTO<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        3,
-                                        '<a href="Field\/CreateFieldDTO.php.html#9">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO<\/a>',
-                                    ],
-                                    [
-                                        50,
-                                        2,
-                                        '<a href="project\/DeleteProjectAction.php.html#8">App\\Domains\\CMS\\DTOs\\Project\\DeleteProjectAction<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        3,
-                                        '<a href="project\/UpdateProjectDTO.php.html#7">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO<\/a>',
-                                    ],
-                                ],
-                                "Class Complexity",
-                            ),
-                        )
-                        .transition()
-                        .duration(500)
-                        .call(chart);
+    nv.utils.windowResize(chart.update);
 
-                    nv.utils.windowResize(chart.update);
+    return chart;
+  });
 
-                    return chart;
-                });
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
 
-                nv.addGraph(function () {
-                    var chart = nv.models
-                        .scatterChart()
-                        .showDistX(true)
-                        .showDistY(true)
-                        .showLegend(false)
-                        .forceX([0, 100]);
-                    chart.tooltipContent(function (graph) {
-                        return "<p>" + graph.point.class + "</p>";
-                    });
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
 
-                    chart.xAxis.axisLabel("Code Coverage (in percent)");
-                    chart.yAxis.axisLabel("Method Complexity");
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
 
-                    d3.select("#methodComplexity svg")
-                        .datum(
-                            getComplexityData(
-                                [
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="CreateDataEntryDTO.php.html#6">App\\Domains\\CMS\\DTOs\\CreateDataEntryDTO::__construct<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="CreateProjectDTO.php.html#8">App\\Domains\\CMS\\DTOs\\CreateProjectDTO::__construct<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="CreateProjectDTO.php.html#15">App\\Domains\\CMS\\DTOs\\CreateProjectDTO::fromRequest<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="CreateProjectDTO.php.html#25">App\\Domains\\CMS\\DTOs\\CreateProjectDTO::toArray<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="DataType\/CreateDataTypeDTO.php.html#10">App\\Domains\\CMS\\DTOs\\DataType\\CreateDataTypeDTO::__construct<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="DataType\/CreateDataTypeDTO.php.html#19">App\\Domains\\CMS\\DTOs\\DataType\\CreateDataTypeDTO::fromRequest<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="DataType\/ShowDataTypeDTOProperities.php.html#7">App\\Domains\\CMS\\DTOs\\DataType\\ShowDataTypeDTOProperities::__construct<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="DataType\/ShowDataTypeDTOProperities.php.html#12">App\\Domains\\CMS\\DTOs\\DataType\\ShowDataTypeDTOProperities::fromRequest<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="DataType\/UpdateDataTypeDTO.php.html#9">App\\Domains\\CMS\\DTOs\\DataType\\UpdateDataTypeDTO::__construct<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="DataType\/UpdateDataTypeDTO.php.html#17">App\\Domains\\CMS\\DTOs\\DataType\\UpdateDataTypeDTO::fromRequest<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="Data\/CreateDataEntryDTO.php.html#9">App\\Domains\\CMS\\DTOs\\Data\\CreateDataEntryDTO::__construct<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="Data\/CreateDataEntryDTO.php.html#17">App\\Domains\\CMS\\DTOs\\Data\\CreateDataEntryDTO::fromRequest<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="Field\/CreateFieldDTO.php.html#11">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO::__construct<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="Field\/CreateFieldDTO.php.html#22">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO::fromRequest<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="Field\/CreateFieldDTO.php.html#36">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO::fromRequestForUpdate<\/a>',
-                                    ],
-                                    [
-                                        100,
-                                        1,
-                                        '<a href="project\/DeleteProjectAction.php.html#10">App\\Domains\\CMS\\DTOs\\Project\\DeleteProjectAction::__construct<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="project\/DeleteProjectAction.php.html#14">App\\Domains\\CMS\\DTOs\\Project\\DeleteProjectAction::execute<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="project\/UpdateProjectDTO.php.html#9">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO::__construct<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="project\/UpdateProjectDTO.php.html#15">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO::fromRequest<\/a>',
-                                    ],
-                                    [
-                                        0,
-                                        1,
-                                        '<a href="project\/UpdateProjectDTO.php.html#24">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO::toArray<\/a>',
-                                    ],
-                                ],
-                                "Method Complexity",
-                            ),
-                        )
-                        .transition()
-                        .duration(500)
-                        .call(chart);
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[100,2,"<a href=\"AI\/GenerateProjectFromSchemaDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\AI\\GenerateProjectFromSchemaDTO<\/a>"],[100,1,"<a href=\"CreateDataEntryDTO.php.html#5\">App\\Domains\\CMS\\DTOs\\CreateDataEntryDTO<\/a>"],[100,8,"<a href=\"CreateProjectDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\CreateProjectDTO<\/a>"],[100,4,"<a href=\"Data\/CreateDataEntryDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\Data\\CreateDataEntryDTO<\/a>"],[100,4,"<a href=\"DataCollection\/CollectionItemsDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\DataCollection\\CollectionItemsDTO<\/a>"],[100,3,"<a href=\"DataCollection\/CreateDataCollectionDTO.php.html#8\">App\\Domains\\CMS\\DTOs\\DataCollection\\CreateDataCollectionDTO<\/a>"],[100,2,"<a href=\"DataCollection\/DeactivateCollectionDTO.php.html#8\">App\\Domains\\CMS\\DTOs\\DataCollection\\DeactivateCollectionDTO<\/a>"],[100,4,"<a href=\"DataCollection\/UpdateDataCollectionDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\DataCollection\\UpdateDataCollectionDTO<\/a>"],[100,2,"<a href=\"DataType\/CreateDataTypeDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\DataType\\CreateDataTypeDTO<\/a>"],[100,2,"<a href=\"DataType\/UpdateDataTypeDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\DataType\\UpdateDataTypeDTO<\/a>"],[100,3,"<a href=\"Field\/CreateFieldDTO.php.html#8\">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO<\/a>"],[100,3,"<a href=\"Project\/UpdateProjectDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO<\/a>"],[100,2,"<a href=\"Rate\/GetRatingStatsDTO.php.html#5\">App\\Domains\\CMS\\DTOs\\Rate\\GetRatingStatsDTO<\/a>"],[100,2,"<a href=\"Rate\/GetRatingsDTO.php.html#5\">App\\Domains\\CMS\\DTOs\\Rate\\GetRatingsDTO<\/a>"],[100,3,"<a href=\"Rate\/RateDTO.php.html#5\">App\\Domains\\CMS\\DTOs\\Rate\\RateDTO<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
 
-                    nv.utils.windowResize(chart.update);
+    nv.utils.windowResize(chart.update);
 
-                    return chart;
-                });
+    return chart;
+  });
 
-                function getComplexityData(data, label) {
-                    var values = [];
-                    $.each(data, function (key) {
-                        var value = Math.round(data[key][0] * 100) / 100;
-                        values.push({
-                            x: value,
-                            y: data[key][1],
-                            class: data[key][2],
-                            size: 0.05,
-                            shape: "diamond",
-                        });
-                    });
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
 
-                    return [
-                        {
-                            key: label,
-                            values: values,
-                            color: "#4572A7",
-                        },
-                    ];
-                }
-            });
-        </script>
-    </body>
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[100,1,"<a href=\"AI\/GenerateProjectFromSchemaDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\AI\\GenerateProjectFromSchemaDTO::__construct<\/a>"],[100,1,"<a href=\"AI\/GenerateProjectFromSchemaDTO.php.html#16\">App\\Domains\\CMS\\DTOs\\AI\\GenerateProjectFromSchemaDTO::fromRequest<\/a>"],[100,1,"<a href=\"CreateDataEntryDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\CreateDataEntryDTO::__construct<\/a>"],[100,1,"<a href=\"CreateProjectDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\CreateProjectDTO::__construct<\/a>"],[100,6,"<a href=\"CreateProjectDTO.php.html#16\">App\\Domains\\CMS\\DTOs\\CreateProjectDTO::fromRequest<\/a>"],[100,1,"<a href=\"CreateProjectDTO.php.html#41\">App\\Domains\\CMS\\DTOs\\CreateProjectDTO::toArray<\/a>"],[100,1,"<a href=\"Data\/CreateDataEntryDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\Data\\CreateDataEntryDTO::__construct<\/a>"],[100,3,"<a href=\"Data\/CreateDataEntryDTO.php.html#27\">App\\Domains\\CMS\\DTOs\\Data\\CreateDataEntryDTO::fromRequest<\/a>"],[100,1,"<a href=\"DataCollection\/CollectionItemsDTO.php.html#11\">App\\Domains\\CMS\\DTOs\\DataCollection\\CollectionItemsDTO::__construct<\/a>"],[100,1,"<a href=\"DataCollection\/CollectionItemsDTO.php.html#16\">App\\Domains\\CMS\\DTOs\\DataCollection\\CollectionItemsDTO::fromInsertRequest<\/a>"],[100,1,"<a href=\"DataCollection\/CollectionItemsDTO.php.html#24\">App\\Domains\\CMS\\DTOs\\DataCollection\\CollectionItemsDTO::fromRemoveRequest<\/a>"],[100,1,"<a href=\"DataCollection\/CollectionItemsDTO.php.html#32\">App\\Domains\\CMS\\DTOs\\DataCollection\\CollectionItemsDTO::fromReOrderRequest<\/a>"],[100,1,"<a href=\"DataCollection\/CreateDataCollectionDTO.php.html#10\">App\\Domains\\CMS\\DTOs\\DataCollection\\CreateDataCollectionDTO::__construct<\/a>"],[100,1,"<a href=\"DataCollection\/CreateDataCollectionDTO.php.html#24\">App\\Domains\\CMS\\DTOs\\DataCollection\\CreateDataCollectionDTO::fromRequest<\/a>"],[100,1,"<a href=\"DataCollection\/CreateDataCollectionDTO.php.html#45\">App\\Domains\\CMS\\DTOs\\DataCollection\\CreateDataCollectionDTO::CollectionToArray<\/a>"],[100,1,"<a href=\"DataCollection\/DeactivateCollectionDTO.php.html#10\">App\\Domains\\CMS\\DTOs\\DataCollection\\DeactivateCollectionDTO::__construct<\/a>"],[100,1,"<a href=\"DataCollection\/DeactivateCollectionDTO.php.html#16\">App\\Domains\\CMS\\DTOs\\DataCollection\\DeactivateCollectionDTO::fromRequest<\/a>"],[100,1,"<a href=\"DataCollection\/UpdateDataCollectionDTO.php.html#11\">App\\Domains\\CMS\\DTOs\\DataCollection\\UpdateDataCollectionDTO::__construct<\/a>"],[100,2,"<a href=\"DataCollection\/UpdateDataCollectionDTO.php.html#16\">App\\Domains\\CMS\\DTOs\\DataCollection\\UpdateDataCollectionDTO::fromRequest<\/a>"],[100,1,"<a href=\"DataCollection\/UpdateDataCollectionDTO.php.html#39\">App\\Domains\\CMS\\DTOs\\DataCollection\\UpdateDataCollectionDTO::toArray<\/a>"],[100,1,"<a href=\"DataType\/CreateDataTypeDTO.php.html#11\">App\\Domains\\CMS\\DTOs\\DataType\\CreateDataTypeDTO::__construct<\/a>"],[100,1,"<a href=\"DataType\/CreateDataTypeDTO.php.html#20\">App\\Domains\\CMS\\DTOs\\DataType\\CreateDataTypeDTO::fromRequest<\/a>"],[100,1,"<a href=\"DataType\/UpdateDataTypeDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\DataType\\UpdateDataTypeDTO::__construct<\/a>"],[100,1,"<a href=\"DataType\/UpdateDataTypeDTO.php.html#17\">App\\Domains\\CMS\\DTOs\\DataType\\UpdateDataTypeDTO::fromRequest<\/a>"],[100,1,"<a href=\"Field\/CreateFieldDTO.php.html#10\">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO::__construct<\/a>"],[100,1,"<a href=\"Field\/CreateFieldDTO.php.html#21\">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO::fromRequest<\/a>"],[100,1,"<a href=\"Field\/CreateFieldDTO.php.html#35\">App\\Domains\\CMS\\DTOs\\Field\\CreateFieldDTO::fromRequestForUpdate<\/a>"],[100,1,"<a href=\"Project\/UpdateProjectDTO.php.html#9\">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO::__construct<\/a>"],[100,1,"<a href=\"Project\/UpdateProjectDTO.php.html#15\">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO::fromRequest<\/a>"],[100,1,"<a href=\"Project\/UpdateProjectDTO.php.html#24\">App\\Domains\\CMS\\DTOs\\Project\\UpdateProjectDTO::toArray<\/a>"],[100,1,"<a href=\"Rate\/GetRatingStatsDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\Rate\\GetRatingStatsDTO::__construct<\/a>"],[100,1,"<a href=\"Rate\/GetRatingStatsDTO.php.html#12\">App\\Domains\\CMS\\DTOs\\Rate\\GetRatingStatsDTO::fromRequest<\/a>"],[100,1,"<a href=\"Rate\/GetRatingsDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\Rate\\GetRatingsDTO::__construct<\/a>"],[100,1,"<a href=\"Rate\/GetRatingsDTO.php.html#13\">App\\Domains\\CMS\\DTOs\\Rate\\GetRatingsDTO::fromRequest<\/a>"],[100,1,"<a href=\"Rate\/RateDTO.php.html#7\">App\\Domains\\CMS\\DTOs\\Rate\\RateDTO::__construct<\/a>"],[100,2,"<a href=\"Rate\/RateDTO.php.html#15\">App\\Domains\\CMS\\DTOs\\Rate\\RateDTO::fromRequest<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
 </html>

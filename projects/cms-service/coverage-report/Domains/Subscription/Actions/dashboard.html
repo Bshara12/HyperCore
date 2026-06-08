@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /var/www/app/Domains/Subscription/Actions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../../../_css/bootstrap.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/nv.d3.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/style.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../../../index.html">/var/www/app</a></li>
+         <li class="breadcrumb-item"><a href="../../index.html">Domains</a></li>
+         <li class="breadcrumb-item"><a href="../index.html">Subscription</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Actions</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Authorization/AuthorizeContentAccessAction.php.html#11">App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Authorization/AuthorizeEventAction.php.html#12">App\Domains\Subscription\Actions\Authorization\AuthorizeEventAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ActivateContentAccessAction.php.html#10">App\Domains\Subscription\Actions\ContentAccess\ActivateContentAccessAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/CreateContentAccessAction.php.html#10">App\Domains\Subscription\Actions\ContentAccess\CreateContentAccessAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/DisableContentAccessMetadataAction.php.html#8">App\Domains\Subscription\Actions\ContentAccess\DisableContentAccessMetadataAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ListContentAccessAction.php.html#7">App\Domains\Subscription\Actions\ContentAccess\ListContentAccessAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ShowContentAccessAction.php.html#9">App\Domains\Subscription\Actions\ContentAccess\ShowContentAccessAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/UpdateContentAccessMetadataAction.php.html#10">App\Domains\Subscription\Actions\ContentAccess\UpdateContentAccessMetadataAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Plan/CreatePlanAction.php.html#10">App\Domains\Subscription\Actions\Plan\CreatePlanAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Rule/CreateFeatureRuleAction.php.html#9">App\Domains\Subscription\Actions\Rule\CreateFeatureRuleAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#10">App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckFeatureAccessAction.php.html#9">App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckUsageLimitAction.php.html#9">App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/IncrementUsageAction.php.html#9">App\Domains\Subscription\Actions\Usage\IncrementUsageAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#13">App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#14">App\Domains\Subscription\Actions\Subscription\SubscribeUserAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#16">App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#10">App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/AutoRenewSubscriptionsAction.php.html#11">App\Domains\Subscription\Actions\Subscription\AutoRenewSubscriptionsAction</a></td><td class="text-right">1%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#16">App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction</a></td><td class="text-right">380</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#14">App\Domains\Subscription\Actions\Subscription\SubscribeUserAction</a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#10">App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction</a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="Authorization/AuthorizeContentAccessAction.php.html#11">App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction</a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="Subscription/CheckFeatureAccessAction.php.html#9">App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction</a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#13">App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction</a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="Subscription/AutoRenewSubscriptionsAction.php.html#11">App\Domains\Subscription\Actions\Subscription\AutoRenewSubscriptionsAction</a></td><td class="text-right">85</td></tr>
+       <tr><td><a href="Authorization/AuthorizeEventAction.php.html#12">App\Domains\Subscription\Actions\Authorization\AuthorizeEventAction</a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="Subscription/CheckUsageLimitAction.php.html#9">App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction</a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#10">App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction</a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="ContentAccess/UpdateContentAccessMetadataAction.php.html#10">App\Domains\Subscription\Actions\ContentAccess\UpdateContentAccessMetadataAction</a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Plan/CreatePlanAction.php.html#10">App\Domains\Subscription\Actions\Plan\CreatePlanAction</a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="ContentAccess/ActivateContentAccessAction.php.html#10">App\Domains\Subscription\Actions\ContentAccess\ActivateContentAccessAction</a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="ContentAccess/DisableContentAccessMetadataAction.php.html#8">App\Domains\Subscription\Actions\ContentAccess\DisableContentAccessMetadataAction</a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="ContentAccess/ShowContentAccessAction.php.html#9">App\Domains\Subscription\Actions\ContentAccess\ShowContentAccessAction</a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Subscription/IncrementUsageAction.php.html#9">App\Domains\Subscription\Actions\Usage\IncrementUsageAction</a></td><td class="text-right">12</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Authorization/AuthorizeContentAccessAction.php.html#13"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Authorization/AuthorizeContentAccessAction.php.html#18"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Authorization/AuthorizeContentAccessAction.php.html#108"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction::ensureMatchingFeatureIsEnabled">ensureMatchingFeatureIsEnabled</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Authorization/AuthorizeEventAction.php.html#14"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeEventAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Authorization/AuthorizeEventAction.php.html#21"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeEventAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ActivateContentAccessAction.php.html#12"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ActivateContentAccessAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ActivateContentAccessAction.php.html#16"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ActivateContentAccessAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/CreateContentAccessAction.php.html#12"><abbr title="App\Domains\Subscription\Actions\ContentAccess\CreateContentAccessAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/CreateContentAccessAction.php.html#17"><abbr title="App\Domains\Subscription\Actions\ContentAccess\CreateContentAccessAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/DisableContentAccessMetadataAction.php.html#10"><abbr title="App\Domains\Subscription\Actions\ContentAccess\DisableContentAccessMetadataAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/DisableContentAccessMetadataAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\ContentAccess\DisableContentAccessMetadataAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ListContentAccessAction.php.html#9"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ListContentAccessAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ListContentAccessAction.php.html#14"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ListContentAccessAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ShowContentAccessAction.php.html#11"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ShowContentAccessAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/ShowContentAccessAction.php.html#16"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ShowContentAccessAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/UpdateContentAccessMetadataAction.php.html#12"><abbr title="App\Domains\Subscription\Actions\ContentAccess\UpdateContentAccessMetadataAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ContentAccess/UpdateContentAccessMetadataAction.php.html#17"><abbr title="App\Domains\Subscription\Actions\ContentAccess\UpdateContentAccessMetadataAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Plan/CreatePlanAction.php.html#12"><abbr title="App\Domains\Subscription\Actions\Plan\CreatePlanAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Plan/CreatePlanAction.php.html#16"><abbr title="App\Domains\Subscription\Actions\Plan\CreatePlanAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Plan/CreatePlanAction.php.html#26"><abbr title="App\Domains\Subscription\Actions\Plan\CreatePlanAction::ensureSlugIsUnique">ensureSlugIsUnique</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Rule/CreateFeatureRuleAction.php.html#11"><abbr title="App\Domains\Subscription\Actions\Rule\CreateFeatureRuleAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Rule/CreateFeatureRuleAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Rule\CreateFeatureRuleAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/AutoRenewSubscriptionsAction.php.html#17"><abbr title="App\Domains\Subscription\Actions\Subscription\AutoRenewSubscriptionsAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/AutoRenewSubscriptionsAction.php.html#51"><abbr title="App\Domains\Subscription\Actions\Subscription\AutoRenewSubscriptionsAction::renew">renew</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#12"><abbr title="App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#16"><abbr title="App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#51"><abbr title="App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction::ensureOwnership">ensureOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#66"><abbr title="App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction::ensureNotAlreadyCancelled">ensureNotAlreadyCancelled</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckFeatureAccessAction.php.html#11"><abbr title="App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckFeatureAccessAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckFeatureAccessAction.php.html#46"><abbr title="App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction::resolveFeatureValue">resolveFeatureValue</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckUsageLimitAction.php.html#11"><abbr title="App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckUsageLimitAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/CheckUsageLimitAction.php.html#57"><abbr title="App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction::resolveLimit">resolveLimit</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/IncrementUsageAction.php.html#11"><abbr title="App\Domains\Subscription\Actions\Usage\IncrementUsageAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/IncrementUsageAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Usage\IncrementUsageAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#20"><abbr title="App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#65"><abbr title="App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction::processPayment">processPayment</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#121"><abbr title="App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction::resolveNewStartDate">resolveNewStartDate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#16"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#21"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#47"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::processPayment">processPayment</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#107"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::ensurePlanIsActive">ensurePlanIsActive</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#119"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::ensureUserHasNoActiveSubscription">ensureUserHasNoActiveSubscription</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#18"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#25"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#62"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::processRule">processRule</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#157"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::checkAndIncrement">checkAndIncrement</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#189"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::checkLimit">checkLimit</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#243"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::incrementUsage">incrementUsage</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#12"><abbr title="App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#17"><abbr title="App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#38"><abbr title="App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction::resetUsage">resetUsage</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#86"><abbr title="App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction::resolveNextResetDate">resolveNextResetDate</abbr></a></td><td class="text-right">0%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Authorization/AuthorizeEventAction.php.html#21"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeEventAction::execute">execute</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Authorization/AuthorizeContentAccessAction.php.html#18"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction::execute">execute</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Subscription/AutoRenewSubscriptionsAction.php.html#51"><abbr title="App\Domains\Subscription\Actions\Subscription\AutoRenewSubscriptionsAction::renew">renew</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Subscription/CheckFeatureAccessAction.php.html#46"><abbr title="App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction::resolveFeatureValue">resolveFeatureValue</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#65"><abbr title="App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction::processPayment">processPayment</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#47"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::processPayment">processPayment</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#62"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::processRule">processRule</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#243"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::incrementUsage">incrementUsage</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#86"><abbr title="App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction::resolveNextResetDate">resolveNextResetDate</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#25"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::execute">execute</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Authorization/AuthorizeContentAccessAction.php.html#108"><abbr title="App\Domains\Subscription\Actions\Authorization\AuthorizeContentAccessAction::ensureMatchingFeatureIsEnabled">ensureMatchingFeatureIsEnabled</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="ContentAccess/UpdateContentAccessMetadataAction.php.html#17"><abbr title="App\Domains\Subscription\Actions\ContentAccess\UpdateContentAccessMetadataAction::execute">execute</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Subscription/AutoRenewSubscriptionsAction.php.html#17"><abbr title="App\Domains\Subscription\Actions\Subscription\AutoRenewSubscriptionsAction::execute">execute</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Subscription/CheckFeatureAccessAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction::execute">execute</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Subscription/CheckUsageLimitAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction::execute">execute</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Subscription/CheckUsageLimitAction.php.html#57"><abbr title="App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction::resolveLimit">resolveLimit</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Usage/ProcessUsageEventAction.php.html#189"><abbr title="App\Domains\Subscription\Actions\Usage\ProcessUsageEventAction::checkLimit">checkLimit</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#38"><abbr title="App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction::resetUsage">resetUsage</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="ContentAccess/ActivateContentAccessAction.php.html#16"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ActivateContentAccessAction::execute">execute</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="ContentAccess/DisableContentAccessMetadataAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\ContentAccess\DisableContentAccessMetadataAction::execute">execute</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="ContentAccess/ShowContentAccessAction.php.html#16"><abbr title="App\Domains\Subscription\Actions\ContentAccess\ShowContentAccessAction::execute">execute</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Plan/CreatePlanAction.php.html#26"><abbr title="App\Domains\Subscription\Actions\Plan\CreatePlanAction::ensureSlugIsUnique">ensureSlugIsUnique</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#51"><abbr title="App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction::ensureOwnership">ensureOwnership</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Subscription/CancelSubscriptionAction.php.html#66"><abbr title="App\Domains\Subscription\Actions\Subscription\CancelSubscriptionAction::ensureNotAlreadyCancelled">ensureNotAlreadyCancelled</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Subscription/IncrementUsageAction.php.html#15"><abbr title="App\Domains\Subscription\Actions\Usage\IncrementUsageAction::execute">execute</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Subscription/RenewSubscriptionAction.php.html#121"><abbr title="App\Domains\Subscription\Actions\Subscription\RenewSubscriptionAction::resolveNewStartDate">resolveNewStartDate</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#107"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::ensurePlanIsActive">ensurePlanIsActive</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Subscription/SubscribeUserAction.php.html#119"><abbr title="App\Domains\Subscription\Actions\Subscription\SubscribeUserAction::ensureUserHasNoActiveSubscription">ensureUserHasNoActiveSubscription</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Usage/ResetSubscriptionUsageAction.php.html#17"><abbr title="App\Domains\Subscription\Actions\Usage\ResetSubscriptionUsageAction::execute">execute</abbr></a></td><td class="text-right">6</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.12</a> using <a href="https://www.php.net/" target="_top">PHP 8.2.30</a> and <a href="https://phpunit.de/">PHPUnit 11.5.50</a> at Fri Jun 5 14:44:08 UTC 2026.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../../../_js/jquery.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/nv.d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([18,1,0,0,0,0,0,0,0,0,0,0], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([55,0,0,0,0,0,0,0,0,0,0,1], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[0,10,"<a href=\"Authorization\/AuthorizeContentAccessAction.php.html#11\">App\\Domains\\Subscription\\Actions\\Authorization\\AuthorizeContentAccessAction<\/a>"],[0,8,"<a href=\"Authorization\/AuthorizeEventAction.php.html#12\">App\\Domains\\Subscription\\Actions\\Authorization\\AuthorizeEventAction<\/a>"],[0,3,"<a href=\"ContentAccess\/ActivateContentAccessAction.php.html#10\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ActivateContentAccessAction<\/a>"],[0,2,"<a href=\"ContentAccess\/CreateContentAccessAction.php.html#10\">App\\Domains\\Subscription\\Actions\\ContentAccess\\CreateContentAccessAction<\/a>"],[0,3,"<a href=\"ContentAccess\/DisableContentAccessMetadataAction.php.html#8\">App\\Domains\\Subscription\\Actions\\ContentAccess\\DisableContentAccessMetadataAction<\/a>"],[0,2,"<a href=\"ContentAccess\/ListContentAccessAction.php.html#7\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ListContentAccessAction<\/a>"],[0,3,"<a href=\"ContentAccess\/ShowContentAccessAction.php.html#9\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ShowContentAccessAction<\/a>"],[0,4,"<a href=\"ContentAccess\/UpdateContentAccessMetadataAction.php.html#10\">App\\Domains\\Subscription\\Actions\\ContentAccess\\UpdateContentAccessMetadataAction<\/a>"],[0,4,"<a href=\"Plan\/CreatePlanAction.php.html#10\">App\\Domains\\Subscription\\Actions\\Plan\\CreatePlanAction<\/a>"],[0,2,"<a href=\"Rule\/CreateFeatureRuleAction.php.html#9\">App\\Domains\\Subscription\\Actions\\Rule\\CreateFeatureRuleAction<\/a>"],[1.694915254237288,9,"<a href=\"Subscription\/AutoRenewSubscriptionsAction.php.html#11\">App\\Domains\\Subscription\\Actions\\Subscription\\AutoRenewSubscriptionsAction<\/a>"],[0,6,"<a href=\"Subscription\/CancelSubscriptionAction.php.html#10\">App\\Domains\\Subscription\\Actions\\Subscription\\CancelSubscriptionAction<\/a>"],[0,9,"<a href=\"Subscription\/CheckFeatureAccessAction.php.html#9\">App\\Domains\\Subscription\\Actions\\Feature\\CheckFeatureAccessAction<\/a>"],[0,7,"<a href=\"Subscription\/CheckUsageLimitAction.php.html#9\">App\\Domains\\Subscription\\Actions\\Usage\\CheckUsageLimitAction<\/a>"],[0,3,"<a href=\"Subscription\/IncrementUsageAction.php.html#9\">App\\Domains\\Subscription\\Actions\\Usage\\IncrementUsageAction<\/a>"],[0,9,"<a href=\"Subscription\/RenewSubscriptionAction.php.html#13\">App\\Domains\\Subscription\\Actions\\Subscription\\RenewSubscriptionAction<\/a>"],[0,11,"<a href=\"Subscription\/SubscribeUserAction.php.html#14\">App\\Domains\\Subscription\\Actions\\Subscription\\SubscribeUserAction<\/a>"],[0,19,"<a href=\"Usage\/ProcessUsageEventAction.php.html#16\">App\\Domains\\Subscription\\Actions\\Usage\\ProcessUsageEventAction<\/a>"],[0,11,"<a href=\"Usage\/ResetSubscriptionUsageAction.php.html#10\">App\\Domains\\Subscription\\Actions\\Usage\\ResetSubscriptionUsageAction<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[0,1,"<a href=\"Authorization\/AuthorizeContentAccessAction.php.html#13\">App\\Domains\\Subscription\\Actions\\Authorization\\AuthorizeContentAccessAction::__construct<\/a>"],[0,6,"<a href=\"Authorization\/AuthorizeContentAccessAction.php.html#18\">App\\Domains\\Subscription\\Actions\\Authorization\\AuthorizeContentAccessAction::execute<\/a>"],[0,3,"<a href=\"Authorization\/AuthorizeContentAccessAction.php.html#108\">App\\Domains\\Subscription\\Actions\\Authorization\\AuthorizeContentAccessAction::ensureMatchingFeatureIsEnabled<\/a>"],[0,1,"<a href=\"Authorization\/AuthorizeEventAction.php.html#14\">App\\Domains\\Subscription\\Actions\\Authorization\\AuthorizeEventAction::__construct<\/a>"],[0,7,"<a href=\"Authorization\/AuthorizeEventAction.php.html#21\">App\\Domains\\Subscription\\Actions\\Authorization\\AuthorizeEventAction::execute<\/a>"],[0,1,"<a href=\"ContentAccess\/ActivateContentAccessAction.php.html#12\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ActivateContentAccessAction::__construct<\/a>"],[0,2,"<a href=\"ContentAccess\/ActivateContentAccessAction.php.html#16\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ActivateContentAccessAction::execute<\/a>"],[0,1,"<a href=\"ContentAccess\/CreateContentAccessAction.php.html#12\">App\\Domains\\Subscription\\Actions\\ContentAccess\\CreateContentAccessAction::__construct<\/a>"],[0,1,"<a href=\"ContentAccess\/CreateContentAccessAction.php.html#17\">App\\Domains\\Subscription\\Actions\\ContentAccess\\CreateContentAccessAction::execute<\/a>"],[0,1,"<a href=\"ContentAccess\/DisableContentAccessMetadataAction.php.html#10\">App\\Domains\\Subscription\\Actions\\ContentAccess\\DisableContentAccessMetadataAction::__construct<\/a>"],[0,2,"<a href=\"ContentAccess\/DisableContentAccessMetadataAction.php.html#15\">App\\Domains\\Subscription\\Actions\\ContentAccess\\DisableContentAccessMetadataAction::execute<\/a>"],[0,1,"<a href=\"ContentAccess\/ListContentAccessAction.php.html#9\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ListContentAccessAction::__construct<\/a>"],[0,1,"<a href=\"ContentAccess\/ListContentAccessAction.php.html#14\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ListContentAccessAction::execute<\/a>"],[0,1,"<a href=\"ContentAccess\/ShowContentAccessAction.php.html#11\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ShowContentAccessAction::__construct<\/a>"],[0,2,"<a href=\"ContentAccess\/ShowContentAccessAction.php.html#16\">App\\Domains\\Subscription\\Actions\\ContentAccess\\ShowContentAccessAction::execute<\/a>"],[0,1,"<a href=\"ContentAccess\/UpdateContentAccessMetadataAction.php.html#12\">App\\Domains\\Subscription\\Actions\\ContentAccess\\UpdateContentAccessMetadataAction::__construct<\/a>"],[0,3,"<a href=\"ContentAccess\/UpdateContentAccessMetadataAction.php.html#17\">App\\Domains\\Subscription\\Actions\\ContentAccess\\UpdateContentAccessMetadataAction::execute<\/a>"],[0,1,"<a href=\"Plan\/CreatePlanAction.php.html#12\">App\\Domains\\Subscription\\Actions\\Plan\\CreatePlanAction::__construct<\/a>"],[0,1,"<a href=\"Plan\/CreatePlanAction.php.html#16\">App\\Domains\\Subscription\\Actions\\Plan\\CreatePlanAction::execute<\/a>"],[0,2,"<a href=\"Plan\/CreatePlanAction.php.html#26\">App\\Domains\\Subscription\\Actions\\Plan\\CreatePlanAction::ensureSlugIsUnique<\/a>"],[0,1,"<a href=\"Rule\/CreateFeatureRuleAction.php.html#11\">App\\Domains\\Subscription\\Actions\\Rule\\CreateFeatureRuleAction::__construct<\/a>"],[0,1,"<a href=\"Rule\/CreateFeatureRuleAction.php.html#15\">App\\Domains\\Subscription\\Actions\\Rule\\CreateFeatureRuleAction::execute<\/a>"],[100,1,"<a href=\"Subscription\/AutoRenewSubscriptionsAction.php.html#13\">App\\Domains\\Subscription\\Actions\\Subscription\\AutoRenewSubscriptionsAction::__construct<\/a>"],[0,3,"<a href=\"Subscription\/AutoRenewSubscriptionsAction.php.html#17\">App\\Domains\\Subscription\\Actions\\Subscription\\AutoRenewSubscriptionsAction::execute<\/a>"],[0,5,"<a href=\"Subscription\/AutoRenewSubscriptionsAction.php.html#51\">App\\Domains\\Subscription\\Actions\\Subscription\\AutoRenewSubscriptionsAction::renew<\/a>"],[0,1,"<a href=\"Subscription\/CancelSubscriptionAction.php.html#12\">App\\Domains\\Subscription\\Actions\\Subscription\\CancelSubscriptionAction::__construct<\/a>"],[0,1,"<a href=\"Subscription\/CancelSubscriptionAction.php.html#16\">App\\Domains\\Subscription\\Actions\\Subscription\\CancelSubscriptionAction::execute<\/a>"],[0,2,"<a href=\"Subscription\/CancelSubscriptionAction.php.html#51\">App\\Domains\\Subscription\\Actions\\Subscription\\CancelSubscriptionAction::ensureOwnership<\/a>"],[0,2,"<a href=\"Subscription\/CancelSubscriptionAction.php.html#66\">App\\Domains\\Subscription\\Actions\\Subscription\\CancelSubscriptionAction::ensureNotAlreadyCancelled<\/a>"],[0,1,"<a href=\"Subscription\/CheckFeatureAccessAction.php.html#11\">App\\Domains\\Subscription\\Actions\\Feature\\CheckFeatureAccessAction::__construct<\/a>"],[0,3,"<a href=\"Subscription\/CheckFeatureAccessAction.php.html#15\">App\\Domains\\Subscription\\Actions\\Feature\\CheckFeatureAccessAction::execute<\/a>"],[0,5,"<a href=\"Subscription\/CheckFeatureAccessAction.php.html#46\">App\\Domains\\Subscription\\Actions\\Feature\\CheckFeatureAccessAction::resolveFeatureValue<\/a>"],[0,1,"<a href=\"Subscription\/CheckUsageLimitAction.php.html#11\">App\\Domains\\Subscription\\Actions\\Usage\\CheckUsageLimitAction::__construct<\/a>"],[0,3,"<a href=\"Subscription\/CheckUsageLimitAction.php.html#15\">App\\Domains\\Subscription\\Actions\\Usage\\CheckUsageLimitAction::execute<\/a>"],[0,3,"<a href=\"Subscription\/CheckUsageLimitAction.php.html#57\">App\\Domains\\Subscription\\Actions\\Usage\\CheckUsageLimitAction::resolveLimit<\/a>"],[0,1,"<a href=\"Subscription\/IncrementUsageAction.php.html#11\">App\\Domains\\Subscription\\Actions\\Usage\\IncrementUsageAction::__construct<\/a>"],[0,2,"<a href=\"Subscription\/IncrementUsageAction.php.html#15\">App\\Domains\\Subscription\\Actions\\Usage\\IncrementUsageAction::execute<\/a>"],[0,1,"<a href=\"Subscription\/RenewSubscriptionAction.php.html#15\">App\\Domains\\Subscription\\Actions\\Subscription\\RenewSubscriptionAction::__construct<\/a>"],[0,1,"<a href=\"Subscription\/RenewSubscriptionAction.php.html#20\">App\\Domains\\Subscription\\Actions\\Subscription\\RenewSubscriptionAction::execute<\/a>"],[0,5,"<a href=\"Subscription\/RenewSubscriptionAction.php.html#65\">App\\Domains\\Subscription\\Actions\\Subscription\\RenewSubscriptionAction::processPayment<\/a>"],[0,2,"<a href=\"Subscription\/RenewSubscriptionAction.php.html#121\">App\\Domains\\Subscription\\Actions\\Subscription\\RenewSubscriptionAction::resolveNewStartDate<\/a>"],[0,1,"<a href=\"Subscription\/SubscribeUserAction.php.html#16\">App\\Domains\\Subscription\\Actions\\Subscription\\SubscribeUserAction::__construct<\/a>"],[0,1,"<a href=\"Subscription\/SubscribeUserAction.php.html#21\">App\\Domains\\Subscription\\Actions\\Subscription\\SubscribeUserAction::execute<\/a>"],[0,5,"<a href=\"Subscription\/SubscribeUserAction.php.html#47\">App\\Domains\\Subscription\\Actions\\Subscription\\SubscribeUserAction::processPayment<\/a>"],[0,2,"<a href=\"Subscription\/SubscribeUserAction.php.html#107\">App\\Domains\\Subscription\\Actions\\Subscription\\SubscribeUserAction::ensurePlanIsActive<\/a>"],[0,2,"<a href=\"Subscription\/SubscribeUserAction.php.html#119\">App\\Domains\\Subscription\\Actions\\Subscription\\SubscribeUserAction::ensureUserHasNoActiveSubscription<\/a>"],[0,1,"<a href=\"Usage\/ProcessUsageEventAction.php.html#18\">App\\Domains\\Subscription\\Actions\\Usage\\ProcessUsageEventAction::__construct<\/a>"],[0,4,"<a href=\"Usage\/ProcessUsageEventAction.php.html#25\">App\\Domains\\Subscription\\Actions\\Usage\\ProcessUsageEventAction::execute<\/a>"],[0,5,"<a href=\"Usage\/ProcessUsageEventAction.php.html#62\">App\\Domains\\Subscription\\Actions\\Usage\\ProcessUsageEventAction::processRule<\/a>"],[0,1,"<a href=\"Usage\/ProcessUsageEventAction.php.html#157\">App\\Domains\\Subscription\\Actions\\Usage\\ProcessUsageEventAction::checkAndIncrement<\/a>"],[0,3,"<a href=\"Usage\/ProcessUsageEventAction.php.html#189\">App\\Domains\\Subscription\\Actions\\Usage\\ProcessUsageEventAction::checkLimit<\/a>"],[0,5,"<a href=\"Usage\/ProcessUsageEventAction.php.html#243\">App\\Domains\\Subscription\\Actions\\Usage\\ProcessUsageEventAction::incrementUsage<\/a>"],[0,1,"<a href=\"Usage\/ResetSubscriptionUsageAction.php.html#12\">App\\Domains\\Subscription\\Actions\\Usage\\ResetSubscriptionUsageAction::__construct<\/a>"],[0,2,"<a href=\"Usage\/ResetSubscriptionUsageAction.php.html#17\">App\\Domains\\Subscription\\Actions\\Usage\\ResetSubscriptionUsageAction::execute<\/a>"],[0,3,"<a href=\"Usage\/ResetSubscriptionUsageAction.php.html#38\">App\\Domains\\Subscription\\Actions\\Usage\\ResetSubscriptionUsageAction::resetUsage<\/a>"],[0,5,"<a href=\"Usage\/ResetSubscriptionUsageAction.php.html#86\">App\\Domains\\Subscription\\Actions\\Usage\\ResetSubscriptionUsageAction::resolveNextResetDate<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

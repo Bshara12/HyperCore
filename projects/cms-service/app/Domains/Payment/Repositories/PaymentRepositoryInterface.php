@@ -51,6 +51,8 @@ interface PaymentRepositoryInterface
     // ─── Wallet ───────────────────────────────────────────────────────────────
     public function findWalletByUserId(int $userId): ?Wallet;
 
+    public function findWalletByNumber(string $walletNumber): ?Wallet;
+
     public function debitWallet(Wallet $wallet, float $amount): void;
 
     public function creditWallet(Wallet $wallet, float $amount): void;

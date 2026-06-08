@@ -19,7 +19,8 @@ class ProjectService
         private UpdateProjectAction $updateAction,
         private ShowProjectAction $showAction,
         private ListProjectsAction $listAction,
-        private DeleteProjectAction $deleteAction
+        private DeleteProjectAction $deleteAction,
+        private Project $projectModel
     ) {}
 
     public function resolve($request)
@@ -30,7 +31,8 @@ class ProjectService
             return response()->json(['message' => 'Project Id is required'], 400);
         }
 
-        $project = Project::where('public_id', $projectKey)->first();
+        $project = $this->projectModel->where('public_id', $projectKey)->first();
+        // $project = Project::where('public_id', $projectKey)->first();
 
         if (! $project) {
             return response()->json(['message' => 'Project not found'], 404);

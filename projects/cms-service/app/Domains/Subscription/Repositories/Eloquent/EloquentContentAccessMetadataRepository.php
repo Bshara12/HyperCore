@@ -157,7 +157,8 @@ class EloquentContentAccessMetadataRepository implements ContentAccessMetadataRe
         $features = array_values(
           array_filter(
             $features,
-            fn(string $f) => $f !== ''
+            // fn(string $f) => $f !== ''
+            fn(string $f) => trim($f) !== ''
           )
 
         )

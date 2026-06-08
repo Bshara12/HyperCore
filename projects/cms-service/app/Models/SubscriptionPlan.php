@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * @property float $price
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class SubscriptionPlan extends Model
 {
+  use HasFactory;
   protected $fillable = [
     'project_id',
     'name',

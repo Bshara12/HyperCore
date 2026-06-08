@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DataTypeRelation extends Model
 {
+  use HasFactory;
     protected $table = 'data_type_relations';
 
     protected $fillable = [

@@ -22,7 +22,7 @@ use App\Domains\Search\DTOs\UserPreferenceDTO;
  * str_contains calls NOT optimized — they are O(n) and necessary.
  * Scoring weights and behavior: UNCHANGED.
  */
-final class SearchResultRanker
+class SearchResultRanker
 {
     private const INTENT_SLUGS = [
         'product' => ['products', 'product', 'items', 'goods'],

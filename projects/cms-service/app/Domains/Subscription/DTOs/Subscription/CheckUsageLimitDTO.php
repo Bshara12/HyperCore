@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\Subscription\DTOs\Usage;
+namespace App\Domains\Subscription\DTOs\Subscription;
 
 class CheckUsageLimitDTO
 {

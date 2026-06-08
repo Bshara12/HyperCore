@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\Subscription\DTOs\Feature;
+namespace App\Domains\Subscription\DTOs\Subscription;
 
 class CheckFeatureAccessDTO
 {

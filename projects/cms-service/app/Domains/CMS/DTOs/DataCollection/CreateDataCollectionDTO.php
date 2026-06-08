@@ -37,7 +37,7 @@ class CreateDataCollectionDTO
             conditions_logic: $request->conditions_logic ?? 'and',
             description: $request->description,
             is_active: $request->is_active ?? true,
-            is_offer: $request->is_active ?? false,
+            is_offer: $request->is_offer ?? false,
             settings: $request->settings,
         );
     }

@@ -20,7 +20,8 @@ class UpdateFieldAction extends Action
 
     public function __construct(
         protected FieldRepositoryInterface $repository,
-        protected CreateFieldAction $createFieldAction
+        protected CreateFieldAction $createFieldAction,
+        protected FieldTypeFactory $factory
     ) {}
 
     public function execute(DataTypeField $field, CreateFieldDTO $dto): DataTypeField
@@ -32,7 +33,7 @@ class UpdateFieldAction extends Action
         return $this->run(function () use ($dto, $field) {
             $this->repository->ensureUpdatedFieldIsUnique($dto->data_type_id, $dto->name, $field->id);
 
-            $strategy = FieldTypeFactory::make($dto->type);
+            $strategy = $this->factory->make($dto->type);
 
             $strategy->validateRules($dto->validation_rules);
 

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SynonymSuggestion extends Model
 {
+  use HasFactory;
     protected $table = 'synonym_suggestions';
 
     protected $fillable = [

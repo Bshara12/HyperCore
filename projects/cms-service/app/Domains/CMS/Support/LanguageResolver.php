@@ -11,6 +11,7 @@ class LanguageResolver
 
     public function fallback(): string
     {
-        return config('app.fallback_locale', 'en');
+        return config('app.fallback_locale') ?? 'en';
+        // return config('app.fallback_locale', 'en');
     }
 }

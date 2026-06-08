@@ -58,7 +58,7 @@ class KeyController extends Controller
 
     public function index()
     {
-        $publicKey = file_get_contents(storage_path('keys/jwt_public.pem'));
+        $publicKey = file_get_contents(storage_path('keys/public.key'));
 
         return response()->json([
             'key' => $publicKey,

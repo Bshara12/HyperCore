@@ -33,6 +33,7 @@ class EloquentSeoEntryRepository implements SeoEntryRepository
     {
         return DB::table('seo_entries')
             ->where('data_entry_id', $entryId)
+            ->orderBy('language', 'asc')
             ->get()
             ->map(fn ($r) => (array) $r)
             ->toArray();

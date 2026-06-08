@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\CMS\Actions\Data;
+namespace App\Domains\CMS\Actions\data;
 
 use App\Domains\CMS\Repositories\Interface\DataEntryValueRepository;
 use App\Domains\Core\Actions\Action;
