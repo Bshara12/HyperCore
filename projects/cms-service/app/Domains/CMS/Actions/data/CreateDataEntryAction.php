@@ -1,90 +1,11 @@
 <?php
 
-namespace App\Domains\CMS\Actions\Data;
+namespace App\Domains\CMS\Actions\data;
 
 use App\Domains\CMS\Repositories\Interface\DataEntryRepositoryInterface;
 use App\Domains\Subscription\Services\DomainEventService;
 use App\Events\SystemLogEvent;
 use App\Models\DataType;
-
-// class CreateDataEntryAction
-// {
-//     public function __construct(
-//         private DataEntryRepositoryInterface $entries,
-//         private DataEntryValueRepository $values,
-//         private SeoEntryRepository $seo,
-//         private SeoGeneratorService $seoGenerator,
-//         private DataEntryStateResolver $stateResolver,
-//         private DataEntryRelationRepository $relations,
-//         private ValidateFieldsAction $validateFields
-//     ) {}
-
-//     public function execute(
-//         int $projectId,
-//         int $dataTypeId,
-//         CreateDataEntryDTO $dto,
-//         ?int $userId = null
-//     ) {
-//         return DB::transaction(function () use ($projectId, $dataTypeId, $dto, $userId) {
-
-//             // 1️⃣ Validate
-//             $this->validateFields->execute($dataTypeId, $dto->values);
-
-//             // 2️⃣ Create Entry
-//             $entry = $this->entries->create([
-//                 'project_id'   => $projectId,
-//                 'data_type_id' => $dataTypeId,
-//                 'status'       => 'draft',
-//                 'scheduled_at' => $dto->status === 'scheduled'
-//                     ? $dto->scheduled_at
-//                     : null,
-//                 'created_by'   => $userId,
-//             ]);
-
-//             // 3️⃣ Resolve State
-//             $state = $this->stateResolver->resolve($entry);
-
-//             if ($dto->status === 'published') {
-//                 $state->publish($entry);
-//             }
-
-//             if ($dto->status === 'scheduled') {
-//                 $state->schedule($entry, $dto->scheduled_at);
-//             }
-
-//             // 4️⃣ Insert Values
-//             $this->values->bulkInsert(
-//                 $entry->id,
-//                 $dataTypeId,
-//                 $dto->values
-//             );
-
-//             // 5️⃣ SEO
-//             if ($dto->seo) {
-//                 $this->seo->insertForEntry($entry->id, $dto->seo);
-//             } else {
-//                 $generatedSeo = $this->seoGenerator->generate($dto->values);
-//                 $this->seo->insertForEntry($entry->id, $generatedSeo);
-//             }
-
-//             // 6️⃣ Relations
-//             if ($dto->relations) {
-//                 $this->relations->insertForEntry(
-//                     $entry->id,
-//                     $dataTypeId,
-//                     $projectId,
-//                     $dto->relations
-//                 );
-//             }
-
-//             $entry->load('values');
-
-//             event(new EntryChanged($entry, $userId));
-
-//             return $entry;
-//         });
-//     }
-// }
 
 class CreateDataEntryAction
 {

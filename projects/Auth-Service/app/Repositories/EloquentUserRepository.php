@@ -10,7 +10,16 @@ class EloquentUserRepository implements UserRepositoryInterface
 {
     public function create(array $data): User
     {
-        return User::create($data);
+        $user = User::create($data);
+        DB::table('role_user')->insert([
+            'user_id' => $user->id,
+            'role_id' => 4,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return $user;
+        // return User::create($data);
     }
 
     public function findByEmail(string $email): ?User

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /var/www/app/Domains/Search/Support</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../../../_css/bootstrap.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/nv.d3.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/style.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../../../index.html">/var/www/app</a></li>
+         <li class="breadcrumb-item"><a href="../../index.html">Domains</a></li>
+         <li class="breadcrumb-item"><a href="../index.html">Search</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Support</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#19">App\Domains\Search\Support\ArabicQueryNormalizer</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#5">App\Domains\Search\Support\CoOccurrenceAnalyzer</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#20">App\Domains\Search\Support\EnglishQueryNormalizer</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#7">App\Domains\Search\Support\EntityExtractor</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntryFieldsExtractor.php.html#7">App\Domains\Search\Support\EntryFieldsExtractor</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="IntentDetector.php.html#5">App\Domains\Search\Support\IntentDetector</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#5">App\Domains\Search\Support\KeywordProcessor</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordTokenizer.php.html#5">App\Domains\Search\Support\KeywordTokenizer</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#24">App\Domains\Search\Support\QueryLanguageDetector</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#25">App\Domains\Search\Support\SearchResultRanker</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#9">App\Domains\Search\Support\SynonymExpander</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymProvider.php.html#5">App\Domains\Search\Support\SynonymProvider</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymScorer.php.html#5">App\Domains\Search\Support\SynonymScorer</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#24">App\Domains\Search\Support\TypoCorrector</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#10">App\Domains\Search\Support\UserPreferenceAnalyzer</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="WindowFallbackChain.php.html#14">App\Domains\Search\Support\WindowFallbackChain</a></td><td class="text-right">50%</td></tr>
+       <tr><td><a href="SqlFragment.php.html#28">App\Domains\Search\Support\SqlFragment</a></td><td class="text-right">60%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="EntityExtractor.php.html#7">App\Domains\Search\Support\EntityExtractor</a></td><td class="text-right">1332</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#24">App\Domains\Search\Support\QueryLanguageDetector</a></td><td class="text-right">1260</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#5">App\Domains\Search\Support\KeywordProcessor</a></td><td class="text-right">930</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#25">App\Domains\Search\Support\SearchResultRanker</a></td><td class="text-right">702</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#24">App\Domains\Search\Support\TypoCorrector</a></td><td class="text-right">702</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#20">App\Domains\Search\Support\EnglishQueryNormalizer</a></td><td class="text-right">650</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#19">App\Domains\Search\Support\ArabicQueryNormalizer</a></td><td class="text-right">462</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#9">App\Domains\Search\Support\SynonymExpander</a></td><td class="text-right">462</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#10">App\Domains\Search\Support\UserPreferenceAnalyzer</a></td><td class="text-right">306</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#5">App\Domains\Search\Support\CoOccurrenceAnalyzer</a></td><td class="text-right">156</td></tr>
+       <tr><td><a href="IntentDetector.php.html#5">App\Domains\Search\Support\IntentDetector</a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="EntryFieldsExtractor.php.html#7">App\Domains\Search\Support\EntryFieldsExtractor</a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="KeywordTokenizer.php.html#5">App\Domains\Search\Support\KeywordTokenizer</a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="SqlFragment.php.html#28">App\Domains\Search\Support\SqlFragment</a></td><td class="text-right">32</td></tr>
+       <tr><td><a href="SynonymScorer.php.html#5">App\Domains\Search\Support\SynonymScorer</a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="SynonymProvider.php.html#5">App\Domains\Search\Support\SynonymProvider</a></td><td class="text-right">20</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#86"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::normalize">normalize</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#146"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::extractNegations">extractNegations</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#207"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::normalizeChars">normalizeChars</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#216"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::splitWords">splitWords</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#229"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::translateWords">translateWords</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#243"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::buildExcludeTerms">buildExcludeTerms</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#40"><abbr title="App\Domains\Search\Support\CoOccurrenceAnalyzer::analyze">analyze</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#94"><abbr title="App\Domains\Search\Support\CoOccurrenceAnalyzer::jaccardSimilarity">jaccardSimilarity</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#123"><abbr title="App\Domains\Search\Support\CoOccurrenceAnalyzer::buildPairKey">buildPairKey</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#61"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::normalize">normalize</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#112"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::extractNegations">extractNegations</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#178"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::splitWords">splitWords</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#195"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::hasNegation">hasNegation</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#64"><abbr title="App\Domains\Search\Support\EntityExtractor::extract">extract</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#103"><abbr title="App\Domains\Search\Support\EntityExtractor::extractBrand">extractBrand</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#126"><abbr title="App\Domains\Search\Support\EntityExtractor::extractModel">extractModel</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#153"><abbr title="App\Domains\Search\Support\EntityExtractor::buildProductPhrase">buildProductPhrase</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#178"><abbr title="App\Domains\Search\Support\EntityExtractor::extractLocation">extractLocation</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#207"><abbr title="App\Domains\Search\Support\EntityExtractor::extractPriceRange">extractPriceRange</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#244"><abbr title="App\Domains\Search\Support\EntityExtractor::extractAttributes">extractAttributes</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntryFieldsExtractor.php.html#24"><abbr title="App\Domains\Search\Support\EntryFieldsExtractor::extract">extract</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EntryFieldsExtractor.php.html#69"><abbr title="App\Domains\Search\Support\EntryFieldsExtractor::cleanText">cleanText</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="IntentDetector.php.html#101"><abbr title="App\Domains\Search\Support\IntentDetector::detect">detect</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="IntentDetector.php.html#129"><abbr title="App\Domains\Search\Support\IntentDetector::calculateScores">calculateScores</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="IntentDetector.php.html#146"><abbr title="App\Domains\Search\Support\IntentDetector::normalizeScores">normalizeScores</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="IntentDetector.php.html#156"><abbr title="App\Domains\Search\Support\IntentDetector::buildResult">buildResult</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#187"><abbr title="App\Domains\Search\Support\KeywordProcessor::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#198"><abbr title="App\Domains\Search\Support\KeywordProcessor::process">process</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#206"><abbr title="App\Domains\Search\Support\KeywordProcessor::processWithExpansion">processWithExpansion</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#278"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildRelaxedQueries">buildRelaxedQueries</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#314"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildStrictQuery">buildStrictQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#330"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildSemiStrictQuery">buildSemiStrictQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#350"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildLooseQuery">buildLooseQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#362"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildFallbackQuery">buildFallbackQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#409"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildGroupTerm">buildGroupTerm</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#467"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildWeightedGroupTerm">buildWeightedGroupTerm</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#518"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildWordOrPhrase">buildWordOrPhrase</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#528"><abbr title="App\Domains\Search\Support\KeywordProcessor::escapeWord">escapeWord</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#533"><abbr title="App\Domains\Search\Support\KeywordProcessor::cleanInput">cleanInput</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#541"><abbr title="App\Domains\Search\Support\KeywordProcessor::tokenize">tokenize</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#551"><abbr title="App\Domains\Search\Support\KeywordProcessor::removeStopWords">removeStopWords</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordTokenizer.php.html#40"><abbr title="App\Domains\Search\Support\KeywordTokenizer::tokenize">tokenize</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="KeywordTokenizer.php.html#81"><abbr title="App\Domains\Search\Support\KeywordTokenizer::tokenizeAll">tokenizeAll</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#60"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isArabic">isArabic</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#83"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isMixed">isMixed</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#116"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isEnglishOnly">isEnglishOnly</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#138"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isGibberish">isGibberish</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#184"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::vowelRatioOfText">vowelRatioOfText</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#209"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::analyze">analyze</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#228"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::stripWhitespace">stripWhitespace</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#233"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::vowelRatio">vowelRatio</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#245"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::arabicRatio">arabicRatio</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#262"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::hasRepeatingPattern">hasRepeatingPattern</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#39"><abbr title="App\Domains\Search\Support\SearchResultRanker::rerank">rerank</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#118"><abbr title="App\Domains\Search\Support\SearchResultRanker::computeScore">computeScore</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#215"><abbr title="App\Domains\Search\Support\SearchResultRanker::getSlugs">getSlugs</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#223"><abbr title="App\Domains\Search\Support\SearchResultRanker::getPreferenceSlugs">getPreferenceSlugs</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SqlFragment.php.html#71"><abbr title="App\Domains\Search\Support\SqlFragment::or">or</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SqlFragment.php.html#124"><abbr title="App\Domains\Search\Support\SqlFragment::wrap">wrap</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SqlFragment.php.html#132"><abbr title="App\Domains\Search\Support\SqlFragment::isEmpty">isEmpty</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SqlFragment.php.html#137"><abbr title="App\Domains\Search\Support\SqlFragment::__toString">__toString</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#41"><abbr title="App\Domains\Search\Support\SynonymExpander::expand">expand</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#105"><abbr title="App\Domains\Search\Support\SynonymExpander::loadSynonymMap">loadSynonymMap</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#139"><abbr title="App\Domains\Search\Support\SynonymExpander::buildSynonymMapFromDB">buildSynonymMapFromDB</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#211"><abbr title="App\Domains\Search\Support\SynonymExpander::invalidateCache">invalidateCache</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#224"><abbr title="App\Domains\Search\Support\SynonymExpander::invalidateCacheForProject">invalidateCacheForProject</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymProvider.php.html#130"><abbr title="App\Domains\Search\Support\SynonymProvider::getSynonyms">getSynonyms</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymProvider.php.html#152"><abbr title="App\Domains\Search\Support\SynonymProvider::expandWords">expandWords</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymProvider.php.html#169"><abbr title="App\Domains\Search\Support\SynonymProvider::hasSynonyms">hasSynonyms</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SynonymScorer.php.html#27"><abbr title="App\Domains\Search\Support\SynonymScorer::calculate">calculate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#130"><abbr title="App\Domains\Search\Support\TypoCorrector::correct">correct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#178"><abbr title="App\Domains\Search\Support\TypoCorrector::correctWord">correctWord</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#216"><abbr title="App\Domains\Search\Support\TypoCorrector::levenshteinWithIndex">levenshteinWithIndex</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#272"><abbr title="App\Domains\Search\Support\TypoCorrector::maxAllowedDistance">maxAllowedDistance</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#281"><abbr title="App\Domains\Search\Support\TypoCorrector::buildResult">buildResult</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#29"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#38"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::analyzeForUser">analyzeForUser</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#60"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::analyzeForSession">analyzeForSession</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#97"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::analyze">analyze</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#126"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::invalidateCache">invalidateCache</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#142"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::buildPreference">buildPreference</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="WindowFallbackChain.php.html#52"><abbr title="App\Domains\Search\Support\WindowFallbackChain::getScoreColumn">getScoreColumn</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="WindowFallbackChain.php.html#57"><abbr title="App\Domains\Search\Support\WindowFallbackChain::isValid">isValid</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SqlFragment.php.html#59"><abbr title="App\Domains\Search\Support\SqlFragment::andIf">andIf</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="SqlFragment.php.html#87"><abbr title="App\Domains\Search\Support\SqlFragment::andIn">andIn</abbr></a></td><td class="text-right">75%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="SearchResultRanker.php.html#118"><abbr title="App\Domains\Search\Support\SearchResultRanker::computeScore">computeScore</abbr></a></td><td class="text-right">306</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#112"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::extractNegations">extractNegations</abbr></a></td><td class="text-right">182</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#216"><abbr title="App\Domains\Search\Support\TypoCorrector::levenshteinWithIndex">levenshteinWithIndex</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#83"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isMixed">isMixed</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#139"><abbr title="App\Domains\Search\Support\SynonymExpander::buildSynonymMapFromDB">buildSynonymMapFromDB</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#146"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::extractNegations">extractNegations</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#195"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::hasNegation">hasNegation</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#41"><abbr title="App\Domains\Search\Support\SynonymExpander::expand">expand</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#142"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::buildPreference">buildPreference</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#40"><abbr title="App\Domains\Search\Support\CoOccurrenceAnalyzer::analyze">analyze</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="EntryFieldsExtractor.php.html#24"><abbr title="App\Domains\Search\Support\EntryFieldsExtractor::extract">extract</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#138"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isGibberish">isGibberish</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#130"><abbr title="App\Domains\Search\Support\TypoCorrector::correct">correct</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#243"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::buildExcludeTerms">buildExcludeTerms</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#64"><abbr title="App\Domains\Search\Support\EntityExtractor::extract">extract</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#153"><abbr title="App\Domains\Search\Support\EntityExtractor::buildProductPhrase">buildProductPhrase</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#178"><abbr title="App\Domains\Search\Support\EntityExtractor::extractLocation">extractLocation</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#278"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildRelaxedQueries">buildRelaxedQueries</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#103"><abbr title="App\Domains\Search\Support\EntityExtractor::extractBrand">extractBrand</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#207"><abbr title="App\Domains\Search\Support\EntityExtractor::extractPriceRange">extractPriceRange</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#206"><abbr title="App\Domains\Search\Support\KeywordProcessor::processWithExpansion">processWithExpansion</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#409"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildGroupTerm">buildGroupTerm</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="KeywordTokenizer.php.html#40"><abbr title="App\Domains\Search\Support\KeywordTokenizer::tokenize">tokenize</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#262"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::hasRepeatingPattern">hasRepeatingPattern</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="SynonymScorer.php.html#27"><abbr title="App\Domains\Search\Support\SynonymScorer::calculate">calculate</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="UserPreferenceAnalyzer.php.html#97"><abbr title="App\Domains\Search\Support\UserPreferenceAnalyzer::analyze">analyze</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#126"><abbr title="App\Domains\Search\Support\EntityExtractor::extractModel">extractModel</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="EntityExtractor.php.html#244"><abbr title="App\Domains\Search\Support\EntityExtractor::extractAttributes">extractAttributes</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="IntentDetector.php.html#101"><abbr title="App\Domains\Search\Support\IntentDetector::detect">detect</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="IntentDetector.php.html#129"><abbr title="App\Domains\Search\Support\IntentDetector::calculateScores">calculateScores</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#39"><abbr title="App\Domains\Search\Support\SearchResultRanker::rerank">rerank</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#178"><abbr title="App\Domains\Search\Support\TypoCorrector::correctWord">correctWord</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="TypoCorrector.php.html#272"><abbr title="App\Domains\Search\Support\TypoCorrector::maxAllowedDistance">maxAllowedDistance</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#229"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::translateWords">translateWords</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#94"><abbr title="App\Domains\Search\Support\CoOccurrenceAnalyzer::jaccardSimilarity">jaccardSimilarity</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="KeywordTokenizer.php.html#81"><abbr title="App\Domains\Search\Support\KeywordTokenizer::tokenizeAll">tokenizeAll</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#209"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::analyze">analyze</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#223"><abbr title="App\Domains\Search\Support\SearchResultRanker::getPreferenceSlugs">getPreferenceSlugs</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="ArabicQueryNormalizer.php.html#216"><abbr title="App\Domains\Search\Support\ArabicQueryNormalizer::splitWords">splitWords</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="CoOccurrenceAnalyzer.php.html#123"><abbr title="App\Domains\Search\Support\CoOccurrenceAnalyzer::buildPairKey">buildPairKey</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#61"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::normalize">normalize</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="EnglishQueryNormalizer.php.html#178"><abbr title="App\Domains\Search\Support\EnglishQueryNormalizer::splitWords">splitWords</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="IntentDetector.php.html#146"><abbr title="App\Domains\Search\Support\IntentDetector::normalizeScores">normalizeScores</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#467"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildWeightedGroupTerm">buildWeightedGroupTerm</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="KeywordProcessor.php.html#518"><abbr title="App\Domains\Search\Support\KeywordProcessor::buildWordOrPhrase">buildWordOrPhrase</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#60"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isArabic">isArabic</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#116"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::isEnglishOnly">isEnglishOnly</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#184"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::vowelRatioOfText">vowelRatioOfText</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#233"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::vowelRatio">vowelRatio</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="QueryLanguageDetector.php.html#245"><abbr title="App\Domains\Search\Support\QueryLanguageDetector::arabicRatio">arabicRatio</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SearchResultRanker.php.html#215"><abbr title="App\Domains\Search\Support\SearchResultRanker::getSlugs">getSlugs</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SqlFragment.php.html#71"><abbr title="App\Domains\Search\Support\SqlFragment::or">or</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SynonymExpander.php.html#224"><abbr title="App\Domains\Search\Support\SynonymExpander::invalidateCacheForProject">invalidateCacheForProject</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SynonymProvider.php.html#152"><abbr title="App\Domains\Search\Support\SynonymProvider::expandWords">expandWords</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SqlFragment.php.html#59"><abbr title="App\Domains\Search\Support\SqlFragment::andIf">andIf</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="SqlFragment.php.html#87"><abbr title="App\Domains\Search\Support\SqlFragment::andIn">andIn</abbr></a></td><td class="text-right">2</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.12</a> using <a href="https://www.php.net/" target="_top">PHP 8.2.30</a> and <a href="https://phpunit.de/">PHPUnit 11.5.50</a> at Fri Jun 5 14:44:08 UTC 2026.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../../../_js/jquery.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/nv.d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([15,0,0,0,0,0,1,1,0,0,0,1], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([83,0,0,0,0,0,0,1,1,0,1,6], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[0,21,"<a href=\"ArabicQueryNormalizer.php.html#19\">App\\Domains\\Search\\Support\\ArabicQueryNormalizer<\/a>"],[0,12,"<a href=\"CoOccurrenceAnalyzer.php.html#5\">App\\Domains\\Search\\Support\\CoOccurrenceAnalyzer<\/a>"],[0,25,"<a href=\"EnglishQueryNormalizer.php.html#20\">App\\Domains\\Search\\Support\\EnglishQueryNormalizer<\/a>"],[0,36,"<a href=\"EntityExtractor.php.html#7\">App\\Domains\\Search\\Support\\EntityExtractor<\/a>"],[0,8,"<a href=\"EntryFieldsExtractor.php.html#7\">App\\Domains\\Search\\Support\\EntryFieldsExtractor<\/a>"],[0,11,"<a href=\"IntentDetector.php.html#5\">App\\Domains\\Search\\Support\\IntentDetector<\/a>"],[0,30,"<a href=\"KeywordProcessor.php.html#5\">App\\Domains\\Search\\Support\\KeywordProcessor<\/a>"],[0,8,"<a href=\"KeywordTokenizer.php.html#5\">App\\Domains\\Search\\Support\\KeywordTokenizer<\/a>"],[100,1,"<a href=\"ProcessedKeyword.php.html#5\">App\\Domains\\Search\\Support\\ProcessedKeyword<\/a>"],[0,35,"<a href=\"QueryLanguageDetector.php.html#24\">App\\Domains\\Search\\Support\\QueryLanguageDetector<\/a>"],[0,26,"<a href=\"SearchResultRanker.php.html#25\">App\\Domains\\Search\\Support\\SearchResultRanker<\/a>"],[60,16,"<a href=\"SqlFragment.php.html#28\">App\\Domains\\Search\\Support\\SqlFragment<\/a>"],[0,21,"<a href=\"SynonymExpander.php.html#9\">App\\Domains\\Search\\Support\\SynonymExpander<\/a>"],[0,4,"<a href=\"SynonymProvider.php.html#5\">App\\Domains\\Search\\Support\\SynonymProvider<\/a>"],[0,5,"<a href=\"SynonymScorer.php.html#5\">App\\Domains\\Search\\Support\\SynonymScorer<\/a>"],[0,26,"<a href=\"TypoCorrector.php.html#24\">App\\Domains\\Search\\Support\\TypoCorrector<\/a>"],[0,17,"<a href=\"UserPreferenceAnalyzer.php.html#10\">App\\Domains\\Search\\Support\\UserPreferenceAnalyzer<\/a>"],[50,4,"<a href=\"WindowFallbackChain.php.html#14\">App\\Domains\\Search\\Support\\WindowFallbackChain<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[0,1,"<a href=\"ArabicQueryNormalizer.php.html#86\">App\\Domains\\Search\\Support\\ArabicQueryNormalizer::normalize<\/a>"],[0,8,"<a href=\"ArabicQueryNormalizer.php.html#146\">App\\Domains\\Search\\Support\\ArabicQueryNormalizer::extractNegations<\/a>"],[0,1,"<a href=\"ArabicQueryNormalizer.php.html#207\">App\\Domains\\Search\\Support\\ArabicQueryNormalizer::normalizeChars<\/a>"],[0,2,"<a href=\"ArabicQueryNormalizer.php.html#216\">App\\Domains\\Search\\Support\\ArabicQueryNormalizer::splitWords<\/a>"],[0,3,"<a href=\"ArabicQueryNormalizer.php.html#229\">App\\Domains\\Search\\Support\\ArabicQueryNormalizer::translateWords<\/a>"],[0,6,"<a href=\"ArabicQueryNormalizer.php.html#243\">App\\Domains\\Search\\Support\\ArabicQueryNormalizer::buildExcludeTerms<\/a>"],[0,7,"<a href=\"CoOccurrenceAnalyzer.php.html#40\">App\\Domains\\Search\\Support\\CoOccurrenceAnalyzer::analyze<\/a>"],[0,3,"<a href=\"CoOccurrenceAnalyzer.php.html#94\">App\\Domains\\Search\\Support\\CoOccurrenceAnalyzer::jaccardSimilarity<\/a>"],[0,2,"<a href=\"CoOccurrenceAnalyzer.php.html#123\">App\\Domains\\Search\\Support\\CoOccurrenceAnalyzer::buildPairKey<\/a>"],[0,2,"<a href=\"EnglishQueryNormalizer.php.html#61\">App\\Domains\\Search\\Support\\EnglishQueryNormalizer::normalize<\/a>"],[0,13,"<a href=\"EnglishQueryNormalizer.php.html#112\">App\\Domains\\Search\\Support\\EnglishQueryNormalizer::extractNegations<\/a>"],[0,2,"<a href=\"EnglishQueryNormalizer.php.html#178\">App\\Domains\\Search\\Support\\EnglishQueryNormalizer::splitWords<\/a>"],[0,8,"<a href=\"EnglishQueryNormalizer.php.html#195\">App\\Domains\\Search\\Support\\EnglishQueryNormalizer::hasNegation<\/a>"],[0,6,"<a href=\"EntityExtractor.php.html#64\">App\\Domains\\Search\\Support\\EntityExtractor::extract<\/a>"],[0,5,"<a href=\"EntityExtractor.php.html#103\">App\\Domains\\Search\\Support\\EntityExtractor::extractBrand<\/a>"],[0,4,"<a href=\"EntityExtractor.php.html#126\">App\\Domains\\Search\\Support\\EntityExtractor::extractModel<\/a>"],[0,6,"<a href=\"EntityExtractor.php.html#153\">App\\Domains\\Search\\Support\\EntityExtractor::buildProductPhrase<\/a>"],[0,6,"<a href=\"EntityExtractor.php.html#178\">App\\Domains\\Search\\Support\\EntityExtractor::extractLocation<\/a>"],[0,5,"<a href=\"EntityExtractor.php.html#207\">App\\Domains\\Search\\Support\\EntityExtractor::extractPriceRange<\/a>"],[0,4,"<a href=\"EntityExtractor.php.html#244\">App\\Domains\\Search\\Support\\EntityExtractor::extractAttributes<\/a>"],[0,7,"<a href=\"EntryFieldsExtractor.php.html#24\">App\\Domains\\Search\\Support\\EntryFieldsExtractor::extract<\/a>"],[0,1,"<a href=\"EntryFieldsExtractor.php.html#69\">App\\Domains\\Search\\Support\\EntryFieldsExtractor::cleanText<\/a>"],[0,4,"<a href=\"IntentDetector.php.html#101\">App\\Domains\\Search\\Support\\IntentDetector::detect<\/a>"],[0,4,"<a href=\"IntentDetector.php.html#129\">App\\Domains\\Search\\Support\\IntentDetector::calculateScores<\/a>"],[0,2,"<a href=\"IntentDetector.php.html#146\">App\\Domains\\Search\\Support\\IntentDetector::normalizeScores<\/a>"],[0,1,"<a href=\"IntentDetector.php.html#156\">App\\Domains\\Search\\Support\\IntentDetector::buildResult<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#187\">App\\Domains\\Search\\Support\\KeywordProcessor::__construct<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#198\">App\\Domains\\Search\\Support\\KeywordProcessor::process<\/a>"],[0,5,"<a href=\"KeywordProcessor.php.html#206\">App\\Domains\\Search\\Support\\KeywordProcessor::processWithExpansion<\/a>"],[0,6,"<a href=\"KeywordProcessor.php.html#278\">App\\Domains\\Search\\Support\\KeywordProcessor::buildRelaxedQueries<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#314\">App\\Domains\\Search\\Support\\KeywordProcessor::buildStrictQuery<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#330\">App\\Domains\\Search\\Support\\KeywordProcessor::buildSemiStrictQuery<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#350\">App\\Domains\\Search\\Support\\KeywordProcessor::buildLooseQuery<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#362\">App\\Domains\\Search\\Support\\KeywordProcessor::buildFallbackQuery<\/a>"],[0,5,"<a href=\"KeywordProcessor.php.html#409\">App\\Domains\\Search\\Support\\KeywordProcessor::buildGroupTerm<\/a>"],[0,2,"<a href=\"KeywordProcessor.php.html#467\">App\\Domains\\Search\\Support\\KeywordProcessor::buildWeightedGroupTerm<\/a>"],[0,2,"<a href=\"KeywordProcessor.php.html#518\">App\\Domains\\Search\\Support\\KeywordProcessor::buildWordOrPhrase<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#528\">App\\Domains\\Search\\Support\\KeywordProcessor::escapeWord<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#533\">App\\Domains\\Search\\Support\\KeywordProcessor::cleanInput<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#541\">App\\Domains\\Search\\Support\\KeywordProcessor::tokenize<\/a>"],[0,1,"<a href=\"KeywordProcessor.php.html#551\">App\\Domains\\Search\\Support\\KeywordProcessor::removeStopWords<\/a>"],[0,5,"<a href=\"KeywordTokenizer.php.html#40\">App\\Domains\\Search\\Support\\KeywordTokenizer::tokenize<\/a>"],[0,3,"<a href=\"KeywordTokenizer.php.html#81\">App\\Domains\\Search\\Support\\KeywordTokenizer::tokenizeAll<\/a>"],[100,1,"<a href=\"ProcessedKeyword.php.html#7\">App\\Domains\\Search\\Support\\ProcessedKeyword::__construct<\/a>"],[0,2,"<a href=\"QueryLanguageDetector.php.html#60\">App\\Domains\\Search\\Support\\QueryLanguageDetector::isArabic<\/a>"],[0,9,"<a href=\"QueryLanguageDetector.php.html#83\">App\\Domains\\Search\\Support\\QueryLanguageDetector::isMixed<\/a>"],[0,2,"<a href=\"QueryLanguageDetector.php.html#116\">App\\Domains\\Search\\Support\\QueryLanguageDetector::isEnglishOnly<\/a>"],[0,7,"<a href=\"QueryLanguageDetector.php.html#138\">App\\Domains\\Search\\Support\\QueryLanguageDetector::isGibberish<\/a>"],[0,2,"<a href=\"QueryLanguageDetector.php.html#184\">App\\Domains\\Search\\Support\\QueryLanguageDetector::vowelRatioOfText<\/a>"],[0,3,"<a href=\"QueryLanguageDetector.php.html#209\">App\\Domains\\Search\\Support\\QueryLanguageDetector::analyze<\/a>"],[0,1,"<a href=\"QueryLanguageDetector.php.html#228\">App\\Domains\\Search\\Support\\QueryLanguageDetector::stripWhitespace<\/a>"],[0,2,"<a href=\"QueryLanguageDetector.php.html#233\">App\\Domains\\Search\\Support\\QueryLanguageDetector::vowelRatio<\/a>"],[0,2,"<a href=\"QueryLanguageDetector.php.html#245\">App\\Domains\\Search\\Support\\QueryLanguageDetector::arabicRatio<\/a>"],[0,5,"<a href=\"QueryLanguageDetector.php.html#262\">App\\Domains\\Search\\Support\\QueryLanguageDetector::hasRepeatingPattern<\/a>"],[0,4,"<a href=\"SearchResultRanker.php.html#39\">App\\Domains\\Search\\Support\\SearchResultRanker::rerank<\/a>"],[0,17,"<a href=\"SearchResultRanker.php.html#118\">App\\Domains\\Search\\Support\\SearchResultRanker::computeScore<\/a>"],[0,2,"<a href=\"SearchResultRanker.php.html#215\">App\\Domains\\Search\\Support\\SearchResultRanker::getSlugs<\/a>"],[0,3,"<a href=\"SearchResultRanker.php.html#223\">App\\Domains\\Search\\Support\\SearchResultRanker::getPreferenceSlugs<\/a>"],[100,1,"<a href=\"SqlFragment.php.html#30\">App\\Domains\\Search\\Support\\SqlFragment::__construct<\/a>"],[100,1,"<a href=\"SqlFragment.php.html#37\">App\\Domains\\Search\\Support\\SqlFragment::create<\/a>"],[100,2,"<a href=\"SqlFragment.php.html#46\">App\\Domains\\Search\\Support\\SqlFragment::and<\/a>"],[66.66666666666666,2,"<a href=\"SqlFragment.php.html#59\">App\\Domains\\Search\\Support\\SqlFragment::andIf<\/a>"],[0,2,"<a href=\"SqlFragment.php.html#71\">App\\Domains\\Search\\Support\\SqlFragment::or<\/a>"],[75,2,"<a href=\"SqlFragment.php.html#87\">App\\Domains\\Search\\Support\\SqlFragment::andIn<\/a>"],[90,3,"<a href=\"SqlFragment.php.html#102\">App\\Domains\\Search\\Support\\SqlFragment::andNotLikeAll<\/a>"],[0,1,"<a href=\"SqlFragment.php.html#124\">App\\Domains\\Search\\Support\\SqlFragment::wrap<\/a>"],[0,1,"<a href=\"SqlFragment.php.html#132\">App\\Domains\\Search\\Support\\SqlFragment::isEmpty<\/a>"],[0,1,"<a href=\"SqlFragment.php.html#137\">App\\Domains\\Search\\Support\\SqlFragment::__toString<\/a>"],[0,8,"<a href=\"SynonymExpander.php.html#41\">App\\Domains\\Search\\Support\\SynonymExpander::expand<\/a>"],[0,1,"<a href=\"SynonymExpander.php.html#105\">App\\Domains\\Search\\Support\\SynonymExpander::loadSynonymMap<\/a>"],[0,9,"<a href=\"SynonymExpander.php.html#139\">App\\Domains\\Search\\Support\\SynonymExpander::buildSynonymMapFromDB<\/a>"],[0,1,"<a href=\"SynonymExpander.php.html#211\">App\\Domains\\Search\\Support\\SynonymExpander::invalidateCache<\/a>"],[0,2,"<a href=\"SynonymExpander.php.html#224\">App\\Domains\\Search\\Support\\SynonymExpander::invalidateCacheForProject<\/a>"],[0,1,"<a href=\"SynonymProvider.php.html#130\">App\\Domains\\Search\\Support\\SynonymProvider::getSynonyms<\/a>"],[0,2,"<a href=\"SynonymProvider.php.html#152\">App\\Domains\\Search\\Support\\SynonymProvider::expandWords<\/a>"],[0,1,"<a href=\"SynonymProvider.php.html#169\">App\\Domains\\Search\\Support\\SynonymProvider::hasSynonyms<\/a>"],[0,5,"<a href=\"SynonymScorer.php.html#27\">App\\Domains\\Search\\Support\\SynonymScorer::calculate<\/a>"],[0,7,"<a href=\"TypoCorrector.php.html#130\">App\\Domains\\Search\\Support\\TypoCorrector::correct<\/a>"],[0,4,"<a href=\"TypoCorrector.php.html#178\">App\\Domains\\Search\\Support\\TypoCorrector::correctWord<\/a>"],[0,10,"<a href=\"TypoCorrector.php.html#216\">App\\Domains\\Search\\Support\\TypoCorrector::levenshteinWithIndex<\/a>"],[0,4,"<a href=\"TypoCorrector.php.html#272\">App\\Domains\\Search\\Support\\TypoCorrector::maxAllowedDistance<\/a>"],[0,1,"<a href=\"TypoCorrector.php.html#281\">App\\Domains\\Search\\Support\\TypoCorrector::buildResult<\/a>"],[0,1,"<a href=\"UserPreferenceAnalyzer.php.html#29\">App\\Domains\\Search\\Support\\UserPreferenceAnalyzer::__construct<\/a>"],[0,1,"<a href=\"UserPreferenceAnalyzer.php.html#38\">App\\Domains\\Search\\Support\\UserPreferenceAnalyzer::analyzeForUser<\/a>"],[0,1,"<a href=\"UserPreferenceAnalyzer.php.html#60\">App\\Domains\\Search\\Support\\UserPreferenceAnalyzer::analyzeForSession<\/a>"],[0,5,"<a href=\"UserPreferenceAnalyzer.php.html#97\">App\\Domains\\Search\\Support\\UserPreferenceAnalyzer::analyze<\/a>"],[0,1,"<a href=\"UserPreferenceAnalyzer.php.html#126\">App\\Domains\\Search\\Support\\UserPreferenceAnalyzer::invalidateCache<\/a>"],[0,8,"<a href=\"UserPreferenceAnalyzer.php.html#142\">App\\Domains\\Search\\Support\\UserPreferenceAnalyzer::buildPreference<\/a>"],[100,1,"<a href=\"WindowFallbackChain.php.html#42\">App\\Domains\\Search\\Support\\WindowFallbackChain::getChain<\/a>"],[100,1,"<a href=\"WindowFallbackChain.php.html#47\">App\\Domains\\Search\\Support\\WindowFallbackChain::getCountColumn<\/a>"],[0,1,"<a href=\"WindowFallbackChain.php.html#52\">App\\Domains\\Search\\Support\\WindowFallbackChain::getScoreColumn<\/a>"],[0,1,"<a href=\"WindowFallbackChain.php.html#57\">App\\Domains\\Search\\Support\\WindowFallbackChain::isValid<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

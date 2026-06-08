@@ -2,8 +2,8 @@
 
 namespace App\Domains\CMS\Services;
 
-use App\Domains\CMS\Actions\Data\CreateDataEntryAction;
-use App\Domains\CMS\Actions\Data\DeleteDataEntryAction;
+use App\Domains\CMS\Actions\data\CreateDataEntryAction;
+use App\Domains\CMS\Actions\data\DeleteDataEntryAction;
 use App\Domains\CMS\Actions\data\DeleteValuesAction;
 use App\Domains\CMS\Actions\data\HandleRelationsAction;
 use App\Domains\CMS\Actions\data\HandleSeoAction;

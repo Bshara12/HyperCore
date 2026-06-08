@@ -12,7 +12,6 @@ use App\Models\DataType;
 use App\Support\CurrentProject;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class DataEntryController extends Controller
 {
@@ -97,9 +96,9 @@ class DataEntryController extends Controller
       $userId = (int) $authUser->id;
     }
 
-    // $userId = $userId ?? auth()->id();
-    $user = $request->attributes->get('auth_user');
-    $userId = $user->id;
+    // // $userId = $userId ?? auth()->id();
+    // $user = $request->attributes->get('auth_user');
+    // $userId = $user->id;
     $dto = CreateDataEntryDTO::fromRequest($request);
     $entry = $this->service->update(
       $request,

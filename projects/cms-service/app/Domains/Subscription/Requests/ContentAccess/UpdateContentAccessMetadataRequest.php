@@ -20,14 +20,6 @@ class UpdateContentAccessMetadataRequest extends FormRequest
                 'exists:projects,id',
             ],
 
-            /*
-            |----------------------------------------------------------
-            | content_type removed from API.
-            | content_id is optional on update — if not provided,
-            | the existing value on the model is kept as-is.
-            | If provided, must exist in data_entries.
-            |----------------------------------------------------------
-            */
             'content_id' => [
                 'nullable',
                 'integer',

@@ -134,6 +134,11 @@ class EloquentPaymentRepository implements PaymentRepositoryInterface
         return Wallet::where('user_id', $userId)->first();
     }
 
+    public function findWalletByNumber(string $walletNumber): ?Wallet
+    {
+        return Wallet::where('wallet_number', $walletNumber)->first();
+    }
+
     public function debitWallet(Wallet $wallet, float $amount): void
     {
         $wallet->decrement('balance', $amount);

@@ -13,4 +13,8 @@ class ServiceClient extends Model
         'client_id',
         'client_secret',
     ];
+
+    public function sessions() {
+        return $this->hasMany(ServiceSession::class);
+    }
 }

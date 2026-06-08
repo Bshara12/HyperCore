@@ -10,24 +10,24 @@ use Illuminate\Support\Facades\Cache;
 
 class ListProjectsAction extends Action
 {
-    protected function circuitServiceName(): string
-    {
-        return 'project.index';
-    }
+  protected function circuitServiceName(): string
+  {
+    return 'project.index';
+  }
 
-    public function __construct(
-        private ProjectRepositoryInterface $repository
-    ) {}
+  public function __construct(
+    private ProjectRepositoryInterface $repository
+  ) {}
 
-    public function execute(): Collection
-    {
-        return $this->run(function () {
+  public function execute(): Collection
+  {
+    return $this->run(function () {
 
-            return Cache::remember(
-                CacheKeys::allProjects(),      // المفتاح
-                CacheKeys::TTL_LONG,           // مدة الـ Cache (يوم)
-                fn () => $this->repository->all() // لو مش موجود، نجيبه من DB
-            );
-        });
-    }
+      return Cache::remember(
+        CacheKeys::allProjects(),      // المفتاح
+        CacheKeys::TTL_LONG,           // مدة الـ Cache (يوم)
+        fn() => $this->repository->all() // لو مش موجود، نجيبه من DB
+      );
+    });
+  }
 }

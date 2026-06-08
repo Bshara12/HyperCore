@@ -7,29 +7,50 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class RabbitMQPublisher
 {
-    public function publish(array $data)
-    {
-        $connection = new AMQPStreamConnection(
-            config('services.rabbitmq.host'),
-            config('services.rabbitmq.port'),
-            config('services.rabbitmq.user'),
-            config('services.rabbitmq.password')
-        );
+  // نقوم بحقن الاتصال
+  public function __construct(
+    private AMQPStreamConnection $connection
+  ) {}
 
-        $channel = $connection->channel();
+  public function publish(array $data)
+  {
+    $channel = $this->connection->channel();
 
-        $channel->queue_declare('logs_queue', false, true, false, false);
+    $channel->queue_declare('logs_queue', false, true, false, false);
 
-        $msg = new AMQPMessage(
-            json_encode($data),
-            ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]
-        );
+    $msg = new AMQPMessage(
+      json_encode($data),
+      ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]
+    );
 
-        $channel->basic_publish($msg, '', 'logs_queue');
+    $channel->basic_publish($msg, '', 'logs_queue');
 
-        $channel->close();
-        $connection->close();
-    }
+    $channel->close();
+    // ملاحظة: لا نغلق الاتصال هنا لأننا نستخدم حقن المعتمديات (سنتحكم به من الخارج)
+  }
+  // public function publish(array $data)
+  // {
+  //     $connection = new AMQPStreamConnection(
+  //         config('services.rabbitmq.host'),
+  //         config('services.rabbitmq.port'),
+  //         config('services.rabbitmq.user'),
+  //         config('services.rabbitmq.password')
+  //     );
+
+  //     $channel = $connection->channel();
+
+  //     $channel->queue_declare('logs_queue', false, true, false, false);
+
+  //     $msg = new AMQPMessage(
+  //         json_encode($data),
+  //         ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]
+  //     );
+
+  //     $channel->basic_publish($msg, '', 'logs_queue');
+
+  //     $channel->close();
+  //     $connection->close();
+  // }
 }
 
 // // audit

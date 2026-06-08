@@ -17,7 +17,7 @@ class ServiceAuthMiddleware
             return response()->json(['error' => 'Token missing'], 401);
         }
 
-        $publicKey = file_get_contents(storage_path('keys/jwt_public.pem'));
+        $publicKey = file_get_contents(storage_path('keys/public.key'));
 
         try {
 
