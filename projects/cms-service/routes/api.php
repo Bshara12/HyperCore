@@ -525,10 +525,10 @@ Route::get('/b', function () {
 });
 
 Route::get('/ping', function () {
-    return response()->json([
-        'ok' => true,
-        'time' => now()
-    ]);
+  return response()->json([
+    'ok' => true,
+    'time' => now()
+  ]);
 });
 
 Route::get('/test', function () {
