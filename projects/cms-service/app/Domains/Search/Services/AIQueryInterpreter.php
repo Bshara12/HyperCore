@@ -1,102 +1,179 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Search\Services;
 
+use App\Domains\Search\Support\QueryLanguageDetector;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * يُحل محل AIQueryEnhancer القديم
+ * AIQueryInterpreter — Single source of truth for AI query interpretation.
  *
- * الفرق الجوهري:
- *   القديم → يطلب "correctedQuery" كـ string كامل
- *   الجديد → يطلب بنية منظمة: include/exclude/intent/tokens
+ * Replaces AIQueryEnhancer.
  *
- * هذا يمنع المشكلة الأساسية:
- *   "ما بدي ايفون" → لا يُحوَّل لـ "what do want an iphone"
- *                  → يُحوَّل لـ { exclude: ["iphone"], intent: "avoid" }
+ * Output schema is IDENTICAL to AIQueryEnhancer to ensure
+ * SearchEntriesAction and SearchDebugService both work without changes:
+ *
+ * [
+ *   'correctedQuery'   => string,   // ← same key as AIQueryEnhancer
+ *   'expandedKeywords' => string[], // ← same key as AIQueryEnhancer
+ *   'include'          => string[],
+ *   'exclude'          => string[],
+ *   'intent'           => string,
+ *   'confidence'       => float,
+ *   'source'           => string,
+ *   'originalQuery'    => string,
+ * ]
+ *
+ * Migration notes:
+ *   - AIQueryEnhancer is now DEAD CODE — safe to delete after this ships
+ *   - Cache key changed: 'ai_enhance:' — kept same to reuse warm cache
+ *   - Arabic processing: delegates to processArabicLocally() (ported from Enhancer)
+ *   - Gibberish check: isGibberish() uses QueryLanguageDetector
  */
-class AIQueryInterpreter
+final class AIQueryInterpreter
 {
-    private const CACHE_TTL = 3600;
+    private const CACHE_TTL   = 3600;
+    private const API_TIMEOUT = 10;
+    private const API_URL     = 'https://openrouter.ai/api/v1/chat/completions';
 
-    private const TIMEOUT = 8;
+    // ─── kept identical to AIQueryEnhancer for cache reuse ───────────
+    private const CACHE_KEY_PREFIX = 'ai_enhance:';
 
-    private const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+    private const AR_PRODUCT_MAP = [
+        'ايفون'   => 'iphone',    'آيفون'   => 'iphone',
+        'أيفون'   => 'iphone',    'سامسونج' => 'samsung',
+        'سامسونغ' => 'samsung',   'لابتوب'  => 'laptop',
+        'جوال'    => 'phone',     'هاتف'    => 'phone',
+        'موبايل'  => 'mobile',    'تابلت'   => 'tablet',
+        'شاشة'    => 'screen',    'كاميرا'  => 'camera',
+        'سعر'     => 'price',     'شراء'    => 'buy',
+        'رخيص'    => 'cheap',     'ارخص'    => 'cheap',
+        'أرخص'    => 'cheap',     'غالي'    => 'expensive',
+        'ساعة'    => 'watch',     'سماعات'  => 'headphones',
+        'حاسوب'   => 'computer',  'ماك'     => 'mac',
+        'بيكسل'   => 'pixel',     'نوكيا'   => 'nokia',
+        'جوجل'    => 'google',    'ابل'     => 'apple',
+        'أبل'     => 'apple',     'هواوي'   => 'huawei',
+        'شاومي'   => 'xiaomi',    'اوبو'    => 'oppo',
+        'تلفزيون' => 'tv',        'تلفاز'   => 'tv',
+        'شاحن'    => 'charger',   'بطارية'  => 'battery',
+        'كفر'     => 'case',      'غطاء'    => 'cover',
+    ];
+
+    private const AR_NEGATION_PATTERNS = [
+        'ما بدي', 'ما اريد', 'ما أريد', 'ما ابغى', 'ما أبغى',
+        'لا اريد', 'لا أريد', 'لا ابغى', 'لا أبغى',
+        'مش عايز', 'مش عايزة', 'مو بادي', 'مو عايز',
+        'بدون', 'بدوني', 'غير', 'ماعدا', 'سوى', 'عدا', 'إلا',
+        'مبغاش', 'مابغاش',
+    ];
+
+    private const AR_FILLER_WORDS = [
+        'بدي', 'ودي', 'ابي', 'أبي', 'نفسي', 'محتاج', 'محتاجة',
+        'حابب', 'حابة', 'عايز', 'عايزة', 'ابغى', 'أبغى',
+        'اريد', 'أريد', 'ابغاه', 'ابيه', 'بغيت', 'عندي',
+        'يا', 'هلا', 'ممكن', 'لو', 'فيه', 'وين',
+    ];
+
+    private const TYPO_DICTIONARY = [
+        'iphoen'  => 'iphone',  'ipone'   => 'iphone',
+        'iphon'   => 'iphone',  'samsng'  => 'samsung',
+        'samsong' => 'samsung', 'labtop'  => 'laptop',
+        'laptp'   => 'laptop',  'googel'  => 'google',
+        'macbok'  => 'macbook', 'androd'  => 'android',
+        'phoen'   => 'phone',   'fone'    => 'phone',
+        'cheep'   => 'cheap',   'prie'    => 'price',
+        'tabelt'  => 'tablet',  'galxy'   => 'galaxy',
+        'nokea'   => 'nokia',   'pixle'   => 'pixel',
+        'huaewi'  => 'huawei',  'xiomi'   => 'xiaomi',
+    ];
 
     // ─────────────────────────────────────────────────────────────────
 
     /**
-     * تحليل الـ query وإرجاع بنية منظمة
-     *
-     * @return array{
-     *   include:    string[],   // كلمات البحث الأساسية
-     *   exclude:    string[],   // كلمات الاستبعاد
-     *   intent:     string,     // buy|compare|learn|avoid|general
-     *   expanded:   string[],   // مرادفات/توسعات
-     *   corrected:  string,     // الـ query المُصحَّح (للعرض فقط)
-     *   confidence: float,
-     *   source:     string,
-     * }
+     * Main entry point — drop-in replacement for AIQueryEnhancer::enhance()
+     * Output schema is IDENTICAL to maintain backward compatibility.
      */
-    public function interpret(string $query, string $language): array
+    public function enhance(string $query, string $language): array
     {
-        $cacheKey = 'ai_interpret:'.md5(mb_strtolower(trim($query)).':'.$language);
+        $query = trim($query);
 
-        $cached = Cache::get($cacheKey);
+        if (empty($query)) {
+            return $this->emptyResult($query, 0.0, 'empty_input');
+        }
+
+        $cacheKey = $this->cacheKey($query, $language);
+        $cached   = Cache::get($cacheKey);
+
         if ($cached !== null) {
             return array_merge($cached, ['source' => 'cache']);
         }
 
-        Log::info('AIQueryInterpreter: calling API', [
-            'query' => $query,
-            'language' => $language,
-        ]);
+        if ($this->isGibberish($query)) {
+            $result = $this->emptyResult($query, 0.04, 'gibberish');
+            Cache::put($cacheKey, $result, self::CACHE_TTL);
+            return $result;
+        }
+
+        if ($this->isArabic($query)) {
+            $result = $this->processArabicLocally($query);
+            Cache::put($cacheKey, $result, self::CACHE_TTL);
+            return array_merge($result, ['source' => 'arabic_local']);
+        }
 
         try {
             $result = $this->callAPI($query, $language);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
-
             return array_merge($result, ['source' => 'api']);
-
         } catch (\Throwable $e) {
-            Log::error('AIQueryInterpreter: API failed', [
-                'query' => $query,
+            Log::warning('AIQueryInterpreter: API failed, local fallback', [
                 'error' => $e->getMessage(),
+                'query' => $query,
             ]);
-
-            return $this->buildFallback($query);
+            $result = $this->processEnglishLocally($query);
+            Cache::put($cacheKey, $result, self::CACHE_TTL);
+            return array_merge($result, ['source' => 'local_fallback']);
         }
     }
 
+    /**
+     * Alias used by SearchDebugService — same implementation, named differently.
+     * Keeping both to avoid breaking existing callers.
+     */
+    public function interpret(string $query, string $language): array
+    {
+        return $this->enhance($query, $language);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // API
     // ─────────────────────────────────────────────────────────────────
 
     private function callAPI(string $query, string $language): array
     {
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer '.config('services.openrouter.key'),
-            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . config('services.openrouter.key'),
+            'Content-Type'  => 'application/json',
         ])
-            ->timeout(self::TIMEOUT)
-            ->post(self::API_URL, [
-                'model' => config('services.openrouter.model', 'mistralai/mistral-7b-instruct'),
-                'max_tokens' => 400,
-                'messages' => [
-                    ['role' => 'user', 'content' => $this->buildPrompt($query, $language)],
-                ],
-            ]);
+        ->timeout(self::API_TIMEOUT)
+        ->post(self::API_URL, [
+            'model'      => config('services.openrouter.model', 'mistralai/mistral-7b-instruct'),
+            'max_tokens' => 400,
+            'messages'   => [
+                ['role' => 'system', 'content' => $this->systemPrompt()],
+                ['role' => 'user',   'content' => $this->userPrompt($query, $language)],
+            ],
+        ]);
 
         if (! $response->successful()) {
-            Log::error('AIQueryInterpreter: API error', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-            throw new \RuntimeException('API error: '.$response->status());
+            throw new \RuntimeException('API error: ' . $response->status());
         }
 
-        $content = $response->json()['choices'][0]['message']['content'] ?? '';
-
+        $content = $response->json('choices.0.message.content');
         if (empty($content)) {
             throw new \RuntimeException('Empty API response');
         }
@@ -105,174 +182,300 @@ class AIQueryInterpreter
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // Prompts
+    // ─────────────────────────────────────────────────────────────────
 
-    /**
-     * Prompt مُصمَّم لإرجاع TOKENS وليس جمل
-     *
-     * الفرق الجوهري عن الـ Prompt القديم:
-     *   القديم: "correct the query" → يُنتج جمل كاملة
-     *   الجديد: "extract structured intent" → يُنتج tokens فقط
-     *
-     * مثال المدخل:  "ما بدي ايفون 15"
-     * مثال المخرج:
-     * {
-     *   "include": ["iphone"],
-     *   "exclude": ["15"],
-     *   "intent": "avoid",
-     *   "expanded": [],
-     *   "corrected": "iphone without 15",
-     *   "confidence": 0.9
-     * }
-     */
-    private function buildPrompt(string $query, string $language): string
+    private function systemPrompt(): string
     {
-        $langName = match ($language) {
-            'ar' => 'Arabic',
-            'fr' => 'French',
+        return <<<'SYSTEM'
+You are a multilingual search query interpreter.
+Return ONLY valid JSON. No explanation. No markdown.
+
+Rules:
+1. Correct spelling (iphoen→iphone, samsng→samsung).
+2. Detect negation. Move negated terms to "exclude".
+   Arabic: ما بدي, بدون, غير, لا اريد
+   English: without, not, no, except
+3. "include" = what user WANTS (English only).
+4. "exclude" = what user does NOT want (English only).
+5. Translate Arabic product names to English.
+6. Drop filler words.
+7. Gibberish = confidence < 0.15, empty arrays.
+
+JSON schema (exact keys required):
+{"correctedQuery":"","include":[],"exclude":[],"expandedKeywords":[],"intent":"general","confidence":0.0}
+SYSTEM;
+    }
+
+    private function userPrompt(string $query, string $language): string
+    {
+        $lang = match ($language) {
+            'ar'    => 'Arabic',
+            'fr'    => 'French',
             default => 'English',
         };
 
         return <<<PROMPT
-You are a search query parser for a product/content database.
-
-Input query: "{$query}"
-Input language: {$langName}
-
-Your job: Extract structured search intent. Return ONLY valid JSON.
-
-Rules:
-1. "include": search tokens to find (array of single words or short phrases, max 5)
-2. "exclude": terms user wants to AVOID (array of single words, max 3)
-3. "intent": one of: "buy", "compare", "learn", "avoid", "repair", "general"
-4. "expanded": 2-3 alternative tokens/synonyms for include terms (NOT full sentences)
-5. "corrected": spell-corrected version as SHORT search string (max 5 words, NO explanation)
-6. "confidence": 0.0 to 1.0
-
-Critical rules:
-- NEVER put full sentences in include, exclude, or expanded
-- NEVER add words like "buy", "price", "deals" unless user said them
-- If query has negation ("ما بدي", "don't want", "without", "غير"): move negated term to "exclude"
-- If query is gibberish/random: set include=[], confidence=0.1
-- Translate Arabic product names to English in the output
+Language: {$lang}
 
 Examples:
-Input: "ما بدي ايفون 15"
-Output: {"include":["iphone"],"exclude":["15"],"intent":"avoid","expanded":["apple phone","smartphone"],"corrected":"iphone -15","confidence":0.9}
+Q: "iphoen" → {"correctedQuery":"iphone","include":["iphone"],"exclude":[],"expandedKeywords":["apple phone"],"intent":"general","confidence":0.93}
+Q: "ما بدي ايفون 15" → {"correctedQuery":"iphone","include":["iphone"],"exclude":["15"],"expandedKeywords":["apple phone"],"intent":"buy","confidence":0.92}
+Q: "بدون سامسونج" → {"correctedQuery":"","include":[],"exclude":["samsung"],"expandedKeywords":[],"intent":"general","confidence":0.88}
+Q: "asdasdadasd" → {"correctedQuery":"","include":[],"exclude":[],"expandedKeywords":[],"intent":"general","confidence":0.03}
 
-Input: "iphoen"
-Output: {"include":["iphone"],"exclude":[],"intent":"general","expanded":["apple phone"],"corrected":"iphone","confidence":0.85}
-
-Input: "legh fid hgphgm"
-Output: {"include":[],"exclude":[],"intent":"general","expanded":[],"corrected":"","confidence":0.1}
-
-Input: "iphone 15 price compare"
-Output: {"include":["iphone","15","price"],"exclude":[],"intent":"compare","expanded":["apple phone","iphone cost"],"corrected":"iphone 15 price","confidence":0.95}
-
-Now parse: "{$query}"
+Query: "{$query}"
 PROMPT;
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // Response Parsing — output keys match AIQueryEnhancer schema
     // ─────────────────────────────────────────────────────────────────
 
     private function parseResponse(string $content, string $originalQuery): array
     {
         $clean = preg_replace('/```(?:json)?\s*|\s*```/', '', trim($content));
-        $parsed = json_decode(trim($clean), true);
+        if (preg_match('/\{.*?\}/s', $clean, $m)) {
+            $clean = $m[0];
+        }
+
+        $parsed = json_decode($clean, true);
 
         if (json_last_error() !== JSON_ERROR_NONE || ! is_array($parsed)) {
-            Log::warning('AIQueryInterpreter: parse failed', [
-                'content' => $content,
-                'error' => json_last_error_msg(),
-            ]);
-
-            return $this->buildFallback($originalQuery);
+            Log::warning('AIQueryInterpreter: JSON parse failed', ['raw' => substr($content, 0, 200)]);
+            return $this->processEnglishLocally($originalQuery);
         }
 
-        $include = $this->sanitizeTokens($parsed['include'] ?? []);
-        $exclude = $this->sanitizeTokens($parsed['exclude'] ?? []);
-        $expanded = $this->sanitizeTokens($parsed['expanded'] ?? []);
-        $intent = $this->sanitizeIntent($parsed['intent'] ?? 'general');
-        $corrected = trim(strip_tags($parsed['corrected'] ?? ''));
+        $include    = $this->sanitizeArray($parsed['include']          ?? []);
+        $exclude    = $this->sanitizeArray($parsed['exclude']          ?? []);
+        $expanded   = $this->sanitizeArray($parsed['expandedKeywords'] ?? []);
+        $corrected  = trim($parsed['correctedQuery'] ?? '');
+        $intent     = $this->sanitizeIntent($parsed['intent'] ?? 'general');
         $confidence = min(1.0, max(0.0, (float) ($parsed['confidence'] ?? 0.5)));
 
-        // Safety: إذا include فارغة لكن confidence عالي → استخدم corrected
-        if (empty($include) && ! empty($corrected) && $confidence > 0.5) {
-            $include = array_filter(
-                explode(' ', mb_strtolower($corrected)),
-                fn ($w) => mb_strlen($w) >= 2
-            );
-            $include = array_values($include);
+        if (empty($include) && ! empty($corrected)) {
+            $include = array_values(array_filter(
+                explode(' ', $corrected),
+                fn($w) => mb_strlen(trim($w), 'UTF-8') >= 2
+            ));
         }
 
-        Log::debug('AIQueryInterpreter: parsed result', [
-            'original' => $originalQuery,
-            'include' => $include,
-            'exclude' => $exclude,
-            'intent' => $intent,
-            'confidence' => $confidence,
-        ]);
+        $finalCorrected = ! empty($include) ? implode(' ', $include) : $corrected;
 
         return [
-            'include' => $include,
-            'exclude' => $exclude,
-            'intent' => $intent,
-            'expanded' => $expanded,
-            'corrected' => $corrected,
-            'confidence' => $confidence,
+            'correctedQuery'   => $finalCorrected,  // ← AIQueryEnhancer key
+            'include'          => $include,
+            'exclude'          => $exclude,
+            'expandedKeywords' => $expanded,         // ← AIQueryEnhancer key
+            'intent'           => $intent,
+            'confidence'       => $confidence,
+            'originalQuery'    => $originalQuery,
         ];
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // Arabic Local Processing (ported from AIQueryEnhancer)
+    // ─────────────────────────────────────────────────────────────────
 
-    /**
-     * تنظيف الـ tokens - يمنع الجمل الطويلة
-     *
-     * إذا AI أرسل "apple iphone smartphone" كـ token واحد → نُقسِّمه
-     * إذا أرسل جملة طويلة → نأخذ أول كلمتين فقط
-     */
-    private function sanitizeTokens(array $tokens): array
+    private function processArabicLocally(string $query): array
     {
-        $result = [];
+        $normalized = $this->normalizeArabic($query);
+        $exclude    = [];
+        $cleanText  = $normalized;
 
-        foreach ($tokens as $token) {
-            $token = trim(mb_strtolower($token, 'UTF-8'));
+        $patterns = self::AR_NEGATION_PATTERNS;
+        usort($patterns, fn($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
 
-            if (empty($token) || mb_strlen($token) < 2) {
+        foreach ($patterns as $pattern) {
+            $pos = mb_strpos($cleanText, $pattern, 0, 'UTF-8');
+            if ($pos === false) continue;
+
+            $afterOffset = $pos + mb_strlen($pattern, 'UTF-8');
+            $afterText   = trim(mb_substr($cleanText, $afterOffset, null, 'UTF-8'));
+            $afterWords  = $this->splitWords($afterText);
+
+            foreach (array_slice($afterWords, 0, 3) as $word) {
+                $word = trim($word);
+                if (in_array($word, self::AR_FILLER_WORDS, true)) continue;
+                $exclude[] = is_numeric($word) ? $word : (self::AR_PRODUCT_MAP[$word] ?? $word);
+            }
+
+            $cleanText = trim(mb_substr($cleanText, 0, $pos, 'UTF-8'));
+            break;
+        }
+
+        $include  = [];
+        $fillers  = array_flip(self::AR_FILLER_WORDS);
+        foreach ($this->splitWords($cleanText) as $word) {
+            $word = trim($word);
+            if (mb_strlen($word, 'UTF-8') < 2 || isset($fillers[$word])) continue;
+            $translated = self::AR_PRODUCT_MAP[$word] ?? $word;
+            if ($translated) $include[] = $translated;
+        }
+
+        $include = array_values(array_unique($include));
+        $exclude = array_values(array_unique($exclude));
+
+        if (empty($include) && empty($exclude)) {
+            return $this->emptyResult($query, 0.3, 'arabic_empty');
+        }
+
+        return [
+            'correctedQuery'   => implode(' ', $include),
+            'include'          => $include,
+            'exclude'          => $exclude,
+            'expandedKeywords' => [],
+            'intent'           => $this->detectArabicIntent($normalized),
+            'confidence'       => ! empty($exclude) ? 0.87 : 0.72,
+            'originalQuery'    => $query,
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // English Local Fallback (Levenshtein — ported from AIQueryEnhancer)
+    // ─────────────────────────────────────────────────────────────────
+
+    private function processEnglishLocally(string $query): array
+    {
+        $words     = preg_split('/\s+/', mb_strtolower(trim($query), 'UTF-8'));
+        $corrected = [];
+        $hadFix    = false;
+
+        foreach ($words as $word) {
+            $word = preg_replace('/[^a-z0-9]/i', '', $word);
+            if (mb_strlen($word) < 2) continue;
+
+            if (isset(self::TYPO_DICTIONARY[$word])) {
+                $fixed = self::TYPO_DICTIONARY[$word];
+                if ($fixed !== $word) $hadFix = true;
+                $corrected[] = $fixed;
                 continue;
             }
 
-            // إذا أكثر من كلمتين → خذ أول كلمتين فقط
-            $words = array_filter(explode(' ', $token), fn ($w) => mb_strlen($w) >= 2);
-
-            if (count($words) > 2) {
-                // phrase طويلة → خذ أول 2 كلمات
-                $result[] = implode(' ', array_slice(array_values($words), 0, 2));
-            } elseif (count($words) >= 1) {
-                $result[] = $token;
+            $best = $this->levenshteinCorrect($word);
+            if ($best !== null && $best !== $word) {
+                $hadFix      = true;
+                $corrected[] = $best;
+            } else {
+                $corrected[] = $word;
             }
         }
 
-        // dedup
-        return array_values(array_unique(array_slice($result, 0, 5)));
+        $corrected = array_values(array_unique(array_filter($corrected)));
+
+        if (empty($corrected)) {
+            return $this->emptyResult($query, 0.2, 'english_empty');
+        }
+
+        return [
+            'correctedQuery'   => implode(' ', $corrected),
+            'include'          => $corrected,
+            'exclude'          => [],
+            'expandedKeywords' => [],
+            'intent'           => 'general',
+            'confidence'       => $hadFix ? 0.82 : 0.60,
+            'originalQuery'    => $query,
+        ];
+    }
+
+    private function levenshteinCorrect(string $word): ?string
+    {
+        $wordLen    = strlen($word);
+        $bestMatch  = null;
+        $bestDist   = PHP_INT_MAX;
+        $maxAllowed = $wordLen <= 5 ? 2 : ($wordLen <= 8 ? 3 : 4);
+
+        foreach (self::TYPO_DICTIONARY as $dictWord => $correction) {
+            if (abs(strlen($dictWord) - $wordLen) > $maxAllowed) continue;
+            $dist = levenshtein($word, $dictWord);
+            if ($dist < $bestDist && $dist <= $maxAllowed) {
+                $bestDist  = $dist;
+                $bestMatch = $correction;
+            }
+        }
+
+        return $bestMatch;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Public helpers (used by SearchEntriesAction via enhance())
+    // ─────────────────────────────────────────────────────────────────
+
+    public function isGibberish(string $text): bool
+    {
+        return QueryLanguageDetector::isGibberish($text);
+    }
+
+    public function isArabic(string $text): bool
+    {
+        return QueryLanguageDetector::isArabic($text);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Private Helpers
+    // ─────────────────────────────────────────────────────────────────
+
+    private function normalizeArabic(string $text): string
+    {
+        $text = str_replace(['أ', 'إ', 'آ', 'ٱ'], 'ا', $text);
+        $text = preg_replace('/[\x{064B}-\x{065F}\x{0670}]/u', '', $text);
+        $text = str_replace('ـ', '', $text);
+        return mb_strtolower(trim($text), 'UTF-8');
+    }
+
+    private function splitWords(string $text): array
+    {
+        if (empty(trim($text))) return [];
+        return array_values(array_filter(
+            preg_split('/[\s,،.]+/u', $text, -1, PREG_SPLIT_NO_EMPTY),
+            fn($w) => mb_strlen(trim($w), 'UTF-8') >= 1
+        ));
+    }
+
+    private function detectArabicIntent(string $text): string
+    {
+        $buy    = ['شراء', 'اشتري', 'سعر', 'أسعار', 'رخيص', 'ارخص', 'ثمن', 'عرض', 'خصم'];
+        $repair = ['إصلاح', 'تصليح', 'صيانة', 'حجز', 'موعد', 'خدمة', 'تركيب'];
+        $learn  = ['شرح', 'دليل', 'كيف', 'مراجعة', 'تعلم', 'أخبار'];
+
+        foreach ($buy    as $s) { if (str_contains($text, $s)) return 'buy';    }
+        foreach ($repair as $s) { if (str_contains($text, $s)) return 'repair'; }
+        foreach ($learn  as $s) { if (str_contains($text, $s)) return 'learn';  }
+
+        return 'general';
+    }
+
+    private function sanitizeArray(mixed $input): array
+    {
+        if (! is_array($input)) return [];
+        return array_values(array_filter(
+            array_map(fn($v) => is_string($v) ? trim($v) : null, $input),
+            fn($v) => $v !== null && mb_strlen($v, 'UTF-8') >= 1
+        ));
     }
 
     private function sanitizeIntent(string $intent): string
     {
-        $valid = ['buy', 'compare', 'learn', 'avoid', 'repair', 'general'];
-
-        return in_array($intent, $valid, true) ? $intent : 'general';
+        return in_array($intent, ['buy', 'learn', 'repair', 'compare', 'general'], true)
+            ? $intent : 'general';
     }
 
-    private function buildFallback(string $query): array
+    private function emptyResult(string $query, float $confidence, string $source): array
     {
         return [
-            'include' => [],
-            'exclude' => [],
-            'intent' => 'general',
-            'expanded' => [],
-            'corrected' => $query,
-            'confidence' => 0.0,
-            'source' => 'fallback',
+            'correctedQuery'   => '',
+            'include'          => [],
+            'exclude'          => [],
+            'expandedKeywords' => [],
+            'intent'           => 'general',
+            'confidence'       => $confidence,
+            'originalQuery'    => $query,
+            'source'           => $source,
         ];
+    }
+
+    private function cacheKey(string $query, string $language): string
+    {
+        return self::CACHE_KEY_PREFIX . md5(mb_strtolower(trim($query), 'UTF-8') . ':' . $language);
     }
 }

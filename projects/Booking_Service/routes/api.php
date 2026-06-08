@@ -64,3 +64,12 @@ Route::prefix('booking/analytics')
 Route::get('/test', function () {
     return gethostname();
 });
+
+
+
+Route::get('/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'time' => now()
+    ]);
+});

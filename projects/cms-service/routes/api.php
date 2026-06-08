@@ -517,6 +517,13 @@ Route::get('/b', function () {
     return 'CMS OK';
 });
 
+Route::get('/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'time' => now()
+    ]);
+});
+
 Route::get('/test', function () {
     return gethostname();
 });
