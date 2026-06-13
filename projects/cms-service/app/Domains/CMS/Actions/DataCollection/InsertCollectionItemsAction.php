@@ -35,7 +35,7 @@ class InsertCollectionItemsAction extends Action
                 eventType: 'add_collection_item',
                 userId: null,
                 entityType: 'collection',
-                entityId: $dto->slug
+                entityId: $dto->collectionSlug
             ));
         });
     }
