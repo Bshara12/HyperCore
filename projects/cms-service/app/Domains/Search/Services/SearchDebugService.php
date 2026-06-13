@@ -768,10 +768,60 @@ class SearchDebugService
     ));
   }
 
+  // private function containsNegation(string $text): bool
+  // {
+  //   $text = mb_strtolower($text, 'UTF-8');
+  //   $signals = [
+  //     'ما بدي',
+  //     'ما اريد',
+  //     'ما أريد',
+  //     'لا اريد',
+  //     'لا أريد',
+  //     'مش عايز',
+  //     'مو بادي',
+  //     'بدون',
+  //     'غير',
+  //     'ماعدا',
+  //     'سوى',
+  //     'without',
+  //     'not',
+  //     'except',
+  //     'excluding',
+  //     'exclude',
+  //     'minus',
+  //   ];
+
+  //   // فرز تنازلي بالطول لمنع partial match
+  //   usort($signals, fn($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+
+  //   foreach ($signals as $signal) {
+  //     $pos = mb_strpos($text, $signal, 0, 'UTF-8');
+  //     if ($pos === false) {
+  //       continue;
+  //     }
+
+  //     // word boundary check للإنجليزي
+  //     if (! QueryLanguageDetector::isArabic($signal)) {
+  //       $before = $pos > 0 ? mb_substr($text, $pos - 1, 1, 'UTF-8') : ' ';
+  //       $after = mb_substr($text, $pos + mb_strlen($signal, 'UTF-8'), 1, 'UTF-8');
+  //       if (($before !== ' ' && $pos !== 0) || ($after !== '' && $after !== ' ')) {
+  //         continue;
+  //       }
+  //     }
+
+  //     return true;
+  //   }
+
+  //   return false;
+  // }
+
+
   private function containsNegation(string $text): bool
   {
     $text = mb_strtolower($text, 'UTF-8');
+
     $signals = [
+      // Arabic — أطول أولاً لمنع partial match
       'ما بدي',
       'ما اريد',
       'ما أريد',
@@ -779,41 +829,89 @@ class SearchDebugService
       'لا أريد',
       'مش عايز',
       'مو بادي',
+      'ماعدا',
       'بدون',
       'غير',
-      'ماعدا',
       'سوى',
-      'without',
-      'not',
-      'except',
+      // English — أطول أولاً
+      'not including',
+      'apart from',
+      'aside from',
+      'other than',
       'excluding',
+      'without',
+      'except',
       'exclude',
       'minus',
+      'not',
+      'no',
     ];
 
-    // فرز تنازلي بالطول لمنع partial match
-    usort($signals, fn($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+    // فرز تنازلي بالطول — يمنع "not" يُطابق قبل "not including"
+    usort($signals, fn($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
 
     foreach ($signals as $signal) {
-      $pos = mb_strpos($text, $signal, 0, 'UTF-8');
-      if ($pos === false) {
-        continue;
-      }
+      $signalLen = mb_strlen($signal, 'UTF-8');
+      $pos       = 0;
 
-      // word boundary check للإنجليزي
-      if (! QueryLanguageDetector::isArabic($signal)) {
-        $before = $pos > 0 ? mb_substr($text, $pos - 1, 1, 'UTF-8') : ' ';
-        $after = mb_substr($text, $pos + mb_strlen($signal, 'UTF-8'), 1, 'UTF-8');
-        if (($before !== ' ' && $pos !== 0) || ($after !== '' && $after !== ' ')) {
-          continue;
+      // نبحث عن كل occurrences (قد يكون signal في أكثر من موضع)
+      while (($pos = mb_strpos($text, $signal, $pos, 'UTF-8')) !== false) {
+        if ($this->isWordBoundary($text, $pos, $signalLen)) {
+          return true;
         }
+        $pos += $signalLen;
       }
-
-      return true;
     }
 
     return false;
   }
+
+  
+private function isWordBoundary(string $text, int $pos, int $tokenLen): bool
+{
+    $textLen = mb_strlen($text, 'UTF-8');
+
+    // ── فحص ما قبل الـ token ──────────────────────────────────────
+    if ($pos > 0) {
+        $charBefore = mb_substr($text, $pos - 1, 1, 'UTF-8');
+        // إذا الحرف قبله alphanumeric → الـ token داخل كلمة → ليس boundary
+        if ($this->isAlphanumeric($charBefore)) {
+            return false;
+        }
+    }
+    // pos === 0 → بداية النص → boundary ✅
+
+    // ── فحص ما بعد الـ token ─────────────────────────────────────
+    $endPos = $pos + $tokenLen;
+
+    if ($endPos < $textLen) {
+        $charAfter = mb_substr($text, $endPos, 1, 'UTF-8');
+        // إذا الحرف بعده alphanumeric → الـ token داخل كلمة → ليس boundary
+        if ($this->isAlphanumeric($charAfter)) {
+            return false;
+        }
+    }
+    // endPos === textLen → نهاية النص → boundary ✅
+
+    return true;
+}
+
+/**
+ * هل الحرف alphanumeric؟ (Latin أو Arabic أو رقم)
+ * يدعم UTF-8 بشكل صحيح.
+ */
+private function isAlphanumeric(string $char): bool
+{
+    if (empty($char)) return false;
+
+    // Latin alphanumeric
+    if (ctype_alnum($char)) return true;
+
+    // Arabic letters (U+0600–U+06FF)
+    $code = mb_ord($char, 'UTF-8');
+    return $code >= 0x0600 && $code <= 0x06FF;
+}
+
 
   private function getVowelRatio(string $text): float
   {
