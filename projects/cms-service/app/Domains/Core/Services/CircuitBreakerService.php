@@ -90,7 +90,8 @@ class CircuitBreakerService
             ->first();
 
         if (! $cb) {
-            DB::table('circuit_breakers')->insert([
+            DB::table('circuit_breakers')->insertOrIgnore([
+            // DB::table('circuit_breakers')->insert([
                 'service_name' => $service,
                 'state' => 'closed',
                 'failure_count' => 0,

@@ -44,7 +44,7 @@ class ReturnRequestController extends Controller
   {
     $user = $request->attributes->get('auth_user');
     // 🔥 Authorization
-    if ($user['roles'][0]['name'] !== 'owner') {
+    if ($user['roles'][0]['name'] !== 'owner' || $user['roles'][0]['name'] !== 'admin') {
       throw new \Exception('Unauthorized');
     }
 

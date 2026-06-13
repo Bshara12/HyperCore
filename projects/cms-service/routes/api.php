@@ -162,7 +162,8 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
   Route::post('/data-types/{dataType}/entries', [DataEntryController::class, 'store'])->middleware('resolve.project');
   // Route::post('/projects/{project}/data-types/{dataType}/entries', [DataEntryController::class, 'store']);
 
-  Route::delete('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'destroy']);
+  Route::delete('/entries/{entry}', [DataEntryController::class, 'destroy']);
+  // Route::delete('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'destroy']);
 
   Route::post('/entries/{entry}/publish', DataEntryPublishController::class);
 
@@ -216,7 +217,10 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
     |--------------------------------------------------------------------------
     */
 
-Route::prefix('cms')->middleware('resolve.project')->group(function () {
+Route::prefix('cms')->middleware([
+  'resolve.project',
+  'auth.user'
+])->group(function () {
 
   /*
           |--------------------------------------------------------------------------
