@@ -33,28 +33,28 @@ class KeyController extends Controller
         ]);
     }
 
-    public function serviceToken(Request $request)
-    {
-        $client = DB::table('service_clients')->where('client_id', $request->client_id)->first();
+    // public function serviceToken(Request $request)
+    // {
+    //     $client = DB::table('service_clients')->where('client_id', $request->client_id)->first();
 
-        if (! $client || ! Hash::check($request->client_secret, $client->client_secret)) {
-            return response()->json(['error' => 'Invalid client'], 401);
-        }
+    //     if (! $client || ! Hash::check($request->client_secret, $client->client_secret)) {
+    //         return response()->json(['error' => 'Invalid client'], 401);
+    //     }
 
-        $payload = [
-            'iss' => 'auth-service',
-            'client' => $client->name,
-            'type' => 'service',
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ];
+    //     $payload = [
+    //         'iss' => 'auth-service',
+    //         'client' => $client->name,
+    //         'type' => 'service',
+    //         'iat' => time(),
+    //         'exp' => time() + 3600,
+    //     ];
 
-        $token = JWT::encode($payload, $this->jwt->returnInfo()['private'], 'RS256');
+    //     $token = JWT::encode($payload, $this->jwt->returnInfo()['private'], 'RS256');
 
-        return response()->json([
-            'access_token' => $token,
-        ]);
-    }
+    //     return response()->json([
+    //         'access_token' => $token,
+    //     ]);
+    // }
 
     public function index()
     {

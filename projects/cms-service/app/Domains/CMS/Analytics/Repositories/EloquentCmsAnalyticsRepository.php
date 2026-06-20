@@ -182,14 +182,25 @@ class EloquentCmsAnalyticsRepository implements AnalyticsRepositoryInterface
      * } $collectionsStats
      */
     // إجمالي الـ collections للمشروع
-    $collectionsStats = DataCollection::query()
+    // $collectionsStats = DataCollection::query()
+    //   ->where('project_id', $dto->projectId)
+    //   ->selectRaw("
+    //             COUNT(*) as total,
+    //             SUM(CASE WHEN type = 'manual'  THEN 1 ELSE 0 END) as manual,
+    //             SUM(CASE WHEN type = 'dynamic' THEN 1 ELSE 0 END) as dynamic,
+    //             SUM(CASE WHEN is_offer = 1     THEN 1 ELSE 0 END) as offer_collections,
+    //             SUM(CASE WHEN is_active = 1    THEN 1 ELSE 0 END) as active
+    //         ")
+    //   ->first();
+
+        $collectionsStats = DataCollection::query()
       ->where('project_id', $dto->projectId)
       ->selectRaw("
                 COUNT(*) as total,
-                SUM(CASE WHEN type = 'manual'  THEN 1 ELSE 0 END) as manual,
-                SUM(CASE WHEN type = 'dynamic' THEN 1 ELSE 0 END) as dynamic,
-                SUM(CASE WHEN is_offer = 1     THEN 1 ELSE 0 END) as offer_collections,
-                SUM(CASE WHEN is_active = 1    THEN 1 ELSE 0 END) as active
+                SUM(CASE WHEN type = 'manual'  THEN 1 ELSE 0 END) as `manual`,
+                SUM(CASE WHEN type = 'dynamic' THEN 1 ELSE 0 END) as `dynamic`,
+                SUM(CASE WHEN is_offer = 1     THEN 1 ELSE 0 END) as `offer_collections`,
+                SUM(CASE WHEN is_active = 1    THEN 1 ELSE 0 END) as `active`
             ")
       ->first();
 

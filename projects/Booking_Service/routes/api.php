@@ -41,26 +41,27 @@ Route::middleware(['resolve.project', 'auth.user'])
     });
 
 Route::prefix('booking/analytics')
-// <<<<<<< HEAD
-//   ->middleware(['resolve.project', 'auth.user'])
-//   ->name('analytics.') // أضف هذا السطر هنا
-//   ->group(function () {
-//     Route::get('/overview', [BookingAnalyticsController::class, 'overview'])->name('overview');
-//     Route::get('/trend', [BookingAnalyticsController::class, 'trend'])->name('trend');
-//     Route::get('/resources', [BookingAnalyticsController::class, 'resourcePerformance'])->name('resources');
-//     Route::get('/cancellations', [BookingAnalyticsController::class, 'cancellations'])->name('cancellations');
-//     Route::get('/peak-times', [BookingAnalyticsController::class, 'peakTimes'])->name('peak-times');
-//   });
-// =======
+
     ->middleware(['resolve.project', 'auth.user'])
     ->group(function () {
         Route::get('/overview', [BookingAnalyticsController::class, 'overview']);
-        Route::get('/trend', [BookingAnalyticsController::class, 'trend']);
-        Route::get('/resources', [BookingAnalyticsController::class, 'resourcePerformance']);
-        Route::get('/cancellations', [BookingAnalyticsController::class, 'cancellations']);
-        Route::get('/peak-times', [BookingAnalyticsController::class, 'peakTimes']);
+        // Route::get('/trend', [BookingAnalyticsController::class, 'trend']);
+        // Route::get('/resources', [BookingAnalyticsController::class, 'resourcePerformance']);
+        // Route::get('/cancellations', [BookingAnalyticsController::class, 'cancellations']);
+        // Route::get('/peak-times', [BookingAnalyticsController::class, 'peakTimes']);
     });
 
 Route::get('/test', function () {
-    return gethostname();
+    return response()->json([
+        'message' => 'Booking Service API is working!',
+    ]);
+});
+
+
+
+Route::get('/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'time' => now()
+    ]);
 });

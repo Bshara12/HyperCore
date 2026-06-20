@@ -19,6 +19,9 @@
   </source>
   <php>
     <env name="APP_ENV" value="testing" />
+    <env name="JWT_ALGO" value="RS256"/>
+    <env name="JWT_PUBLIC_KEY_PATH" value="storage/certs/public.pem"/>
+    <env name="JWT_PRIVATE_KEY_PATH" value="storage/certs/private.pem"/>
     <env name="APP_MAINTENANCE_DRIVER" value="file" />
     <env name="BCRYPT_ROUNDS" value="4" />
     <env name="BROADCAST_CONNECTION" value="null" />

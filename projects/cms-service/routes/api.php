@@ -362,21 +362,25 @@ Route::post('/wallet/topup', [PaymentController::class, 'topUp'])
 // -------------------------
 // CMS Analytics
 // -------------------------
+// Route::prefix('cms/analytics')->middleware('auth.user')->group(function () {
+
+//   // --- Admin ---
+//   Route::prefix('admin')->group(function () {
+//     Route::get('/overview', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
+//     Route::get('/projects-growth', [CmsAnalyticsController::class, 'projectsGrowth'])->name('cms.analytics.admin.projects-growth');
+//   });
+
+//   // --- Project Owner ---
+//   Route::prefix('projects')->middleware('resolve.project')->group(function () {
+//     Route::get('/content', [CmsAnalyticsController::class, 'contentSummary'])->name('cms.analytics.projects.content');
+//     Route::get('/content-growth', [CmsAnalyticsController::class, 'contentGrowth'])->name('cms.analytics.projects.content-growth');
+//     Route::get('/top-rated', [CmsAnalyticsController::class, 'topRated'])->name('cms.analytics.projects.top-rated');
+//     Route::get('/ratings', [CmsAnalyticsController::class, 'ratingsReport'])->name('cms.analytics.projects.ratings');
+//   });
+// });
 Route::prefix('cms/analytics')->middleware('auth.user')->group(function () {
-
-  // --- Admin ---
-  Route::prefix('admin')->group(function () {
-    Route::get('/overview', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
-    Route::get('/projects-growth', [CmsAnalyticsController::class, 'projectsGrowth'])->name('cms.analytics.admin.projects-growth');
-  });
-
-  // --- Project Owner ---
-  Route::prefix('projects')->middleware('resolve.project')->group(function () {
-    Route::get('/content', [CmsAnalyticsController::class, 'contentSummary'])->name('cms.analytics.projects.content');
-    Route::get('/content-growth', [CmsAnalyticsController::class, 'contentGrowth'])->name('cms.analytics.projects.content-growth');
-    Route::get('/top-rated', [CmsAnalyticsController::class, 'topRated'])->name('cms.analytics.projects.top-rated');
-    Route::get('/ratings', [CmsAnalyticsController::class, 'ratingsReport'])->name('cms.analytics.projects.ratings');
-  });
+  Route::get('/admin', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
+  Route::get('/projectOwner', [CmsAnalyticsController::class, 'projectOverview'])->name('cms.analytics.projects.overview')->middleware('resolve.project');
 });
 
 // Rate
@@ -522,6 +526,13 @@ Route::get(
 // );
 Route::get('/b', function () {
   return 'CMS OK';
+});
+
+Route::get('/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'time' => now()
+    ]);
 });
 
 Route::get('/test', function () {

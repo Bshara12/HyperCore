@@ -171,6 +171,7 @@ class AuthController extends Controller
 
     public function changePassword(ChangePasswordRequest $request)
     {
+      \Log::info('Auth User:', ['user' => auth()->user()]);
         $token = $request->bearerToken();
         $decode = $this->jwtService->validateToken($token);
         if (! $decode) {

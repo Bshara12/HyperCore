@@ -9,59 +9,24 @@ use Illuminate\Http\Request;
 
 class EcommerceAnalyticsController extends Controller
 {
-    public function __construct(protected AnalyticsService $service) {}
+  public function __construct(protected AnalyticsService $service) {}
 
-    public function salesSummary(
-        Request $request
-    ): JsonResponse {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getSalesSummary($dto);
+  public function summary(Request $request): JsonResponse
+  {
+    // 1. بناء الـ DTO لمرة واحدة من الـ Request
+    $dto = AnalyticsFilterDTO::fromRequest($request);
 
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function salesTrend(
-        Request $request
-    ): JsonResponse {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getSalesTrend($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function topProducts(
-        Request $request
-    ): JsonResponse {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getTopProducts($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function offersAnalytics(
-        Request $request
-    ): JsonResponse {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getOffersAnalytics($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function topCustomers(
-        Request $request
-    ): JsonResponse {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getTopCustomers($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function returnsAnalytics(
-        Request $request
-    ): JsonResponse {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getReturnsAnalytics($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
+    // 2. دمج كافة تقارير المتجر الإلكتروني في مصفوفة واحدة
+    return response()->json([
+      'success' => true,
+      'data' => [
+        'sales'         => $this->service->getSalesSummary($dto),
+        'sales-trend'   => $this->service->getSalesTrend($dto),
+        'top-products'  => $this->service->getTopProducts($dto),
+        'offers'        => $this->service->getOffersAnalytics($dto),
+        'top-customers' => $this->service->getTopCustomers($dto),
+        'returns'       => $this->service->getReturnsAnalytics($dto),
+      ],
+    ]);
+  }
 }

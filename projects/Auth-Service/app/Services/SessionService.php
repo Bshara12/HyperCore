@@ -49,8 +49,8 @@ class SessionService
         $agent = strtolower($agent);
 
         if (str_contains($agent, 'windows')) return 'Windows device';
-        if (str_contains($agent, 'mac')) return 'Mac device';
         if (str_contains($agent, 'iphone')) return 'iPhone';
+        if (str_contains($agent, 'mac')) return 'Mac device';
         if (str_contains($agent, 'android')) return 'Android device';
         if (str_contains($agent, 'linux')) return 'Linux device';
 
