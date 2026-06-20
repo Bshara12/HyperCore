@@ -137,7 +137,7 @@ class EloquentBookingAnalyticsRepository implements AnalyticsRepositoryInterface
                 COALESCE(SUM(CASE WHEN b.status NOT IN ('cancelled') THEN b.amount ELSE 0 END), 0) as total_revenue,
                 COALESCE(SUM(CASE WHEN b.status = 'cancelled' THEN b.refund_amount ELSE 0 END), 0) as total_refunded,
                 COALESCE(ROUND(AVG(CASE WHEN b.status NOT IN ('cancelled')
-                    THEN TIMESTAMPDIFF('MINUTE', b.start_at, b.end_at) END), 2), 0) as avg_duration_minutes
+                    THEN TIMESTAMPDIFF(MINUTE, b.start_at, b.end_at) END), 2), 0) as avg_duration_minutes
             ")
             ->groupBy('r.id', 'r.name', 'r.type', 'r.capacity', 'r.payment_type', 'r.price')
             ->orderByRaw('total_bookings DESC')

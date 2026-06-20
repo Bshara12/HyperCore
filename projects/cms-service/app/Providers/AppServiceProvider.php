@@ -54,119 +54,137 @@ use App\Models\DataEntry;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
-        $this->app->bind(FieldRepositoryInterface::class, FieldRepositoryEloquent::class);
-        $this->app->bind(DataEntryRepositoryInterface::class, EloquentDataEntryRepository::class);
-        $this->app->bind(DataCollectionRepositoryInterface::class, DataCollectionRepositoryEloquent::class);
-        $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
-        $this->app->bind(AnalyticsRepositoryInterface::class, EloquentCmsAnalyticsRepository::class);
-        $this->app->bind(AiConversationRepositoryInterface::class, EloquentAiConversationRepository::class);
-        $this->app->bind(
-            ProjectRepositoryInterface::class,
-            EloquentProjectRepository::class
-        );
-        $this->app->bind(
-            DataEntryRepositoryInterface::class,
-            EloquentDataEntryRepository::class
-        );
+  /**
+   * Register any application services.
+   */
+  public function register(): void
+  {
+    $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
+    $this->app->bind(FieldRepositoryInterface::class, FieldRepositoryEloquent::class);
+    $this->app->bind(DataEntryRepositoryInterface::class, EloquentDataEntryRepository::class);
+    $this->app->bind(DataCollectionRepositoryInterface::class, DataCollectionRepositoryEloquent::class);
+    $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
+    $this->app->bind(AnalyticsRepositoryInterface::class, EloquentCmsAnalyticsRepository::class);
+    $this->app->bind(AiConversationRepositoryInterface::class, EloquentAiConversationRepository::class);
+    $this->app->bind(
+      ProjectRepositoryInterface::class,
+      EloquentProjectRepository::class
+    );
+    $this->app->bind(
+      DataEntryRepositoryInterface::class,
+      EloquentDataEntryRepository::class
+    );
 
-        $this->app->bind(
-            DataEntryValueRepository::class,
-            EloquentDataEntryValueRepository::class
-        );
+    $this->app->bind(
+      DataEntryValueRepository::class,
+      EloquentDataEntryValueRepository::class
+    );
 
-        $this->app->bind(
-            SeoEntryRepository::class,
-            EloquentSeoEntryRepository::class
-        );
-        $this->app->bind(
-            DataEntryRepositoryInterface::class,
-            EloquentDataEntryRepository::class
-        );
+    $this->app->bind(
+      SeoEntryRepository::class,
+      EloquentSeoEntryRepository::class
+    );
+    $this->app->bind(
+      DataEntryRepositoryInterface::class,
+      EloquentDataEntryRepository::class
+    );
 
-        $this->app->bind(
-            DataEntryVersionRepository::class,
-            EloquentDataEntryVersionRepository::class
-        );
-        $this->app->bind(ProjectRepositoryInterface::class, EloquentProjectRepository::class);
-        $this->app->bind(
-            DataEntryRelationRepository::class,
-            EloquentDataEntryRelationRepository::class
-        );
-        $this->app->bind(
-            EntryReadRepositoryInterface::class,
-            EntryReadRepository::class
-        );
+    $this->app->bind(
+      DataEntryVersionRepository::class,
+      EloquentDataEntryVersionRepository::class
+    );
+    $this->app->bind(ProjectRepositoryInterface::class, EloquentProjectRepository::class);
+    $this->app->bind(
+      DataEntryRelationRepository::class,
+      EloquentDataEntryRelationRepository::class
+    );
+    $this->app->bind(
+      EntryReadRepositoryInterface::class,
+      EntryReadRepository::class
+    );
 
-        $this->app->bind(
-            EntryVersionReadRepositoryInterface::class,
-            EntryVersionReadRepository::class
-        );
-        $this->app->bind(
-            ProjectUserRepositoryInterface::class,
-            ProjectUserRepository::class
-        );
-        $this->app->bind(
-            EntryProjectReadRepositoryInterface::class,
-            EntryProjectReadRepository::class
-        );
-        $this->app->bind(
-            RatingRepositoryInterface::class,
-            RatingRepository::class
-        );
+    $this->app->bind(
+      EntryVersionReadRepositoryInterface::class,
+      EntryVersionReadRepository::class
+    );
+    $this->app->bind(
+      ProjectUserRepositoryInterface::class,
+      ProjectUserRepository::class
+    );
+    $this->app->bind(
+      EntryProjectReadRepositoryInterface::class,
+      EntryProjectReadRepository::class
+    );
+    $this->app->bind(
+      RatingRepositoryInterface::class,
+      RatingRepository::class
+    );
 
-        $this->app->singleton(AIProviderChain::class, function ($app) {
-            return new AIProviderChain(
-                openRouter: $app->make(OpenRouterProvider::class)
-            );
-        });
+    $this->app->singleton(AIProviderChain::class, function ($app) {
+      return new AIProviderChain(
+        openRouter: $app->make(OpenRouterProvider::class)
+      );
+    });
 
-        $this->app->bind(
-            SubscriptionPlanRepositoryInterface::class,
-            EloquentSubscriptionPlanRepository::class
-        );
-        $this->app->bind(
-            SubscriptionRepositoryInterface::class,
-            EloquentSubscriptionRepository::class
-        );
-        $this->app->bind(
-            SubscriptionFeatureRuleRepositoryInterface::class,
-            EloquentSubscriptionFeatureRuleRepository::class
-        );
-        $this->app->bind(
+    $this->app->bind(
+      SubscriptionPlanRepositoryInterface::class,
+      EloquentSubscriptionPlanRepository::class
+    );
+    $this->app->bind(
+      SubscriptionRepositoryInterface::class,
+      EloquentSubscriptionRepository::class
+    );
+    $this->app->bind(
+      SubscriptionFeatureRuleRepositoryInterface::class,
+      EloquentSubscriptionFeatureRuleRepository::class
+    );
+    $this->app->bind(
 
-            SubscriptionAccessRuleRepositoryInterface::class,
+      SubscriptionAccessRuleRepositoryInterface::class,
 
-            EloquentSubscriptionAccessRuleRepository::class
-        );
+      EloquentSubscriptionAccessRuleRepository::class
+    );
 
-        $this->app->bind(
-            ContentAccessMetadataRepositoryInterface::class,
-            EloquentContentAccessMetadataRepository::class
-        );
-        $this->app->bind(
-            ContentTypeResolverInterface::class,
-            DataEntryContentTypeResolver::class
-        );
-    }
+    $this->app->bind(
+      ContentAccessMetadataRepositoryInterface::class,
+      EloquentContentAccessMetadataRepository::class
+    );
+    $this->app->bind(
+      ContentTypeResolverInterface::class,
+      DataEntryContentTypeResolver::class
+    );
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        //
-        Relation::enforceMorphMap([
-            'project' => Project::class,
-            'data' => DataEntry::class,
-        ]);
-    }
+
+
+
+
+
+
+
+    // أضف هذا الربط (Binding) هنا
+    $this->app->singleton(AMQPStreamConnection::class, function ($app) {
+      return new AMQPStreamConnection(
+        env('RABBITMQ_HOST', 'rabbitmq'),
+        env('RABBITMQ_PORT', 5672),
+        env('RABBITMQ_USER', 'appuser'),
+        env('RABBITMQ_PASSWORD', 'apppass')
+      );
+    });
+  }
+
+  /**
+   * Bootstrap any application services.
+   */
+  public function boot(): void
+  {
+    //
+    Relation::enforceMorphMap([
+      'project' => Project::class,
+      'data' => DataEntry::class,
+    ]);
+  }
 }
