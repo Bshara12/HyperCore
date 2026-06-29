@@ -139,12 +139,57 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled', 'throttl
 
 Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix('ecommerce')->group(function () {
 
+    // -------------------------
+    // Offers
+    // -------------------------
+    Route::post('/offers', [OfferController::class, 'store'])
+        ->middleware('permission:offer.create');
+
+    Route::patch('/offers/{collectionSlug}', [OfferController::class, 'update'])
+        ->middleware('permission:offer.update');
+
+    Route::delete('/offers/{collectionSlug}', [OfferController::class, 'destroy'])
+        ->middleware('permission:offer.delete');
+
+    Route::post('/offers/{collectionSlug}/insert', [OfferController::class, 'addItems'])
+        ->middleware('permission:offer.update');
+
+    Route::delete('/offers/{collectionSlug}/items', [OfferController::class, 'removeItems'])
+        ->middleware('permission:offer.update');
+
+    Route::post('/offers/{collectionSlug}/deactivate', [OfferController::class, 'deactivate'])
+        ->middleware('permission:offer.update');
+
+    Route::post('/offers/{collectionSlug}/activate', [OfferController::class, 'activate'])
+        ->middleware('permission:offer.update');
+
+    Route::get('/offers', [OfferController::class, 'index']);
+    Route::get('/offers/{collectionSlug}', [OfferController::class, 'show']);
+    Route::post('/offers/{collectionSlug}/subscribe', [OfferController::class, 'subscribe']);
+
   // -------------------------
   // Products & Pricing
   // -------------------------
   Route::get('/products/{dataTypeSlug}', [ProductController::class, 'index']);
   Route::post('/pricing/calculate', [PricingController::class, 'calculate']);
 
+    // -------------------------
+    // Cart
+    // -------------------------
+    Route::post('/cart', [CartController::class, 'store']);
+    Route::get('/cart', [CartController::class, 'show']);
+    Route::put('/cart', [CartController::class, 'update']);
+    Route::delete('/cart/items', [CartController::class, 'remove']);
+    Route::delete('/cart', [CartController::class, 'clear']);
+
+    // -------------------------
+    // Payments
+    // -------------------------
+    Route::post('/payments/pay', [PaymentController::class, 'charge']);
+    Route::post('/payments/installment', [PaymentController::class, 'payInstallment']);
+    // الاسترداد — إدارية
+    Route::post('/payments/refund', [PaymentController::class, 'refund'])
+        ->middleware('permission:payment.refund');
 
   // Route::post('/payments', [PaymentController::class, 'charge']);
   // الاسترداد — إدارية
@@ -203,17 +248,21 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix
   Route::get('/admin/return-requests', [ReturnRequestController::class, 'index'])
     ->middleware('permission:return.viewAll');
 
-  Route::patch('/admin/return-requests/{id}', [ReturnRequestController::class, 'update'])
-    ->middleware('permission:return.update');
+    Route::patch('/admin/return-requests/{id}', [ReturnRequestController::class, 'update'])
+        ->middleware('permission:return.update');
 });
+
+Route::prefix('ecommerce/analytics')
+    ->middleware(['resolve.project', 'auth.user'])
+    ->group(function () {
+        Route::get('/sales', [EcommerceAnalyticsController::class, 'salesSummary']);
+        Route::get('/sales/trend', [EcommerceAnalyticsController::class, 'salesTrend']);
+        Route::get('/products/top', [EcommerceAnalyticsController::class, 'topProducts']);
+        Route::get('/offers', [EcommerceAnalyticsController::class, 'offersAnalytics']);
+        Route::get('/customers/top', [EcommerceAnalyticsController::class, 'topCustomers']);
+        Route::get('/returns', [EcommerceAnalyticsController::class, 'returnsAnalytics']);
+    });
 
 Route::get('/test', function () {
   return gethostname();
-});
-
-Route::get('/ping', function () {
-  return response()->json([
-    'ok' => true,
-    'time' => now()
-  ]);
 });
