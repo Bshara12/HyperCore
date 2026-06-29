@@ -86,3 +86,12 @@ Route::get('/ping', function () {
         'time' => now(),
     ]);
 });
+
+
+
+Route::get('/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'time' => now()
+    ]);
+});
