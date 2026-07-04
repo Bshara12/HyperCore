@@ -51,7 +51,15 @@ use App\Domains\Subscription\Repositories\Interface\SubscriptionFeatureRuleRepos
 use App\Domains\Subscription\Repositories\Interface\SubscriptionPlanRepositoryInterface;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Models\DataEntry;
+use App\Models\InstallmentPlan;
+use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Subscription;
+use App\Observers\InstallmentPlanObserver;
+use App\Observers\PaymentObserver;
+use App\Observers\ProjectObserver;
+use App\Observers\SubscriptionObserver;
+use App\Services\MessageBroker\RabbitMQPublisher;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
@@ -73,6 +81,11 @@ class AppServiceProvider extends ServiceProvider
         password: config('services.rabbitmq.password'),
       );
     });
+
+    $this->app->singleton(
+        RabbitMQPublisher::class,
+        fn () => new RabbitMQPublisher()
+    );
 
     $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
     $this->app->bind(FieldRepositoryInterface::class, FieldRepositoryEloquent::class);
@@ -180,5 +193,31 @@ class AppServiceProvider extends ServiceProvider
       'project' => Project::class,
       'data' => DataEntry::class,
     ]);
+
+    /*
+         | SubscriptionObserver:
+         |   created → cms.subscription.created
+         |   updated:
+         |     status = cancelled    → cms.subscription.cancelled
+         |     status = grace_period → cms.subscription.grace_period
+         |     status = expired      → cms.subscription.expired
+         |     ends_at dirty         → cms.subscription.renewed
+         |
+         | PaymentObserver:
+         |   updated → cms.payment.{paid|failed|refunded}
+         |
+         | InstallmentPlanObserver:
+         |   updated:
+         |     paid_installments dirty → cms.installment.paid
+         |     status = completed      → cms.installment.completed
+         |     status = defaulted      → cms.installment.defaulted
+         |
+         | ProjectObserver:
+         |   created → cms.project.created
+         */
+        Subscription::observe(SubscriptionObserver::class);
+        Payment::observe(PaymentObserver::class);
+        InstallmentPlan::observe(InstallmentPlanObserver::class);
+        Project::observe(ProjectObserver::class);
   }
 }

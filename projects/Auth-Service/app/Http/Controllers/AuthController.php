@@ -10,6 +10,7 @@ use App\Http\Requests\VerifyOTPRequest;
 use App\Models\User;
 use App\Services\AuthService;
 use App\Services\JwtService;
+use App\Services\OtpService;
 use App\Services\SessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,11 +23,13 @@ class AuthController extends Controller
 
     protected $sessions;
 
-    public function __construct(AuthService $authService, JwtService $jwtService, SessionService $sessionService)
+    protected $otpService;
+    public function __construct(AuthService $authService, JwtService $jwtService, SessionService $sessionService, OtpService $otpService)
     {
         $this->authService = $authService;
         $this->jwtService = $jwtService;
         $this->sessions = $sessionService;
+        $this->otpService = $otpService;
     }
 
     public function register(RegisterRequest $registerRequest)
@@ -91,8 +94,7 @@ class AuthController extends Controller
             ], 400);
         }
 
-        $this->authService->generateOTP($user);
-
+        $this->otpService->resend($user);
         return response()->json([
             'message' => 'OTP Resent',
         ]);
@@ -146,8 +148,22 @@ class AuthController extends Controller
 
         $user = User::find($decoded->sub);
 
+        if (! $user) {
+            return response()->json(['message' => 'User not found'], 401);
+        }
+
+        // إبطال الـ refresh token القديم (rotation) لمنع إعادة استخدامه
+        DB::table('refresh_tokens')
+            ->where('token_id', $decoded->jti)
+            ->update(['revoked' => true]);
+
+        $newAccessToken  = $jwtService->generateToken($user, $record->session_id);
+        $newRefreshToken = $jwtService->generateRefreshToken($user, $record->session_id);
+
         return response()->json([
-            'refresh_token' => $jwtService->generateRefreshToken($user, $record->session_id),
+            'access_token'  => $newAccessToken,
+            'refresh_token' => $newRefreshToken,
+            'token_type'    => 'Bearer',
         ]);
     }
 

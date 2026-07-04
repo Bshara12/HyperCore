@@ -53,4 +53,30 @@ class MeController extends Controller
             'data' => $user,
         ]);
     }
+
+    // أضف هذه الـ method في MeController الموجود
+
+    /**
+     * جلب بيانات مستخدم بالـ ID لأغراض التواصل بين الخدمات فقط
+     * يُستدعى فقط عبر مسار محمي بـ internal.api middleware
+     * لا علاقة له بمصادقة المستخدم الحالي (لا auth() ولا Sanctum هنا إطلاقاً)
+     */
+    public function internalShow(int $id)
+    {
+        $user = User::find($id);
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+            ],
+        ]);
+    }
 }
