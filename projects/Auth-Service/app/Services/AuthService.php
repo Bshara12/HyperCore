@@ -14,20 +14,21 @@ use Illuminate\Support\Facades\Log;
 class AuthService
 {
     protected $users;
-
     protected $jwt;
+    protected $otp;
 
-    public function __construct(UserRepositoryInterface $users, JwtService $jwtService)
+    public function __construct(UserRepositoryInterface $users, JwtService $jwtService, OtpService $otpService)
     {
         $this->users = $users;
         $this->jwt = $jwtService;
+        $this->otp = $otpService;
     }
 
     public function registerService(array $data): User
     {
         $data['password'] = Hash::make($data['password']);
         $user = $this->users->create($data);
-        $this->generateOTP($user);
+        $this->otp->send($user);
         $this->log($user->id, 'register', []);
 
         event(new SystemLogEvent(
@@ -41,21 +42,6 @@ class AuthService
         ));
 
         return $user;
-    }
-
-    public function generateOTP(User $user)
-    {
-        $otp = (string) rand(100000, 999999);
-
-        $this->users->update($user, [
-            'otp_code' => $otp,
-            'otp_expires_at' => now()->addMinutes(10),
-            'is_verified' => false,
-        ]);
-
-        SendOTPMailJob::dispatch($user, $otp);
-
-        $this->log($user->id, 'otp_send', ['otp_length' => 6]);
     }
 
     public function verifyOTP(User $user, string $otp): bool

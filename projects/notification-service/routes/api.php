@@ -1,50 +1,60 @@
 <?php
 
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\DeliveryController;
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\InternalNotificationController;
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\InternalSubscriptionController;
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\PreferenceController;
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\SubscriptionController;
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\TemplateController;
-use App\Http\Controllers\Domains\Notifications\Controllers\Api\V1\WebhookCallbackController;
+use App\Http\Controllers\Api\InAppNotificationController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\BroadcastController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->group(function () {
-    Route::middleware(['auth.user', 'resolve.project'])->group(function () {
-        Route::post('/notifications', [NotificationController::class, 'store']);
-        Route::get('/notifications', [NotificationController::class, 'index']);
-        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-        Route::get('/notifications/{id}', [NotificationController::class, 'show']);
-        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+/*
+|─────────────────────────────────────────────────────────────────────────────
+| Broadcasting Auth Route
+| يجب تسجيله قبل أي route groups لإعطائه الأولوية
+|─────────────────────────────────────────────────────────────────────────────
+*/
+Route::post('/broadcasting/auth', [BroadcastController::class, 'authenticate'])
+    ->middleware('auth.user');
 
-        Route::get('/notifications/{id}/deliveries', [DeliveryController::class, 'indexByNotification']);
+/*
+|─────────────────────────────────────────────────────────────────────────────
+| Service-to-Service Routes
+| محمية بـ ServiceAuthMiddleware
+| تُستدعى من: Auth, E-commerce, Booking, CMS... إلخ
+|─────────────────────────────────────────────────────────────────────────────
+*/
+Route::middleware('auth.service')
+    ->prefix('v1/notifications')
+    ->name('notifications.')
+    ->group(function () {
+        Route::post('/send', [NotificationController::class, 'send'])
+            ->name('send');
 
-        Route::get('/preferences', [PreferenceController::class, 'index']);
-        Route::put('/preferences', [PreferenceController::class, 'update']);
-
-        Route::get('/subscriptions', [SubscriptionController::class, 'index']);
-        Route::post('/subscriptions', [SubscriptionController::class, 'store']);
-        Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
-        Route::put('/subscriptions/{id}', [SubscriptionController::class, 'update']);
-        Route::delete('/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
+        Route::post('/send-bulk', [NotificationController::class, 'sendBulk'])
+            ->name('send-bulk');
     });
 
-    Route::prefix('internal')->middleware(['auth.service', 'resolve.project'])->group(function () {
-        Route::post('/notifications/system', [InternalNotificationController::class, 'storeSystem']);
-        Route::post('/notifications/bulk', [InternalNotificationController::class, 'storeBulk']);
+/*
+|─────────────────────────────────────────────────────────────────────────────
+| User-Facing Routes
+| محمية بـ UserAuthMiddleware
+| يصل إليها المستخدم مباشرة لإدارة إشعاراته الداخلية
+|─────────────────────────────────────────────────────────────────────────────
+*/
+Route::middleware('auth.user')
+    ->prefix('v1/in-app-notifications')
+    ->name('in-app-notifications.')
+    ->group(function () {
+        Route::get('/', [InAppNotificationController::class, 'index'])
+            ->name('index');
 
-        Route::get('/templates', [TemplateController::class, 'index']);
-        Route::post('/templates', [TemplateController::class, 'store']);
-        Route::get('/templates/{id}', [TemplateController::class, 'show']);
-        Route::put('/templates/{id}', [TemplateController::class, 'update']);
-        Route::patch('/templates/{id}/activate', [TemplateController::class, 'activate']);
-        Route::patch('/templates/{id}/deactivate', [TemplateController::class, 'deactivate']);
+        Route::get('/unread-count', [InAppNotificationController::class, 'unreadCount'])
+            ->name('unread-count');
 
-        Route::get('/deliveries/{id}', [DeliveryController::class, 'show']);
-        Route::post('/subscriptions/sync', [InternalSubscriptionController::class, 'sync']);
+        Route::put('/read-all', [InAppNotificationController::class, 'markAllAsRead'])
+            ->name('read-all');
+
+        Route::put('/{id}/read', [InAppNotificationController::class, 'markAsRead'])
+            ->name('read');
+
+        Route::delete('/{id}', [InAppNotificationController::class, 'destroy'])
+            ->name('destroy');
     });
-
-    Route::post('/internal/deliveries/webhook/callback', [WebhookCallbackController::class, 'store']);
-});

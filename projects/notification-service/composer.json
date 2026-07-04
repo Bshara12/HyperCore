@@ -12,7 +12,8 @@
         "laravel/reverb": "^1.10",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "predis/predis": "^3.4",
+        "php-amqplib/php-amqplib": "^3.7",
+        "predis/predis": "^3.5",
         "twilio/sdk": "^8.11"
     },
     "require-dev": {
