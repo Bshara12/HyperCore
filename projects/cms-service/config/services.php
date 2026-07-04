@@ -62,6 +62,12 @@ return [
   'auth_service' => [
     'url' => env('AUTH_SERVICE_URL'),
   ],
+  'ecommerce_service' => [
+    'url' => env('ECOMMERCE_URL'),
+  ],
+  'booking_service' => [
+    'url' => env('BOOKING_URL'),
+  ],
   'openrouter' => [
     'key'      => env('OPENROUTER_KEY'),
     'model'    => env('OPENROUTER_MODEL', 'mistralai/mistral-7b-instruct'),

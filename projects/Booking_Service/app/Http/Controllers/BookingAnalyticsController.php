@@ -9,47 +9,25 @@ use Illuminate\Http\Request;
 
 class BookingAnalyticsController extends Controller
 {
-    public function __construct(
-        private BookingAnalyticsService $service
-    ) {}
+  public function __construct(
+    private BookingAnalyticsService $service
+  ) {}
 
-    public function overview(Request $request): JsonResponse
-    {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getOverview($dto);
+  public function overview(Request $request): JsonResponse
+  {
+    // 1. بناء الـ DTO لمرة واحدة واستخدامه في كل التوابع
+    $dto = AnalyticsFilterDTO::fromRequest($request);
 
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function trend(Request $request): JsonResponse
-    {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getTrend($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function resourcePerformance(Request $request): JsonResponse
-    {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getResourcePerformance($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function cancellations(Request $request): JsonResponse
-    {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getCancellationReport($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function peakTimes(Request $request): JsonResponse
-    {
-        $dto = AnalyticsFilterDTO::fromRequest($request);
-        $data = $this->service->getPeakTimes($dto);
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
+    // 2. جمع كافة البيانات من الخدمات في طلب واحد
+    return response()->json([
+      'success' => true,
+      'data' => [
+        'summary'       => $this->service->getOverview($dto),
+        'trend'         => $this->service->getTrend($dto),
+        'resources'     => $this->service->getResourcePerformance($dto),
+        'cancellations' => $this->service->getCancellationReport($dto),
+        'peak-times'    => $this->service->getPeakTimes($dto),
+      ],
+    ]);
+  }
 }

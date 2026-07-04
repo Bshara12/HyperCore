@@ -53,7 +53,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'notification' => [
-        'url' => env('NOTIFICATION_SERVICE_URL', 'http://localhost:8001'),
+        'url' => env('NOTIFICATION_SERVICE_URL', 'http://localhost:8005'),
 
         // التوكن الذي تستخدمه خدمة الـ Auth لإثبات هويتها
         // أمام خدمة الإشعارات (Service-to-Service Auth)

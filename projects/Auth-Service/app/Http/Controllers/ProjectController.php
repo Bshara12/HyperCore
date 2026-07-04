@@ -14,8 +14,6 @@ class ProjectController extends Controller
     $this->jwtService = $jwtService;
   }
 
-
-
   public function exsists_in_project($userId, $projectId): bool
   {
     $response = Http::withHeaders([
