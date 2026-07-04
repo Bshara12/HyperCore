@@ -138,13 +138,15 @@ Route::prefix('ecommerce/analytics')
     Route::get('/offers', [EcommerceAnalyticsController::class, 'offersAnalytics']);
     Route::get('/customers/top', [EcommerceAnalyticsController::class, 'topCustomers']);
     Route::get('/returns', [EcommerceAnalyticsController::class, 'returnsAnalytics']);
+
+    // الـ API الموحد لجميع إحصائيات المتجر الإلكتروني
+    Route::get('/summary', [EcommerceAnalyticsController::class, 'summary']);
+
   });
 
 Route::get('/test', function () {
   return gethostname();
 });
-
-
 
 Route::get('/ping', function () {
   return response()->json([

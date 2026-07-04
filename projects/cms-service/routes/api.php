@@ -31,20 +31,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
-|--------------------------------------------------------------------------
-| Default Laravel Route
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Default Laravel Route
+ * |--------------------------------------------------------------------------
+ */
 
 Route::get('/user', function (Request $request) {
   return $request->user();
 })->middleware('auth:sanctum');
 
 /*
-|--------------------------------------------------------------------------
-| Project Creation (بدون resolve.project)
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Project Creation (بدون resolve.project)
+ * |--------------------------------------------------------------------------
+ */
 
 // Route::prefix('projects')->group(function () {
 
@@ -54,13 +54,12 @@ Route::get('/user', function (Request $request) {
 Route::post('/projects', [ProjectController::class, 'store'])->middleware('auth.user');
 
 /*
-|--------------------------------------------------------------------------
-| Test Routes
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Test Routes
+ * |--------------------------------------------------------------------------
+ */
 
 Route::middleware('resolve.project')->get('/tenant-test', function () {
-
   return response()->json([
     'project_id' => app('currentProject')->id,
     'project_name' => app('currentProject')->name,
@@ -68,7 +67,6 @@ Route::middleware('resolve.project')->get('/tenant-test', function () {
 });
 
 Route::get('/test-auth', function (AuthServiceClient $auth) {
-
   $token = request()->bearerToken();
 
   $user = $auth->getUserFromToken($token);
@@ -77,23 +75,23 @@ Route::get('/test-auth', function (AuthServiceClient $auth) {
 });
 
 /*
-|--------------------------------------------------------------------------
-| Protected Project APIs
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Protected Project APIs
+ * |--------------------------------------------------------------------------
+ */
 
 /*
-    |--------------------------------------------------------------------------
-    | Projects
-    |--------------------------------------------------------------------------
-    */
+ * |--------------------------------------------------------------------------
+ * | Projects
+ * |--------------------------------------------------------------------------
+ */
 
+Route::get('/projects', [ProjectController::class, 'index']);
 Route::middleware('resolve.project')->group(function () {
   // CMS routes لاحقًا
   Route::get('/projects/resolve', [ProjectController::class, 'resolve']);
   Route::post('/projects/{project}', [ProjectController::class, 'update']);
   Route::get('/projects/{project}', [ProjectController::class, 'show']);
-  Route::get('/projects', [ProjectController::class, 'index']);
   Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
   // Route::get('/entries/{id}', [EntryDetailController::class, 'show']);
   Route::post('/check-project-access', [ProjectAccessController::class, 'check']);
@@ -105,12 +103,11 @@ Route::get(
 )->middleware(['auth.user']);
 
 Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(function () {
-
   /*
-      |--------------------------------------------------------------------------
-      | Entries
-      |--------------------------------------------------------------------------
-      */
+   * |--------------------------------------------------------------------------
+   * | Entries
+   * |--------------------------------------------------------------------------
+   */
   Route::get('/projects/{project}/entries', [ProjectEntriesController::class, 'index']);
   Route::get('/entries/{entry:slug}', [EntryDetailController::class, 'show']);
   Route::post('/entries/bulk', [EntryDetailController::class, 'showMany']);
@@ -144,10 +141,10 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
   );
 
   /*
-      |--------------------------------------------------------------------------
-      | Data Entries
-      |--------------------------------------------------------------------------
-      */
+   * |--------------------------------------------------------------------------
+   * | Data Entries
+   * |--------------------------------------------------------------------------
+   */
 
   Route::post(
     '/data-types/{dataType:slug}/entries',
@@ -175,7 +172,6 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
   );
 
   Route::patch(
-
     '/data-entries/{entry:slug}',
     [DataEntryController::class, 'update']
   )->middleware('resolve.project');
@@ -211,22 +207,16 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
   Route::delete('/collections/{collectionSlug}', [DataCollectionController::class, 'destroy']);
 });
 
-/*
-    |--------------------------------------------------------------------------
-    | CMS
-    |--------------------------------------------------------------------------
-    */
 
 Route::prefix('cms')->middleware([
   'resolve.project',
   'auth.user'
 ])->group(function () {
-
   /*
-          |--------------------------------------------------------------------------
-          | Data Types
-          |--------------------------------------------------------------------------
-          */
+   * |--------------------------------------------------------------------------
+   * | Data Types
+   * |--------------------------------------------------------------------------
+   */
 
   Route::get('/data-types/trashed', [
     DataTypeController::class,
@@ -269,10 +259,10 @@ Route::prefix('cms')->middleware([
   )->middleware('permission:cms.datatype.delete');
 
   /*
-          |--------------------------------------------------------------------------
-          | Fields
-          |--------------------------------------------------------------------------
-          */
+   * |--------------------------------------------------------------------------
+   * | Fields
+   * |--------------------------------------------------------------------------
+   */
 
   Route::get(
     '/data-types/{dataType}/fields/trashed',
@@ -312,10 +302,10 @@ Route::prefix('cms')->middleware([
 });
 
 /*
-    |--------------------------------------------------------------------------
-    | Permission Test
-    |--------------------------------------------------------------------------
-    */
+ * |--------------------------------------------------------------------------
+ * | Permission Test
+ * |--------------------------------------------------------------------------
+ */
 
 Route::post(
   '/datatype',
@@ -366,21 +356,25 @@ Route::post('/wallet/topup', [PaymentController::class, 'topUp'])
 // -------------------------
 // CMS Analytics
 // -------------------------
+// Route::prefix('cms/analytics')->middleware('auth.user')->group(function () {
+
+//   // --- Admin ---
+//   Route::prefix('admin')->group(function () {
+//     Route::get('/overview', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
+//     Route::get('/projects-growth', [CmsAnalyticsController::class, 'projectsGrowth'])->name('cms.analytics.admin.projects-growth');
+//   });
+
+//   // --- Project Owner ---
+//   Route::prefix('projects')->middleware('resolve.project')->group(function () {
+//     Route::get('/content', [CmsAnalyticsController::class, 'contentSummary'])->name('cms.analytics.projects.content');
+//     Route::get('/content-growth', [CmsAnalyticsController::class, 'contentGrowth'])->name('cms.analytics.projects.content-growth');
+//     Route::get('/top-rated', [CmsAnalyticsController::class, 'topRated'])->name('cms.analytics.projects.top-rated');
+//     Route::get('/ratings', [CmsAnalyticsController::class, 'ratingsReport'])->name('cms.analytics.projects.ratings');
+//   });
+// });
 Route::prefix('cms/analytics')->middleware('auth.user')->group(function () {
-
-  // --- Admin ---
-  Route::prefix('admin')->group(function () {
-    Route::get('/overview', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
-    Route::get('/projects-growth', [CmsAnalyticsController::class, 'projectsGrowth'])->name('cms.analytics.admin.projects-growth');
-  });
-
-  // --- Project Owner ---
-  Route::prefix('projects')->middleware('resolve.project')->group(function () {
-    Route::get('/content', [CmsAnalyticsController::class, 'contentSummary'])->name('cms.analytics.projects.content');
-    Route::get('/content-growth', [CmsAnalyticsController::class, 'contentGrowth'])->name('cms.analytics.projects.content-growth');
-    Route::get('/top-rated', [CmsAnalyticsController::class, 'topRated'])->name('cms.analytics.projects.top-rated');
-    Route::get('/ratings', [CmsAnalyticsController::class, 'ratingsReport'])->name('cms.analytics.projects.ratings');
-  });
+  Route::get('/admin', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
+  Route::get('/projectOwner', [CmsAnalyticsController::class, 'projectOverview'])->name('cms.analytics.projects.overview')->middleware('resolve.project');
 });
 
 // Rate
@@ -401,7 +395,6 @@ Route::get('/search/popular', PopularSearchController::class)
 Route::prefix('admin/search')
   ->middleware(['auth.user'])
   ->group(function () {
-
     Route::post('/debug', [SearchAdminController::class, 'debug']);
     Route::get('/logs', [SearchAdminController::class, 'logs']);
     Route::get('/problems', [SearchAdminController::class, 'problems']);
@@ -440,7 +433,6 @@ Route::middleware(['auth.user'])->prefix('ai')->group(function () {
 });
 
 Route::prefix('subscriptions')->group(function () {
-
   Route::post('/plans', [PlanController::class, 'store']);
 });
 
@@ -485,16 +477,12 @@ Route::patch(
 );
 
 Route::get(
-
   '/content-access',
-
   [ContentAccessController::class, 'index']
 );
 
 Route::get(
-
   '/content-access/{id}',
-
   [ContentAccessController::class, 'show']
 );
 

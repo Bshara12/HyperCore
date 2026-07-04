@@ -23,6 +23,7 @@ Route::post('users/by-ids', [AuthController::class, 'getByIds']);
 // Secure processes:
 Route::middleware(['auth.jwt'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/service/token', [KeyController::class, 'serviceToken']);
     Route::post('change-password', [AuthController::class, 'changePassword']);
     Route::get('get-all-users', [OperationController::class, 'getAllUsers']);
     Route::post('assign-role-to-user', [OperationController::class, 'assginRoleToUser']);
@@ -49,6 +50,7 @@ Route::middleware('service.auth')->group(function () {
     Route::get('/profile/{id}', [MeController::class, 'profile']); // new خدمة تصل إلى مستخدم محدد باستخدام التوكن الخاص بالخدمة و رقم المستخدم id
 });
 
+
 /*
 |--------------------------------------------------------------------------
 | Internal Service-to-Service Routes
@@ -69,4 +71,3 @@ Route::get('/ping', function () {
         'time' => now()
     ]);
 });
-
