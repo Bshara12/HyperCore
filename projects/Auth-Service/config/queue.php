@@ -13,7 +13,8 @@ return [
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'database'),
+    // 'default' => env('QUEUE_CONNECTION', 'database'),
+    'default' => env('QUEUE_CONNECTION', 'rabbitmq'),
 
     /*
     |--------------------------------------------------------------------------
@@ -89,31 +90,53 @@ return [
             ],
         ],
 
-        // ... أي اتصالات أخرى لديك
+        // // ... أي اتصالات أخرى لديك
+        // 'rabbitmq' => [
+        //     'driver' => 'rabbitmq',
+        //     'queue' => env('RABBITMQ_QUEUE', 'default'),
+        //     'hosts' => [
+        //         [
+        //             'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+        //             'port' => env('RABBITMQ_PORT', 5672),
+        //             'user' => env('RABBITMQ_USER', 'guest'),
+        //             'password' => env('RABBITMQ_PASSWORD', 'guest'),
+        //             'vhost' => env('RABBITMQ_VHOST', '/'),
+        //         ],
+        //     ],
+        //     'options' => [
+        //         'queue' => [
+        //             'declare' => true, // التأكد من وجودها هنا
+        //             'exchange' => env('RABBITMQ_EXCHANGE_NAME', null),
+        //             'exchange_type' => env('RABBITMQ_EXCHANGE_TYPE', 'direct'),
+        //             'exchange_routing_key' => env('RABBITMQ_EXCHANGE_ROUTING_KEY', '%s'),
+        //         ],
+        //     ],
+        //     // إضافة خيار التصريح التلقائي للـ Worker أيضاً خارج الـ options في بعض إصدارات الحزمة
+        //     'queue_declare_on_connect' => true,
+        //     'worker' => env('RABBITMQ_WORKER', 'default'),
+        // ],
+
+        // ... باقي الاتصالات
+
         'rabbitmq' => [
-            'driver' => 'rabbitmq',
-            'queue' => env('RABBITMQ_QUEUE', 'default'),
-            'hosts' => [
-                [
-                    'host' => env('RABBITMQ_HOST', '127.0.0.1'),
-                    'port' => env('RABBITMQ_PORT', 5672),
-                    'user' => env('RABBITMQ_USER', 'guest'),
-                    'password' => env('RABBITMQ_PASSWORD', 'guest'),
-                    'vhost' => env('RABBITMQ_VHOST', '/'),
-                ],
-            ],
+            'driver'   => 'rabbitmq',
+            'host'     => env('RABBITMQ_HOST', '127.0.0.1'),
+            'port'     => env('RABBITMQ_PORT', 5672),
+            'vhost'    => env('RABBITMQ_VHOST', '/'),
+            'login'    => env('RABBITMQ_USER', 'guest'),
+            'password' => env('RABBITMQ_PASSWORD', 'guest'),
+
+            'queue'    => env('RABBITMQ_QUEUE', 'default'),
+
             'options' => [
-                'queue' => [
-                    'declare' => true, // التأكد من وجودها هنا
-                    'exchange' => env('RABBITMQ_EXCHANGE_NAME', null),
-                    'exchange_type' => env('RABBITMQ_EXCHANGE_TYPE', 'direct'),
-                    'exchange_routing_key' => env('RABBITMQ_EXCHANGE_ROUTING_KEY', '%s'),
+                'exchange' => [
+                    'name'    => env('RABBITMQ_EXCHANGE_NAME', 'microservices_exchange'),
+                    'type'    => env('RABBITMQ_EXCHANGE_TYPE', 'fanout'),
+                    'durable' => true,
                 ],
             ],
-            // إضافة خيار التصريح التلقائي للـ Worker أيضاً خارج الـ options في بعض إصدارات الحزمة
-            'queue_declare_on_connect' => true,
-            'worker' => env('RABBITMQ_WORKER', 'default'),
         ],
+
     ],
 
     /*

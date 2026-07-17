@@ -10,6 +10,9 @@ use App\Domains\Booking\Repositories\Eloquent\EloquentResourceRepository;
 use App\Domains\Booking\Repositories\Interface\BookingCancellationPolicyRepositoryInterface;
 use App\Domains\Booking\Repositories\Interface\BookingRepositoryInterface;
 use App\Domains\Booking\Repositories\Interface\ResourceRepositoryInterface;
+use App\Models\Booking;
+use App\Observers\BookingObserver;
+use App\Services\MessageBroker\RabbitMQPublisher;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +26,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(BookingRepositoryInterface::class, EloquentBookingRepository::class);
         $this->app->bind(BookingCancellationPolicyRepositoryInterface::class, EloquentBookingCancellationPolicyRepository::class);
         $this->app->bind(AnalyticsRepositoryInterface::class, EloquentBookingAnalyticsRepository::class);
+
+        /*
+         | Singleton: نفس instance الـ Publisher يُعاد استخدامه
+         | بدلاً من فتح اتصال جديد بـ RabbitMQ في كل Observer
+         */
+        $this->app->singleton(
+            RabbitMQPublisher::class,
+            fn () => new RabbitMQPublisher()
+        );
     }
 
     /**
@@ -30,6 +42,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        /*
+         | BookingObserver يراقب Booking model:
+         |   created → booking.booking.created
+         |   updated:
+         |     status == cancelled   → booking.booking.cancelled
+         |     start_at/end_at dirty → booking.booking.rescheduled
+         */
+        Booking::observe(BookingObserver::class);
     }
 }
