@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Auth\AuthApiClient;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +12,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        /*
+         | تسجيل AuthApiClient كـ Singleton
+         | يعني نفس الـ instance سيُعاد استخدامه طوال الـ Request الواحد
+         | بدلاً من إنشاء instance جديد في كل مرة يُحقَن فيها
+         */
+        $this->app->singleton(AuthApiClient::class, fn () => new AuthApiClient());
     }
 
     /**

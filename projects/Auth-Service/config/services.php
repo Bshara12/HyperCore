@@ -34,6 +34,7 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
     'rabbitmq' => [
         'host' => env('RABBITMQ_HOST'),
         'port' => env('RABBITMQ_PORT'),
@@ -41,4 +42,21 @@ return [
         'password' => env('RABBITMQ_PASSWORD'),
     ],
 
+    'internal' => [
+        'api_key' => env('INTERNAL_SERVICES_API_KEY'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Microservice
+    | إعدادات التواصل مع خدمة الإشعارات
+    |--------------------------------------------------------------------------
+    */
+    'notification' => [
+        'url' => env('NOTIFICATION_SERVICE_URL', 'http://localhost:8005'),
+
+        // التوكن الذي تستخدمه خدمة الـ Auth لإثبات هويتها
+        // أمام خدمة الإشعارات (Service-to-Service Auth)
+        'service_token' => env('NOTIFICATION_SERVICE_TOKEN'),
+    ],
 ];

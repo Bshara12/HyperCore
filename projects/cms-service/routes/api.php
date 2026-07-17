@@ -207,11 +207,6 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
   Route::delete('/collections/{collectionSlug}', [DataCollectionController::class, 'destroy']);
 });
 
-/*
- * |--------------------------------------------------------------------------
- * | CMS
- * |--------------------------------------------------------------------------
- */
 
 Route::prefix('cms')->middleware([
   'resolve.project',

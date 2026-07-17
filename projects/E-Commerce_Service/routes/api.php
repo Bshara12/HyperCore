@@ -132,8 +132,16 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix
 Route::prefix('ecommerce/analytics')
   ->middleware(['resolve.project', 'auth.user'])
   ->group(function () {
+    Route::get('/sales', [EcommerceAnalyticsController::class, 'salesSummary']);
+    Route::get('/sales/trend', [EcommerceAnalyticsController::class, 'salesTrend']);
+    Route::get('/products/top', [EcommerceAnalyticsController::class, 'topProducts']);
+    Route::get('/offers', [EcommerceAnalyticsController::class, 'offersAnalytics']);
+    Route::get('/customers/top', [EcommerceAnalyticsController::class, 'topCustomers']);
+    Route::get('/returns', [EcommerceAnalyticsController::class, 'returnsAnalytics']);
+
     // الـ API الموحد لجميع إحصائيات المتجر الإلكتروني
     Route::get('/summary', [EcommerceAnalyticsController::class, 'summary']);
+
   });
 
 Route::get('/test', function () {

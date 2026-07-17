@@ -2,17 +2,19 @@
 
 use Illuminate\Support\Facades\Broadcast;
 
-Broadcast::channel('notifications.{projectId}.{recipientType}.{recipientId}', function ($user, string $projectId, string $recipientType, string $recipientId) {
-    $requestProject = request()->attributes->get('project', []);
-    $requestUser = request()->attributes->get('auth_user', []);
+/*
+|─────────────────────────────────────────────────────────────────────────────
+| Broadcast Channels
+| تُحدَّد هنا قواعد التفويض لكل قناة
+|─────────────────────────────────────────────────────────────────────────────
+*/
 
-    if ((int) data_get($requestProject, 'id') !== $projectId) {
-        return false;
-    }
-
-    if ($recipientType !== 'user') {
-        return false;
-    }
-
-    return (string) data_get($requestUser, 'id') === (string) $recipientId;
+/*
+ | القناة الخاصة بكل مستخدم: private-user.{userId}
+ |
+ | المستخدم يمكنه الاشتراك في قناته الخاصة فقط
+ | $user هو الكائن الذي أنشأناه في BroadcastController
+ */
+Broadcast::channel('user.{userId}', function ($user, string $userId): bool {
+    return (string) $user->getAuthIdentifier() === (string) $userId;
 });

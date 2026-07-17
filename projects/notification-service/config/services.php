@@ -24,6 +24,11 @@ return [
 
     'auth' => [
         'url' => env('Auth_URL'),
+        // توكن خدمة الإشعارات لاستخدامه عند الاستعلام عن مستخدم بـ ID
+        'service_token' => env('NOTIFICATION_SERVICE_TOKEN'),
+
+        // المفتاح الداخلي الجديد لجلب بيانات المستخدمين
+        'internal_api_key' => env('INTERNAL_SERVICES_API_KEY'),
     ],
 
     'resend' => [
@@ -50,5 +55,6 @@ return [
             'X-App-Source' => env('NOTIFICATION_WEBHOOK_SOURCE', 'notification-service'),
         ],
     ],
+
 
 ];

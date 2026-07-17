@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.jwt' => JwtMiddleware::class,
             'platform.auth' => PlatformMiddleware::class,
             'service.auth' => ServiceAuthMiddleware::class,
+            'internal.api' => \App\Http\Middleware\VerifyInternalApiKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

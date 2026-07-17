@@ -51,6 +51,19 @@ Route::middleware('service.auth')->group(function () {
 });
 
 
+/*
+|--------------------------------------------------------------------------
+| Internal Service-to-Service Routes
+| محمية بـ X-Internal-Api-Key فقط — منفصلة كلياً عن نظام مصادقة المستخدمين
+| تُستخدم من قِبل Notification Service للتحقق من المستخدمين وجلب إيميلاتهم
+|--------------------------------------------------------------------------
+*/
+Route::middleware('internal.api')
+    ->prefix('internal')
+    ->group(function () {
+        Route::get('/users/{id}', [MeController::class, 'internalShow']);
+    });
+
 
 Route::get('/ping', function () {
     return response()->json([
