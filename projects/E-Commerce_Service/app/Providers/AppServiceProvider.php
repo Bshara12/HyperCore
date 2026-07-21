@@ -24,6 +24,9 @@ use App\Domains\E_Commerce\Repositories\Interfaces\Wishlist\WishlistItemReposito
 use App\Domains\E_Commerce\Repositories\Interfaces\Wishlist\WishlistRepositoryInterface;
 use App\Domains\Payment\Repositories\EloquentPaymentRepository;
 use App\Domains\Payment\Repositories\PaymentRepositoryInterface;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,6 +54,19 @@ class AppServiceProvider extends ServiceProvider
    */
   public function boot(): void
   {
-    //
+    // 1. للمسارات القياسية الجلب والقراءة
+    RateLimiter::for('api.standard', function (Request $request) {
+      return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+    });
+
+    // 2. للعمليات الثقيلة (الكتابة، التعديل، الحفظ والدفع)
+    RateLimiter::for('api.heavy', function (Request $request) {
+      return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+    });
+
+    // 3. لعمليات الذكاء الاصطناعي المكلفة
+    RateLimiter::for('api.ai', function (Request $request) {
+      return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+    });
   }
 }

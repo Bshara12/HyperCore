@@ -60,7 +60,10 @@ use App\Observers\PaymentObserver;
 use App\Observers\ProjectObserver;
 use App\Observers\SubscriptionObserver;
 use App\Services\MessageBroker\RabbitMQPublisher;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 
@@ -81,8 +84,8 @@ class AppServiceProvider extends ServiceProvider
     });
 
     $this->app->singleton(
-        RabbitMQPublisher::class,
-        fn () => new RabbitMQPublisher()
+      RabbitMQPublisher::class,
+      fn() => new RabbitMQPublisher()
     );
 
     $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
@@ -430,9 +433,24 @@ class AppServiceProvider extends ServiceProvider
          | ProjectObserver:
          |   created → cms.project.created
          */
-        Subscription::observe(SubscriptionObserver::class);
-        Payment::observe(PaymentObserver::class);
-        InstallmentPlan::observe(InstallmentPlanObserver::class);
-        Project::observe(ProjectObserver::class);
+    Subscription::observe(SubscriptionObserver::class);
+    Payment::observe(PaymentObserver::class);
+    InstallmentPlan::observe(InstallmentPlanObserver::class);
+    Project::observe(ProjectObserver::class);
+
+    // 1. للمسارات القياسية الجلب والقراءة
+    RateLimiter::for('api.standard', function (Request $request) {
+      return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+    });
+
+    // 2. للعمليات الثقيلة (الكتابة، التعديل، الحفظ والدفع)
+    RateLimiter::for('api.heavy', function (Request $request) {
+      return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+    });
+
+    // 3. لعمليات الذكاء الاصطناعي المكلفة
+    RateLimiter::for('api.ai', function (Request $request) {
+      return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+    });
   }
 }
