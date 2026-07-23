@@ -33,6 +33,18 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::post('remove-permession-from-role', [OperationController::class, 'remove_permession_from_role']);
     Route::get('my-profile', [MeController::class, 'myProfile']); // new الوصول إلى بيانات مستخدم عن طريق ال access token
     Route::post('sign-in-project/{projectId}', [ProjectController::class, 'sign_in_project']);
+    
+    Route::prefix('operations')->group(function () {
+        // ─── جديد ─────────────────────────────────────────────────────────
+        Route::post('/roles', [OperationController::class, 'createRole']);
+        Route::get('/roles', [OperationController::class, 'getRoles']);
+
+        Route::post('/permissions/create', [OperationController::class, 'createPermission']);
+        Route::get('/permissions', [OperationController::class, 'getPermissions']);
+
+        Route::post('/projects/{projectId}/assign-role', [OperationController::class, 'assignRoleToUserForProject']);
+        Route::post('/projects/{projectId}/remove-role', [OperationController::class, 'removeRoleFromUserForProject']);
+    });
 });
 
 // Public Processes:
