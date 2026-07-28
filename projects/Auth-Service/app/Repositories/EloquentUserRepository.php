@@ -13,7 +13,7 @@ class EloquentUserRepository implements UserRepositoryInterface
         $user = User::create($data);
         DB::table('role_user')->insert([
             'user_id' => $user->id,
-            'role_id' => 4,
+            'role_id' => 3,
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -82,5 +82,16 @@ class EloquentUserRepository implements UserRepositoryInterface
             ->whereIn('id', $ids)
             ->select('id', 'name')
             ->get();
+    }
+
+    // أضف هذه الـ method داخل الكلاس الموجود، بجانب create()
+
+    /**
+     * إنشاء مستخدم بدون لمس جدول role_user إطلاقاً
+     * الفرق الجوهري عن create(): لا يوجد role_id=3 مُسنَد تلقائياً
+     */
+    public function createPlain(array $data): User
+    {
+        return User::create($data);
     }
 }

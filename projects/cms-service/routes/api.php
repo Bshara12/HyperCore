@@ -172,7 +172,6 @@ Route::prefix('ai')
 
 
 
-
 Route::get('/user', function (Request $request) {
   return $request->user();
 })->middleware('auth:sanctum');
@@ -450,6 +449,28 @@ Route::get(
 //   '/entries/{id}/same-type',
 //   [EntryDetailController::class, 'showwithsametype']
 // );
+
+/*
+|--------------------------------------------------------------------------
+| Project Membership (بدون auth.user لأن المستخدم قد لا يملك توكناً بعد)
+| مربوط بـ slug مباشرة عبر Route Model Binding — لا يحتاج أي Header
+|--------------------------------------------------------------------------
+*/
+Route::post('/projects/{project}/join', [ProjectController::class, 'join'])
+    ->middleware('throttle:10,1'); // حماية من إساءة الاستخدام لأنه endpoint عام
+
+/*
+ | عرض أعضاء المشروع — يتطلب توكناً صالحاً (auth.user) + تحديد المشروع
+ | يُنصَح بإضافة middleware صلاحية مثل permission:project.viewMembers
+ | إذا أردت حصر الرؤية على الـ admin/owner فقط دون بقية الأعضاء
+ */
+Route::get('/projects/{project}/members', [ProjectController::class, 'members'])
+    ->middleware(['resolve.project', 'auth.user']);
+
+Route::delete('/projects/{project}/leave', [ProjectController::class, 'leave'])
+    ->middleware(['resolve.project', 'auth.user']);
+
+
 Route::get('/b', function () {
   return 'CMS OK';
 });
@@ -464,3 +485,5 @@ Route::get('/ping', function () {
 Route::get('/test', function () {
   return gethostname();
 });
+
+

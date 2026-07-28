@@ -20,7 +20,7 @@ return new class extends Migration
              | لذا التحقق من عدم التكرار سيتم يدوياً داخل الكود (Repository)
              */
             $table->unsignedBigInteger('project_id')->nullable()->after('role_id')->index();
-            $table->index(['user_id', 'project_id']);
+            $table->index(['user_id','role_id', 'project_id']);
         });
     }
 

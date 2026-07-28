@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Domains\CMS\DTOs\CreateProjectDTO;
+use App\Domains\CMS\DTOs\Project\JoinProjectDTO;
 use App\Domains\CMS\DTOs\Project\UpdateProjectDTO;
 use App\Domains\CMS\Requests\CreateProjectRequest;
+use App\Domains\CMS\Requests\Project\JoinProjectRequest;
 use App\Domains\CMS\Requests\UpdateProjectRequest;
 use App\Domains\CMS\Services\ProjectService;
 use App\Models\Project;
@@ -73,5 +75,35 @@ class ProjectController extends Controller
         return response()->json([
             'message' => 'Project deleted successfully',
         ], 200);
+    }
+
+
+    public function join(
+        JoinProjectRequest $request,
+        Project $project,
+        ProjectService $service
+    ) {
+        $dto = JoinProjectDTO::fromRequest($request, $project);
+
+        $result = $service->join($dto);
+
+        return response()->json($result, 200);
+    }
+
+    public function members(Project $project, ProjectService $service)
+    {
+        $members = $service->members($project);
+
+        return response()->json(['data' => $members]);
+    }
+
+    public function leave(Request $request, Project $project, ProjectService $service)
+    {
+        // نفس النمط المستخدم في OrderController لجلب هوية المستخدم من التوكن
+        $userId = $request->attributes->get('auth_user')['id'];
+
+        $result = $service->leave($project, $userId);
+
+        return response()->json($result);
     }
 }

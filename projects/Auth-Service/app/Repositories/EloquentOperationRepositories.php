@@ -263,4 +263,22 @@ class EloquentOperationRepositories implements OperationRepositoryInteface
             ->where('permession_id', $permId)
             ->delete();
     }
+
+    public function getProjectMembers(int $projectId)
+    {
+        return DB::table('role_user')
+            ->join('users', 'users.id', '=', 'role_user.user_id')
+            ->join('roles', 'roles.id', '=', 'role_user.role_id')
+            ->where('role_user.project_id', $projectId)
+            ->select([
+                'users.id as user_id',
+                'users.name',
+                'users.email',
+                'roles.id as role_id',
+                'roles.name as role_name',
+                'role_user.created_at as joined_at',
+            ])
+            ->orderBy('role_user.created_at', 'desc')
+            ->get();
+    }
 }

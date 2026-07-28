@@ -175,4 +175,20 @@ class OperationServices
     {
         return $this->operations->getAllPermissions($projectId);
     }
+
+    // أضف هذه الـ method داخل الكلاس الموجود
+
+    /**
+     * جلب دور عام (project_id = null) بالاسم
+     * تُستخدم لجلب دور "user" الافتراضي لإسناده ضمن أي مشروع
+     */
+    public function findGlobalRoleByNameService(string $name)
+    {
+        return $this->operations->findRoleByNameAndProject($name, null);
+    }
+
+    public function getProjectMembersService(int $projectId)
+    {
+        return $this->operations->getProjectMembers($projectId);
+    }
 }
