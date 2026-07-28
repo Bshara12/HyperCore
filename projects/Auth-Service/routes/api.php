@@ -5,6 +5,7 @@ use App\Http\Controllers\KeyController;
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectMembershipController;
 use App\Http\Controllers\ServiceAuthController;
 use App\Http\Controllers\UserInfoController;
 use Illuminate\Support\Facades\Route;
@@ -33,7 +34,7 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::post('remove-permession-from-role', [OperationController::class, 'remove_permession_from_role']);
     Route::get('my-profile', [MeController::class, 'myProfile']); // new الوصول إلى بيانات مستخدم عن طريق ال access token
     Route::post('sign-in-project/{projectId}', [ProjectController::class, 'sign_in_project']);
-    
+
     Route::prefix('operations')->group(function () {
         // ─── جديد ─────────────────────────────────────────────────────────
         Route::post('/roles', [OperationController::class, 'createRole']);
@@ -74,6 +75,10 @@ Route::middleware('internal.api')
     ->prefix('internal')
     ->group(function () {
         Route::get('/users/{id}', [MeController::class, 'internalShow']);
+
+        Route::post('/projects/{projectId}/join', [ProjectMembershipController::class, 'join']);
+        Route::get('/projects/{projectId}/members', [ProjectMembershipController::class, 'members']);
+        Route::post('/projects/{projectId}/leave', [ProjectMembershipController::class, 'leave']);
     });
 
 

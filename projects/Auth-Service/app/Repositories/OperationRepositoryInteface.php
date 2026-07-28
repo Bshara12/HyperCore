@@ -41,4 +41,9 @@ interface OperationRepositoryInteface
     public function assginPermToRole(int $permId, int $roleId);
 
     public function removePermFromRole(int $permId, int $roleId);
+
+    /**
+     * جلب كل المستخدمين المسجَّلين ضمن مشروع محدد + دورهم فيه
+     */
+    public function getProjectMembers(int $projectId);
 }
