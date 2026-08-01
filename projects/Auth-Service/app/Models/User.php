@@ -2,131 +2,65 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
-  /** @use HasFactory<UserFactory> */
-  use HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
-  /**
-   * The attributes that are mass assignable.
-   *
-   * @var list<string>
-   */
-  protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'is_verified',
-    'otp_code',
-    'otp_expires_at',
-    'locked_until',
-  ];
-
-  /**
-   * The attributes that should be hidden for serialization.
-   *
-   * @var list<string>
-   */
-  protected $hidden = [
-    'password',
-    'remember_token',
-    'otp_code',
-  ];
-
-  /**
-   * Get the attributes that should be cast.
-   *
-   * @return array<string, string>
-   */
-  protected function casts(): array
-  {
-    return [
-      'email_verified_at' => 'datetime',
-      'password' => 'hashed',
-      'is_verified' => 'boolean',
-      'otp_expires_at' => 'datetime',
-      'locked_until' => 'datetime',
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'is_verified',
+        'otp_code',
+        'otp_expires_at',
+        'locked_until',
     ];
-  }
 
-  public function roles()
-  {
-    return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id')->withTimestamps();
-  }
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'otp_code',
+    ];
 
-  public function permessions()
-  {
-    return $this->roles()
-      ->with('permessions')
-      ->get()
-      ->pluck('permessions')
-      ->flatten()
-      ->unique('id');
-  }
-
-  public static function is_admin(User $user)
-  {
-    $role = DB::table('role_user')
-      ->where('role_id', 3)
-      ->where('user_id', $user->id)
-      ->first();
-
-    if (! empty($role)) {
-      return true;
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'is_verified' => 'boolean',
+            'otp_expires_at' => 'datetime',
+            'locked_until' => 'datetime',
+        ];
     }
 
-    return false;
-  }
-
-  public static function is_super_admin(User $user)
-  {
-    $role = DB::table('role_user')
-      ->where('role_id', 2)
-      ->where('user_id', $user->id)
-      ->first();
-
-    if (! empty($role)) {
-      return true;
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id')
+            ->withTimestamps()
+            ->withPivot('project_id'); // ✅ جديد
     }
 
-    return false;
-  }
-
-  public static function is_owner(User $user)
-  {
-    $role = DB::table('role_user')
-      ->where('role_id', 1)
-      ->where('user_id', $user->id)
-      ->first();
-
-    if (! empty($role)) {
-      return true;
+    /**
+     * ✅ جديد: أدوار المستخدم ضمن مشروع محدد، أو العامة (project_id = null) افتراضياً
+     * متاحة لأي كود مستقبلي يحتاجها، بدون ما تغيّر شكل استجابة myProfile/profile الحالية
+     */
+    public function rolesForProject(?int $projectId = null)
+    {
+        return $this->roles()->wherePivot('project_id', $projectId);
     }
 
-    return false;
-  }
-
-  public static function is_user(User $user)
-  {
-    $role = DB::table('role_user')
-      ->where('role_id', 4)
-      ->where('user_id', $user->id)
-      ->first();
-
-    if (! empty($role)) {
-      return true;
+    public function permessions()
+    {
+        return $this->roles()
+            ->with('permessions')
+            ->get()
+            ->pluck('permessions')
+            ->flatten()
+            ->unique('id');
     }
-
-    return false;
-  }
-
-
 }

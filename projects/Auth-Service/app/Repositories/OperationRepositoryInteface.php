@@ -19,6 +19,11 @@ interface OperationRepositoryInteface
 
     public function findUserRoleAssignment(int $userId, ?int $projectId);
 
+    // ✅ جديد: فحص امتلاك دور معيّن بالاسم (بدل الاعتماد على رقم مكتوب يدوياً)
+    public function userHasRole(int $userId, string $roleName, ?int $projectId = null): bool;
+
+    public function userHasAnyRole(int $userId, array $roleNames, ?int $projectId = null): bool;
+
     // ─── Roles Catalog ──────────────────────────────────────────────────────
     public function createRole(string $name, ?int $projectId = null);
 
@@ -42,8 +47,5 @@ interface OperationRepositoryInteface
 
     public function removePermFromRole(int $permId, int $roleId);
 
-    /**
-     * جلب كل المستخدمين المسجَّلين ضمن مشروع محدد + دورهم فيه
-     */
     public function getProjectMembers(int $projectId);
 }

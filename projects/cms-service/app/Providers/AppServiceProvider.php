@@ -64,6 +64,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 
@@ -451,6 +452,12 @@ class AppServiceProvider extends ServiceProvider
     // 3. لعمليات الذكاء الاصطناعي المكلفة
     RateLimiter::for('api.ai', function (Request $request) {
       return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+    });
+
+    Route::bind('project', function (string $value) {
+        return is_numeric($value)
+            ? Project::findOrFail($value)
+            : Project::where('slug', $value)->firstOrFail();
     });
   }
 }

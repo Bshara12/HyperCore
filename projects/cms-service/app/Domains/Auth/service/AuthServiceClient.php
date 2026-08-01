@@ -90,7 +90,7 @@ class AuthServiceClient
     {
         $response = Http::withHeaders([
             'X-Internal-Api-Key' => config('services.auth_service.internal_api_key'),
-        ])->delete(
+        ])->post(
             config('services.auth_service.url') . "/internal/projects/{$projectId}/leave",
             ['user_id' => $userId]
         );

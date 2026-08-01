@@ -45,14 +45,20 @@ class EloquentOperationRepositories implements OperationRepositoryInteface
         ]);
     }
 
+    // ✅ معدّلة: كانت role_id=4 مكتوب يدوياً، صارت تبحث بالاسم
     public function removeRoleFromUser(int $userId)
     {
-        // نُبقي على السلوك الأصلي: تصفير إلى role_id=4 (الدور الافتراضي) بدلاً من الحذف
+        $defaultRole = $this->findRoleByNameAndProject('user', null);
+
+        if (! $defaultRole) {
+            throw new Exception('Default "user" role not found. Please run RolesAndPermissionsSeeder.');
+        }
+
         return DB::table('role_user')
             ->where('user_id', $userId)
             ->whereNull('project_id')
             ->update([
-                'role_id' => 4,
+                'role_id' => $defaultRole->id,
                 'updated_at' => now(),
             ]);
     }
@@ -280,5 +286,34 @@ class EloquentOperationRepositories implements OperationRepositoryInteface
             ])
             ->orderBy('role_user.created_at', 'desc')
             ->get();
+    }
+
+    // ✅ جديد: يضاف مع باقي methods الكلاس
+    public function userHasRole(int $userId, string $roleName, ?int $projectId = null): bool
+    {
+        return DB::table('role_user')
+            ->join('roles', 'roles.id', '=', 'role_user.role_id')
+            ->where('role_user.user_id', $userId)
+            ->where('roles.name', $roleName)
+            ->where(function ($q) use ($projectId) {
+                $projectId === null
+                    ? $q->whereNull('role_user.project_id')
+                    : $q->where('role_user.project_id', $projectId);
+            })
+            ->exists();
+    }
+
+    public function userHasAnyRole(int $userId, array $roleNames, ?int $projectId = null): bool
+    {
+        return DB::table('role_user')
+            ->join('roles', 'roles.id', '=', 'role_user.role_id')
+            ->where('role_user.user_id', $userId)
+            ->whereIn('roles.name', $roleNames)
+            ->where(function ($q) use ($projectId) {
+                $projectId === null
+                    ? $q->whereNull('role_user.project_id')
+                    : $q->where('role_user.project_id', $projectId);
+            })
+            ->exists();
     }
 }

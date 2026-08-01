@@ -2,35 +2,41 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\JwtService;
 use Closure;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class ServiceAuthMiddleware
 {
-    public function handle($request, Closure $next)
-    {
+    protected $jwtService;
 
+    public function __construct(JwtService $jwtService)
+    {
+        $this->jwtService = $jwtService;
+    }
+
+    public function handle(Request $request, Closure $next): Response
+    {
         $token = $request->bearerToken();
 
         if (! $token) {
             return response()->json(['error' => 'Token missing'], 401);
         }
 
-        $publicKey = file_get_contents(storage_path('keys/public.key'));
+        // ✅ صار بيستخدم JwtService المركزي بدل file_get_contents + JWT::decode يدوياً
+        $decoded = $this->jwtService->validateToken($token);
 
-        try {
-
-            $decoded = JWT::decode($token, new Key($publicKey, 'RS256'));
-
-        } catch (\Exception $e) {
-
+        if (! $decoded) {
             return response()->json(['error' => 'Invalid token'], 401);
         }
 
         if ($decoded->type !== 'service') {
             return response()->json(['error' => 'Invalid token type'], 403);
         }
+
+        $request->attributes->set('jwt_payload', $decoded);
+        $request->attributes->set('auth_service_id', $decoded->sub);
 
         return $next($request);
     }

@@ -191,4 +191,41 @@ class OperationServices
     {
         return $this->operations->getProjectMembers($projectId);
     }
+
+    public function isSuperAdmin(int $userId): bool
+    {
+        return $this->operations->userHasRole($userId, 'super_admin');
+    }
+
+    public function isAdmin(int $userId): bool
+    {
+        return $this->operations->userHasRole($userId, 'admin');
+    }
+
+    public function isOwner(int $userId): bool
+    {
+        return $this->operations->userHasRole($userId, 'owner');
+    }
+
+    public function isAdminOrSuperAdmin(int $userId): bool
+    {
+        return $this->operations->userHasAnyRole($userId, ['admin', 'super_admin']);
+    }
+
+    /**
+     * قاعدة العمل: كل من يسجّل مباشرة بالنظام (/register) يبدأ بدور "admin"
+     * (قادر ينشئ مشاريع بخدمات أخرى متل CMS)
+     * هذا المنطق كان مدفوناً جوا EloquentUserRepository::create() — نقلناه هون
+     * لأنه قرار عمل (Business Rule) مكانه الصحيح Service layer، مش Repository
+     */
+    public function assignDefaultRegistrationRole(int $userId): void
+    {
+        $role = $this->operations->findRoleByNameAndProject('admin', null);
+
+        if (! $role) {
+            throw new Exception('Default "admin" role not found. Please run RolesAndPermissionsSeeder.');
+        }
+
+        $this->operations->assginRoleToUser($userId, $role->id);
+    }
 }

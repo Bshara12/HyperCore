@@ -34,11 +34,10 @@ class ProjectMembershipService
             if (! $existingUser) {
                 $isNewUser = true;
 
-                $user = $this->users->createPlain([
+                $user = $this->users->create([   
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'password' => Hash::make($data['password']),
-                    // نتخطى OTP هنا عمداً: عضوية مشروع خفيفة وليست حساب منصة كامل
                     'is_verified' => true,
                 ]);
             } else {

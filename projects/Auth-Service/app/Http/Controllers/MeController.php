@@ -2,79 +2,82 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Services\JwtService;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+use App\Repositories\UserRepositoryInterface;
 use Illuminate\Http\Request;
 
 class MeController extends Controller
 {
-    protected $jwt;
+    protected $users;
 
-    public function __construct(JwtService $jwtService)
+    public function __construct(UserRepositoryInterface $userRepository)
     {
-        $this->jwt = $jwtService;
+        $this->users = $userRepository;
     }
 
+    /**
+     * جلب بيانات أساسية للمستخدم الحالي عبر توكن المستخدم (auth.jwt)
+     * نسخة خفيفة بدون roles/permessions
+     */
     public function index(Request $request)
     {
-        $token = $request->bearerToken();
+        $userId = $this->authUserId($request);
+        $user = $userId ? $this->users->findById($userId) : null;
 
-        $publicKey = file_get_contents(storage_path('keys/public_key'));
-
-        $decoded = JWT::decode($token, new Key($publicKey, 'RS256'));
-
-        $user = User::find($decoded->sub);
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
 
         return response()->json($user);
     }
 
-    public function profile($id) // For services
-    {$user = User::find($id);
+    /**
+     * خدمة تصل إلى مستخدم محدد باستخدام التوكن الخاص بالخدمة ورقم المستخدم id
+     */
+    public function profile($id)
+    {
+        $user = $this->users->findById((int) $id);
+
+        if (! $user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
         $user->load('roles.permessions');
 
-        return response()->json([
-            'data' => $user,
-        ]);
+        return response()->json(['data' => $user]);
     }
 
-    public function myProfile(Request $request) // For users
-    {$token = $request->bearerToken();
-        $decode = $this->jwt->validateToken($token);
-        if (! $decode) {
+    /**
+     * جلب بيانات المستخدم الحالي مع أدواره وصلاحياته عبر توكن المستخدم
+     */
+    public function myProfile(Request $request)
+    {
+        $userId = $this->authUserId($request);
+        $user = $userId ? $this->users->findById($userId) : null;
+
+        if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $user = User::find($decode->sub);
         $user->load('roles.permessions');
 
-        return response()->json([
-            'data' => $user,
-        ]);
+        return response()->json(['data' => $user]);
     }
 
-    // أضف هذه الـ method في MeController الموجود
-
     /**
-     * جلب بيانات مستخدم بالـ ID لأغراض التواصل بين الخدمات فقط
-     * يُستدعى فقط عبر مسار محمي بـ internal.api middleware
-     * لا علاقة له بمصادقة المستخدم الحالي (لا auth() ولا Sanctum هنا إطلاقاً)
+     * جلب بيانات مستخدم بالـ ID لأغراض التواصل بين الخدمات فقط (internal.api)
      */
     public function internalShow(int $id)
     {
-        $user = User::find($id);
+        $user = $this->users->findById($id);
 
         if (! $user) {
-            return response()->json([
-                'message' => 'User not found',
-            ], 404);
+            return response()->json(['message' => 'User not found'], 404);
         }
 
         return response()->json([
             'data' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
+                'id' => $user->id,
+                'name' => $user->name,
                 'email' => $user->email,
             ],
         ]);

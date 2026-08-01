@@ -3,10 +3,11 @@
 namespace App\Services;
 
 use App\Events\SystemLogEvent;
-use App\Jobs\SendOTPMailJob;
 use App\Models\User;
+use App\Repositories\SessionRepositoryInterface;
 use App\Repositories\UserRepositoryInterface;
 use Exception;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -16,18 +17,30 @@ class AuthService
     protected $users;
     protected $jwt;
     protected $otp;
+    protected $operations;
+    protected $sessions;
 
-    public function __construct(UserRepositoryInterface $users, JwtService $jwtService, OtpService $otpService)
-    {
+    public function __construct(
+        UserRepositoryInterface $users,
+        JwtService $jwtService,
+        OtpService $otpService,
+        OperationServices $operationServices,
+        SessionRepositoryInterface $sessionRepository
+    ) {
         $this->users = $users;
         $this->jwt = $jwtService;
         $this->otp = $otpService;
+        $this->operations = $operationServices;
+        $this->sessions = $sessionRepository;
     }
 
     public function registerService(array $data): User
     {
         $data['password'] = Hash::make($data['password']);
         $user = $this->users->create($data);
+
+        $this->operations->assignDefaultRegistrationRole($user->id);
+
         $this->otp->send($user);
         $this->log($user->id, 'register', []);
 
@@ -82,7 +95,6 @@ class AuthService
 
         if (! $user) {
             $this->log(null, 'login_failed', ['identifier' => $identifier, 'ip' => $ip]);
-
             return ['success' => false, 'message' => 'Invalid credentials'];
         }
 
@@ -106,7 +118,6 @@ class AuthService
             return ['success' => false, 'message' => 'Invalid credentials'];
         }
 
-        // passed
         $this->users->update($user, ['failed_attempts' => 0, 'locked_until' => null]);
 
         return ['success' => true, 'user' => $user];
@@ -126,7 +137,48 @@ class AuthService
             throw new Exception('Session ID missing');
         }
 
-        $this->users->revoke($accessToken, $decoded);
+        // 🔴 إصلاح الثغرة الحرجة: صار كل الإبطال مربوط فعلياً بـ session_id
+        // (الجلسة + refresh tokens المرتبطة بها فقط، لا كل جلسات المستخدم) + الـ access token بالـ blacklist
+        // كعملية واحدة ذرية (transaction) عبر Repository
+        $this->sessions->revokeSessionCompletely(
+            $sessionId,
+            $payload->jti,
+            Carbon::createFromTimestamp($payload->exp)
+        );
+    }
+
+    /**
+     * ✅ منطق كان بالكامل داخل AuthController::refresh() (DB::table مباشرة بالـ Controller)
+     * انتقل هون ليتوافق مع Request→Controller→Service→Repository
+     */
+    public function refreshTokens(string $refreshToken): array
+    {
+        $decoded = $this->jwt->validateToken($refreshToken);
+
+        if (! $decoded || $decoded->type !== 'refresh') {
+            return ['success' => false, 'message' => 'Invalid refresh token'];
+        }
+
+        $record = $this->sessions->findValidRefreshToken($decoded->jti);
+
+        if (! $record || now()->gt($record->expires_at)) {
+            return ['success' => false, 'message' => 'Refresh token expired'];
+        }
+
+        $user = $this->users->findById($decoded->sub);
+
+        if (! $user) {
+            return ['success' => false, 'message' => 'User not found'];
+        }
+
+        // Rotation: إبطال القديم قبل توليد الجديد لمنع إعادة الاستخدام
+        $this->sessions->revokeRefreshToken($decoded->jti);
+
+        return [
+            'success' => true,
+            'access_token' => $this->jwt->generateToken($user, $record->session_id),
+            'refresh_token' => $this->jwt->generateRefreshToken($user, $record->session_id),
+        ];
     }
 
     public function changePassword($data)

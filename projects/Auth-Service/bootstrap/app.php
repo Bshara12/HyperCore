@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\JwtMiddleware;
-use App\Http\Middleware\PlatformMiddleware;
 use App\Http\Middleware\ServiceAuthMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,7 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'auth.jwt' => JwtMiddleware::class,
-            'platform.auth' => PlatformMiddleware::class,
             'service.auth' => ServiceAuthMiddleware::class,
             'internal.api' => \App\Http\Middleware\VerifyInternalApiKey::class,
         ]);

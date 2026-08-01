@@ -2,7 +2,7 @@
 
 namespace App\Domains\CMS\DTOs\Project;
 
-use App\Domains\CMS\Requests\Project\JoinProjectRequest;
+use App\Domains\CMS\Requests\JoinProjectRequest;
 use App\Models\Project;
 
 readonly class JoinProjectDTO
