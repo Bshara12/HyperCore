@@ -37,4 +37,7 @@ interface SessionRepositoryInterface
 
     // ─── عملية مركّبة: إبطال جلسة بالكامل (logout) ─────────────────
     public function revokeSessionCompletely(string $sessionId, string $accessTokenId, \DateTimeInterface $accessTokenExpiresAt): void;
+
+    // ✅ جديد: إلغاء كل جلسات المستخدم، باستثناء جلسة محددة اختيارياً (الجلسة الحالية عادةً)
+    public function revokeAllUserSessionsExcept(int $userId, ?string $exceptSessionId = null): void;
 }

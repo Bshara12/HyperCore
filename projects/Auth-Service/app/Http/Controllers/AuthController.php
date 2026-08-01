@@ -59,8 +59,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'User Not Found'], 404);
         }
 
-        if (! $this->authService->verifyOTP($user, $verifyOTPRequest->otp)) {
-            return response()->json(['message' => 'Invalid OTP'], 422);
+        $result = $this->authService->verifyOTP($user, $verifyOTPRequest->otp);
+
+        if (! $result['success']) {
+            return response()->json(['message' => $result['message']], 422);
         }
 
         $sessionId = $this->sessions->create(
@@ -157,7 +159,6 @@ class AuthController extends Controller
 
     public function changePassword(ChangePasswordRequest $request)
     {
-        // ✅ صار بيستخدم auth_user_id اللي حطه auth.jwt middleware، بدل إعادة فك التوكن يدوياً
         $userId = $this->authUserId($request);
 
         if (! $userId) {
@@ -166,6 +167,7 @@ class AuthController extends Controller
 
         $data = $request->only(['current_password', 'new_password']);
         $data['user'] = $this->users->findById($userId);
+        $data['current_session_id'] = $this->authSessionId($request); // ✅ جديد
 
         $this->authService->changePassword($data);
 

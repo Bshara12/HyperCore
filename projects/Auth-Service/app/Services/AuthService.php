@@ -57,25 +57,45 @@ class AuthService
         return $user;
     }
 
-    public function verifyOTP(User $user, string $otp): bool
+    public function verifyOTP(User $user, string $otp): array
     {
+        // ✅ فحص القفل أولاً — قبل أي مقارنة، لمنع استمرار محاولات التخمين خلال فترة القفل
+        if ($user->locked_until && now()->lessThan($user->locked_until)) {
+            return ['success' => false, 'message' => 'Account locked until '.$user->locked_until];
+        }
+
         if (! $user->otp_code || $user->otp_code !== $otp) {
-            return false;
+            $user->failed_attempts++;
+            $update = ['failed_attempts' => $user->failed_attempts];
+
+            // ✅ نفس عتبة الـ 3 محاولات المستخدمة بـ attemptLogin بالضبط
+            if ($user->failed_attempts >= 3) {
+                $update['locked_until'] = now()->addMinutes(15);
+                $update['failed_attempts'] = 0;
+                $this->log($user->id, 'otp_verification_locked', []);
+            }
+
+            $this->users->update($user, $update);
+            $this->log($user->id, 'otp_verification_failed', []);
+
+            return ['success' => false, 'message' => 'Invalid OTP'];
         }
 
         if ($user->otp_expires_at && now()->greaterThan($user->otp_expires_at)) {
-            return false;
+            return ['success' => false, 'message' => 'OTP expired'];
         }
 
         $this->users->update($user, [
             'is_verified' => true,
             'otp_code' => null,
             'otp_expires_at' => null,
+            'failed_attempts' => 0,
+            'locked_until' => null,
         ]);
 
         $this->log($user->id, 'otp_verified', []);
 
-        return true;
+        return ['success' => true];
     }
 
     public function log($userId, string $action, ?array $meta)
@@ -190,6 +210,13 @@ class AuthService
         $this->users->updatePassword(
             $data['user']->id,
             Hash::make($data['new_password'])
+        );
+
+        // ✅ إجراء أمان: إلغاء كل الجلسات الأخرى فوراً بعد تغيير كلمة المرور
+        // (لو الحساب كان مخترق، أي token مسروق سابقاً ينقطع فوراً، ما عدا الجلسة الحالية)
+        $this->sessions->revokeAllUserSessionsExcept(
+            $data['user']->id,
+            $data['current_session_id'] ?? null
         );
     }
 

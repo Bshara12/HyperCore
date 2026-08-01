@@ -131,4 +131,23 @@ class EloquentSessionRepository implements SessionRepositoryInterface
             $this->blacklistToken($accessTokenId, $accessTokenExpiresAt);
         });
     }
+
+    public function revokeAllUserSessionsExcept(int $userId, ?string $exceptSessionId = null): void
+    {
+        DB::transaction(function () use ($userId, $exceptSessionId) {
+            $query = MySession::where('user_id', $userId)->whereNull('revoked_at');
+
+            if ($exceptSessionId) {
+                $query->where('id', '!=', $exceptSessionId);
+            }
+
+            // ✅ نلغي كل جلسة + الـ refresh tokens المرتبطة فيها
+            // (لا داعي لـ blacklist الـ access tokens تحديداً هون: JwtMiddleware أصلاً
+            // بيتحقق من revoked_at بالجلسة بكل طلب، فإلغاء الجلسة كافٍ لإبطال أي access token مرتبط فيها)
+            $query->pluck('id')->each(function (string $sessionId) {
+                $this->revokeUserSession($sessionId);
+                $this->revokeRefreshTokensForSession($sessionId);
+            });
+        });
+    }
 }

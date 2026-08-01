@@ -10,11 +10,11 @@ use App\Http\Controllers\UserInfoController;
 use Illuminate\Support\Facades\Route;
 
 // Main processes:
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
-Route::post('/refresh', [AuthController::class, 'refresh']);
+Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,1');
+Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:20,1');
 
 Route::get('get-all-roles', [OperationController::class, 'getAllRoles']);
 Route::get('get-all-permissions', [OperationController::class, 'getAllPermissions']);
