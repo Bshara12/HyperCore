@@ -14,4 +14,9 @@ abstract class Controller
     {
         return $request->attributes->get('auth_user_id');
     }
+
+    protected function authSessionId(Request $request): ?string
+    {
+        return $request->attributes->get('auth_session_id');
+    }
 }
