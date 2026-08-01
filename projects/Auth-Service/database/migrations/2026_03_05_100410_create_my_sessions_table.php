@@ -15,10 +15,7 @@ return new class extends Migration
             $table->char('id', 26)->primary();
 
             // relations
-            $table->foreignId('user_id');
-
-            // refresh token (hashed)
-            // $table->string('refresh_token_hash', 128)->unique();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
 
             // device info
             $table->string('ip_address', 45)->nullable();
@@ -35,9 +32,6 @@ return new class extends Migration
             // timestamps
             $table->timestamps();
 
-            // $table->timestamp('created_at')->useCurrent();
-            // $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
-
             // indexes
             $table->index('user_id');
             $table->index('expires_at');
@@ -50,6 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('my_sessions');
     }
 };

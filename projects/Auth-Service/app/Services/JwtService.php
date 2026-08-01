@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Repositories\SessionRepositoryInterface;
 use Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class JwtService
@@ -14,16 +14,9 @@ class JwtService
     protected $publicKey;
     private string $issuer;
     protected $algo;
-    protected $ttl;
+    protected $sessions;
 
-    public function returnInfo()  {
-        $data = [
-                'private' => $this->privateKey,
-                'public' => $this->publicKey,
-            ];
-        return $data;
-    }
-    public function __construct()
+    public function __construct(SessionRepositoryInterface $sessionRepository)
     {
         $privatePath = config('jwt.private_key');
         $publicPath  = config('jwt.public_key');
@@ -49,7 +42,7 @@ class JwtService
 
         $this->issuer = config('jwt.issuer');
         $this->algo   = config('jwt.algo');
-        $this->ttl    = config('jwt.ttl');
+        $this->sessions = $sessionRepository;
     }
 
     public function generateToken($user, $sessionId)
@@ -57,38 +50,30 @@ class JwtService
         $jti = Str::uuid()->toString();
 
         $payload = [
-            // 'iss' => config('app.url'),
             'iss' => $this->issuer,
             'iat' => time(),
             'exp' => time() + (config('jwt.access_ttl') * 60),
             'sub' => $user->id,
             'sid' => $sessionId,
             'jti' => $jti,
-            // 'type'=> 'access'
-            'type'=> 'platform'
+            'type'=> 'platform',
         ];
 
-        $token = JWT::encode($payload, $this->privateKey, $this->algo);
-
-
-        return $token;
+        return JWT::encode($payload, $this->privateKey, $this->algo);
     }
 
     public function validateToken($token)
     {
         try {
             $decoded = JWT::decode($token, new Key($this->publicKey, $this->algo));
-            // // تحقق من blacklist
-            // $blacklisted = DB::table('token_blacklist')
-            //     ->where('token_id', $decoded->jti)
-            //     ->exists();
 
-            // if ($blacklisted) {
-            //     return null;
-            // }
+            // ✅ فحص القائمة السوداء صار مفعّل هون — مكان مركزي واحد
+            // يستفيد منه كل الـ middlewares تلقائياً (JwtMiddleware, ServiceAuthMiddleware)
+            if (isset($decoded->jti) && $this->sessions->isTokenBlacklisted($decoded->jti)) {
+                return null;
+            }
 
             return $decoded;
-
         } catch (Exception $e) {
             return null;
         }
@@ -97,17 +82,9 @@ class JwtService
     public function generateRefreshToken($user, $sessionId)
     {
         $jti = Str::uuid()->toString();
-
         $expires = now()->addMinutes(config('jwt.refresh_ttl'));
 
-        DB::table('refresh_tokens')->insert([
-            'user_id'    => $user->id,
-            'token_id'   => $jti,
-            'session_id' => $sessionId,
-            'expires_at' => $expires,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $this->sessions->storeRefreshToken($user->id, $jti, $sessionId, $expires);
 
         $payload = [
             'exp' => $expires->timestamp,
@@ -115,12 +92,10 @@ class JwtService
             'jti' => $jti,
             'iss' => $this->issuer,
             'iat' => time(),
-            'type'=> 'refresh'
+            'type'=> 'refresh',
         ];
 
-        $token = JWT::encode($payload, $this->privateKey, $this->algo);
-
-        return $token;
+        return JWT::encode($payload, $this->privateKey, $this->algo);
     }
 
     public function generateServiceToken($service, $sessionId)
@@ -128,7 +103,6 @@ class JwtService
         $jti = Str::uuid()->toString();
 
         $payload = [
-            // 'iss' => config('app.url'),
             'iss' => $this->issuer,
             'iat' => time(),
             'exp' => time() + (config('jwt.access_ttl') * 60),
@@ -138,25 +112,16 @@ class JwtService
             'type'=> 'service',
         ];
 
-        $token = JWT::encode($payload, $this->privateKey, $this->algo);
-
-        return $token;
+        return JWT::encode($payload, $this->privateKey, $this->algo);
     }
 
     public function generateServiceRefreshToken($service, $sessionId)
     {
         $jti = Str::uuid()->toString();
-
         $expires = now()->addMinutes(config('jwt.refresh_ttl'));
 
-        DB::table('refresh_tokens')->insert([
-            'user_id'    => $service->id,
-            'token_id'   => $jti,
-            'session_id' => $sessionId,
-            'expires_at' => $expires,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // ✅ صارت تخزّن بجدول service_refresh_tokens المخصص، مش refresh_tokens (خاص بالمستخدمين فقط)
+        $this->sessions->storeServiceRefreshToken($service->id, $jti, $sessionId, $expires);
 
         $payload = [
             'exp' => $expires->timestamp,
@@ -164,11 +129,9 @@ class JwtService
             'jti' => $jti,
             'iss' => $this->issuer,
             'iat' => time(),
-            'type'=> 'refresh'
+            'type'=> 'refresh',
         ];
 
-        $token = JWT::encode($payload, $this->privateKey, $this->algo);
-
-        return $token;
+        return JWT::encode($payload, $this->privateKey, $this->algo);
     }
 }

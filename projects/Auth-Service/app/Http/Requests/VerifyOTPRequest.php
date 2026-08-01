@@ -12,10 +12,12 @@ class VerifyOTPRequest extends FormRequest
    *
    * @return array<string, ValidationRule|array<mixed>|string>
    */
-  public function rules(): array
-  {
-    return [
-      'otp' => 'required|string|size:6',
-    ];
-  }
+  // app/Http/Requests/VerifyOTPRequest.php
+    public function rules(): array
+    {
+        return [
+            'user_id' => 'required|integer|exists:users,id',
+            'otp' => 'required|string|size:6',
+        ];
+    }
 }

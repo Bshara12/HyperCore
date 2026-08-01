@@ -6,7 +6,7 @@ use App\Domains\CMS\DTOs\CreateProjectDTO;
 use App\Domains\CMS\DTOs\Project\JoinProjectDTO;
 use App\Domains\CMS\DTOs\Project\UpdateProjectDTO;
 use App\Domains\CMS\Requests\CreateProjectRequest;
-use App\Domains\CMS\Requests\Project\JoinProjectRequest;
+use App\Domains\CMS\Requests\JoinProjectRequest;
 use App\Domains\CMS\Requests\UpdateProjectRequest;
 use App\Domains\CMS\Services\ProjectService;
 use App\Models\Project;

@@ -457,8 +457,7 @@ Route::get(
 |--------------------------------------------------------------------------
 */
 Route::post('/projects/{project}/join', [ProjectController::class, 'join'])
-    ->middleware('throttle:10,1'); // حماية من إساءة الاستخدام لأنه endpoint عام
-
+    ->middleware('throttle:10,1');
 /*
  | عرض أعضاء المشروع — يتطلب توكناً صالحاً (auth.user) + تحديد المشروع
  | يُنصَح بإضافة middleware صلاحية مثل permission:project.viewMembers
@@ -467,8 +466,8 @@ Route::post('/projects/{project}/join', [ProjectController::class, 'join'])
 Route::get('/projects/{project}/members', [ProjectController::class, 'members'])
     ->middleware(['resolve.project', 'auth.user']);
 
-Route::delete('/projects/{project}/leave', [ProjectController::class, 'leave'])
-    ->middleware(['resolve.project', 'auth.user']);
+Route::post('/projects/{project}/leave', [ProjectController::class, 'leave'])
+    ->middleware(['auth.user']);
 
 
 Route::get('/b', function () {

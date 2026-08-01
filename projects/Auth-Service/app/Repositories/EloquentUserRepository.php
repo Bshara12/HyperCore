@@ -4,22 +4,12 @@ namespace App\Repositories;
 
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class EloquentUserRepository implements UserRepositoryInterface
 {
     public function create(array $data): User
     {
-        $user = User::create($data);
-        DB::table('role_user')->insert([
-            'user_id' => $user->id,
-            'role_id' => 3,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
-
-        return $user;
-        // return User::create($data);
+        return User::create($data);
     }
 
     public function findByEmail(string $email): ?User
@@ -37,61 +27,13 @@ class EloquentUserRepository implements UserRepositoryInterface
         return $user->update($data);
     }
 
-    public function revoke(string $sessionId, $decoded)
-    {
-        // Revoke session
-        DB::table('my_sessions')
-            ->where('id', $sessionId)
-            ->update([
-                'revoked_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-        // Revoke all refresh tokens for this session
-        DB::table('refresh_tokens')
-            ->where('session_id', $sessionId)
-            ->update([
-                'revoked_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-        // إضافة access token إلى blacklist
-        DB::table('token_blacklist')->insert([
-            'token_id' => $decoded->jti,
-            'expires_at' => date('Y-m-d H:i:s', $decoded->exp),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // إلغاء جميع refresh tokens للمستخدم
-        DB::table('refresh_tokens')
-            ->where('user_id', $decoded->sub)
-            ->update(['revoked' => true]);
-    }
-
     public function updatePassword($userId, $hashedPassword)
     {
-        return User::where('id', $userId)->update([
-            'password' => $hashedPassword,
-        ]);
+        return User::where('id', $userId)->update(['password' => $hashedPassword]);
     }
 
     public function getUsersByIds(array $ids): Collection
     {
-        return User::query()
-            ->whereIn('id', $ids)
-            ->select('id', 'name')
-            ->get();
-    }
-
-    // أضف هذه الـ method داخل الكلاس الموجود، بجانب create()
-
-    /**
-     * إنشاء مستخدم بدون لمس جدول role_user إطلاقاً
-     * الفرق الجوهري عن create(): لا يوجد role_id=3 مُسنَد تلقائياً
-     */
-    public function createPlain(array $data): User
-    {
-        return User::create($data);
+        return User::query()->whereIn('id', $ids)->select('id', 'name')->get();
     }
 }
