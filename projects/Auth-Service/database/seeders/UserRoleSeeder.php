@@ -18,7 +18,9 @@ class UserRoleSeeder extends Seeder
         $numberOfUsers = 50;
 
         // جلب الأدوار بترتيب ثابت حتى يكون التوزيع ثابتًا
+        // ✅ استثناء hyper_core: دور حصري لمطوري النظام الحقيقيين، لا يُسند عشوائياً لمستخدمين وهميين
         $roles = DB::table('roles')
+            ->where('name', '!=', 'hyper_core')
             ->orderBy('name')
             ->pluck('id', 'name')
             ->toArray();

@@ -27,7 +27,8 @@ class OperationController extends Controller
   {
     $userId = $this->authUserId($request);
 
-    if (! $userId || ! $this->operations->isSuperAdmin($userId)) {
+    // ✅ كانت isSuperAdmin — admin امتص هذه الصلاحية أيضاً
+    if (! $userId || ! $this->operations->isAdminOrHyperCore($userId)) {
       return response()->json(['message' => 'Not authorized'], 401);
     }
 
@@ -40,43 +41,51 @@ class OperationController extends Controller
   {
     $userId = $this->authUserId($request);
 
-    if (! $userId || ! $this->operations->isAdminOrSuperAdmin($userId)) {
+    if (! $userId || ! $this->operations->isAdminOrHyperCore($userId)) {
       return response()->json(['message' => 'Not authorized'], 401);
     }
 
-    $data = $request->only(['user_id', 'role_id']);
-    $assignment = $this->operations->assginRoleService($data);
+    try {
+      $data = $request->only(['user_id', 'role_id']);
+      $assignment = $this->operations->assginRoleService($data, $userId);
 
-    if ($assignment) {
-      return response()->json(['message' => 'Done'], 200);
+      if ($assignment) {
+        return response()->json(['message' => 'Done'], 200);
+      }
+
+      return response()->json(['message' => 'Somthig went wrong!'], 404);
+    } catch (\Exception $e) {
+      return response()->json(['message' => $e->getMessage()], 403);
     }
-
-    return response()->json(['message' => 'Somthig went wrong!'], 404);
   }
 
   public function removeRoleFromUser(RemoveRoleRequest $request)
   {
     $userId = $this->authUserId($request);
 
-    if (! $userId || ! $this->operations->isAdminOrSuperAdmin($userId)) {
+    if (! $userId || ! $this->operations->isAdminOrHyperCore($userId)) {
       return response()->json(['message' => 'Not authorized'], 401);
     }
 
-    $data = $request->only(['user_id']);
-    $assignment = $this->operations->removeRoleService($data);
+    try {
+      $data = $request->only(['user_id']);
+      $assignment = $this->operations->removeRoleService($data, $userId);
 
-    if ($assignment) {
-      return response()->json(['message' => 'Done'], 200);
+      if ($assignment) {
+        return response()->json(['message' => 'Done'], 200);
+      }
+
+      return response()->json(['message' => 'Somthig went wrong!'], 404);
+    } catch (\Exception $e) {
+      return response()->json(['message' => $e->getMessage()], 403);
     }
-
-    return response()->json(['message' => 'Somthig went wrong!'], 404);
   }
 
   public function add_permession(AddPermissionRequest $request)
   {
     $userId = $this->authUserId($request);
 
-    if (! $userId || ! $this->operations->isSuperAdmin($userId)) {
+    if (! $userId || ! $this->operations->isAdminOrHyperCore($userId)) {
       return response()->json(['message' => 'Not authorized'], 401);
     }
 
@@ -94,7 +103,7 @@ class OperationController extends Controller
   {
     $userId = $this->authUserId($request);
 
-    if (! $userId || ! $this->operations->isSuperAdmin($userId)) {
+    if (! $userId || ! $this->operations->isAdminOrHyperCore($userId)) {
       return response()->json(['message' => 'Not authorized'], 401);
     }
 
@@ -112,7 +121,7 @@ class OperationController extends Controller
   {
     $userId = $this->authUserId($request);
 
-    if (! $userId || ! $this->operations->isSuperAdmin($userId)) {
+    if (! $userId || ! $this->operations->isAdminOrHyperCore($userId)) {
       return response()->json(['message' => 'Not authorized'], 401);
     }
 
@@ -148,11 +157,12 @@ class OperationController extends Controller
     return response()->json(['message' => 'Ther is no permissions']);
   }
 
-  private function authorizeSuperAdmin(Request $request)
+  // ✅ إعادة تسمية: authorizeSuperAdmin → authorizeAdminOrHyperCore
+  private function authorizeAdminOrHyperCore(Request $request)
   {
     $userId = $this->authUserId($request);
 
-    if (! $userId || ! $this->operations->isSuperAdmin($userId)) {
+    if (! $userId || ! $this->operations->isAdminOrHyperCore($userId)) {
       return response()->json(['message' => 'Not authorized'], 401);
     }
 
@@ -161,7 +171,7 @@ class OperationController extends Controller
 
   public function createRole(CreateRoleRequest $request)
   {
-    $auth = $this->authorizeSuperAdmin($request);
+    $auth = $this->authorizeAdminOrHyperCore($request);
     if ($auth instanceof \Illuminate\Http\JsonResponse) {
       return $auth;
     }
@@ -176,7 +186,7 @@ class OperationController extends Controller
 
   public function createPermission(CreatePermissionRequest $request)
   {
-    $auth = $this->authorizeSuperAdmin($request);
+    $auth = $this->authorizeAdminOrHyperCore($request);
     if ($auth instanceof \Illuminate\Http\JsonResponse) {
       return $auth;
     }
@@ -191,7 +201,7 @@ class OperationController extends Controller
 
   public function assignRoleToUserForProject(AssignRoleForProjectRequest $request, int $projectId)
   {
-    $auth = $this->authorizeSuperAdmin($request);
+    $auth = $this->authorizeAdminOrHyperCore($request);
     if ($auth instanceof \Illuminate\Http\JsonResponse) {
       return $auth;
     }
@@ -209,7 +219,7 @@ class OperationController extends Controller
 
   public function removeRoleFromUserForProject(RemoveRoleForProjectRequest $request, int $projectId)
   {
-    $auth = $this->authorizeSuperAdmin($request);
+    $auth = $this->authorizeAdminOrHyperCore($request);
     if ($auth instanceof \Illuminate\Http\JsonResponse) {
       return $auth;
     }

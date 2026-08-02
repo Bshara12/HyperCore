@@ -2,38 +2,58 @@
 
 namespace App\Services;
 
+use App\Events\SystemLogEvent;
 use App\Repositories\OperationRepositoryInteface;
+use App\Repositories\UserRepositoryInterface;
 use Exception;
 
 class OperationServices
 {
     protected $operations;
+    protected $users;
 
-    public function __construct(OperationRepositoryInteface $operationRepositoryInteface)
-    {
+    public function __construct(
+        OperationRepositoryInteface $operationRepositoryInteface,
+        UserRepositoryInterface $userRepository
+    ) {
         $this->operations = $operationRepositoryInteface;
+        $this->users = $userRepository;
     }
-
-    // ─── الموجودة سابقاً — بدون أي تغيير في السلوك الخارجي ─────────────────
 
     public function getUsersService()
     {
         return $this->operations->getAllUsers();
     }
 
-    public function assginRoleService(array $data)
+    /**
+     * ✅ صار يستقبل $actingUserId: يمنع أي admin عادي من إسناد دور hyper_core لأي أحد
+     * (ثغرة تصعيد صلاحيات كانت موجودة أصلاً حتى مع super_admin القديم)
+     */
+    public function assginRoleService(array $data, int $actingUserId)
     {
+        $targetRole = $this->operations->findRoleById($data['role_id']);
+
+        if ($targetRole && $targetRole->name === 'hyper_core' && ! $this->isHyperCore($actingUserId)) {
+            throw new Exception('Only hyper_core can assign the hyper_core role.');
+        }
+
         return $this->operations->assginRoleToUser($data['user_id'], $data['role_id']);
     }
 
-    public function removeRoleService(array $data)
+    /**
+     * ✅ صار يستقبل $actingUserId: يمنع أي admin عادي من تجريد حساب hyper_core من دوره
+     */
+    public function removeRoleService(array $data, int $actingUserId)
     {
+        if ($this->operations->userHasRole($data['user_id'], 'hyper_core') && ! $this->isHyperCore($actingUserId)) {
+            throw new Exception('Only hyper_core can modify another hyper_core account.');
+        }
+
         return $this->operations->removeRoleFromUser($data['user_id']);
     }
 
     public function addPermessionService(array $data)
     {
-        // بدون project_id → صلاحية عامة على مستوى النظام (متوافق مع الاستخدام القديم)
         return $this->operations->addPermession($data['permession']);
     }
 
@@ -52,41 +72,22 @@ class OperationServices
         return $this->operations->getAllPermissions();
     }
 
-    /**
-     * أصبحت الآن تستدعي assignPermissionToRoleService الجديدة
-     * لتستفيد تلقائياً من التحقق من توافق النطاق (Project Scope)
-     * دون الحاجة لتعديل الـ Controller القديم إطلاقاً
-     */
     public function assginPermToRoleService(array $data)
     {
         return $this->assignPermissionToRoleService($data);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // جديد: إنشاء Role — نظام أو مشروع
-    // ═══════════════════════════════════════════════════════════════════════
-
     public function createRoleService(array $data)
     {
         $projectId = $data['project_id'] ?? null;
-
         return $this->operations->createRole($data['name'], $projectId);
     }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // جديد: إنشاء Permission — نظام أو مشروع
-    // ═══════════════════════════════════════════════════════════════════════
 
     public function createPermissionService(array $data)
     {
         $projectId = $data['project_id'] ?? null;
-
         return $this->operations->addPermession($data['permession'], $projectId);
     }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // جديد: ربط صلاحية بـ Role مع التحقق من توافق النطاق
-    // ═══════════════════════════════════════════════════════════════════════
 
     public function assignPermissionToRoleService(array $data)
     {
@@ -101,12 +102,6 @@ class OperationServices
             throw new Exception('Permission not found.');
         }
 
-        /*
-         | 🔒 قاعدة التوافق:
-         | إذا كانت الصلاحية خاصة بمشروع معين (project_id != null)،
-         | فلا يمكن ربطها إلا بـ role ينتمي لنفس المشروع بالضبط.
-         | صلاحية عامة (project_id = null) يمكن ربطها بأي role (عام أو خاص بمشروع).
-         */
         if (
             $permission->project_id !== null
             && (int) $permission->project_id !== (int) $role->project_id
@@ -119,10 +114,6 @@ class OperationServices
         return $this->operations->assginPermToRole($data['permession_id'], $data['role_id']);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // جديد: إسناد Role لمستخدم ضمن مشروع محدد
-    // ═══════════════════════════════════════════════════════════════════════
-
     public function assignRoleToUserForProjectService(array $data)
     {
         $role = $this->operations->findRoleById($data['role_id']);
@@ -131,11 +122,6 @@ class OperationServices
             throw new Exception('Role not found.');
         }
 
-        /*
-         | 🔒 قاعدة التوافق:
-         | - role عام (project_id = null) → يمكن إسناده ضمن أي مشروع (استخدام قالب عام)
-         | - role خاص بمشروع آخر → مرفوض تماماً
-         */
         if (
             $role->project_id !== null
             && (int) $role->project_id !== (int) $data['project_id']
@@ -150,10 +136,6 @@ class OperationServices
         );
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // جديد: إزالة Role عن مستخدم ضمن مشروع محدد
-    // ═══════════════════════════════════════════════════════════════════════
-
     public function removeRoleFromUserForProjectService(array $data)
     {
         return $this->operations->removeRoleFromUserForProject(
@@ -161,10 +143,6 @@ class OperationServices
             $data['project_id']
         );
     }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // جديد: جلب الأدوار / الصلاحيات (فلترة اختيارية حسب مشروع)
-    // ═══════════════════════════════════════════════════════════════════════
 
     public function getRolesService(?int $projectId = null)
     {
@@ -176,12 +154,6 @@ class OperationServices
         return $this->operations->getAllPermissions($projectId);
     }
 
-    // أضف هذه الـ method داخل الكلاس الموجود
-
-    /**
-     * جلب دور عام (project_id = null) بالاسم
-     * تُستخدم لجلب دور "user" الافتراضي لإسناده ضمن أي مشروع
-     */
     public function findGlobalRoleByNameService(string $name)
     {
         return $this->operations->findRoleByNameAndProject($name, null);
@@ -192,9 +164,10 @@ class OperationServices
         return $this->operations->getProjectMembers($projectId);
     }
 
-    public function isSuperAdmin(int $userId): bool
+    // ✅ إعادة تسمية: isSuperAdmin → isHyperCore
+    public function isHyperCore(int $userId): bool
     {
-        return $this->operations->userHasRole($userId, 'super_admin');
+        return $this->operations->userHasRole($userId, 'hyper_core');
     }
 
     public function isAdmin(int $userId): bool
@@ -207,17 +180,12 @@ class OperationServices
         return $this->operations->userHasRole($userId, 'owner');
     }
 
-    public function isAdminOrSuperAdmin(int $userId): bool
+    // ✅ إعادة تسمية: isAdminOrSuperAdmin → isAdminOrHyperCore
+    public function isAdminOrHyperCore(int $userId): bool
     {
-        return $this->operations->userHasAnyRole($userId, ['admin', 'super_admin']);
+        return $this->operations->userHasAnyRole($userId, ['admin', 'hyper_core']);
     }
 
-    /**
-     * قاعدة العمل: كل من يسجّل مباشرة بالنظام (/register) يبدأ بدور "admin"
-     * (قادر ينشئ مشاريع بخدمات أخرى متل CMS)
-     * هذا المنطق كان مدفوناً جوا EloquentUserRepository::create() — نقلناه هون
-     * لأنه قرار عمل (Business Rule) مكانه الصحيح Service layer، مش Repository
-     */
     public function assignDefaultRegistrationRole(int $userId): void
     {
         $role = $this->operations->findRoleByNameAndProject('admin', null);
@@ -227,5 +195,32 @@ class OperationServices
         }
 
         $this->operations->assginRoleToUser($userId, $role->id);
+    }
+
+    /**
+     * ✅ جديد: حذف مستخدم نهائياً (hard delete)
+     * يُستدعى حصراً من HyperCoreController بعد التحقق من isHyperCore
+     */
+    public function deleteUser(int $targetUserId, int $actingUserId): void
+    {
+        if ($targetUserId === $actingUserId) {
+            throw new Exception('You cannot delete your own account.');
+        }
+
+        $user = $this->users->findById($targetUserId);
+
+        if (! $user) {
+            throw new Exception('User not found.');
+        }
+
+        $this->users->delete($user);
+
+        event(new SystemLogEvent(
+            module: 'auth',
+            eventType: 'user_deleted',
+            userId: $actingUserId,
+            entityType: 'user',
+            entityId: $targetUserId,
+        ));
     }
 }

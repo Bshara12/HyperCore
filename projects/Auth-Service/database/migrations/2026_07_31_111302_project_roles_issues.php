@@ -10,13 +10,37 @@ return new class extends Migration
     {
         /*
         |----------------------------------------------------------------
+        | 0) ضمان وجود عمود project_id بالجداول الثلاثة قبل أي شيء آخر
+        |    (دفاعي: يعمل بغض النظر عن ترتيب تنفيذ الملفات التي قد
+        |    تُضيف نفس العمود، فلا نعتمد على ترتيب أسماء الملفات)
+        |----------------------------------------------------------------
+        */
+        if (! Schema::hasColumn('roles', 'project_id')) {
+            Schema::table('roles', function (Blueprint $table) {
+                $table->unsignedBigInteger('project_id')->nullable()->after('id')->index();
+            });
+        }
+
+        if (! Schema::hasColumn('permessions', 'project_id')) {
+            Schema::table('permessions', function (Blueprint $table) {
+                $table->unsignedBigInteger('project_id')->nullable()->after('id')->index();
+            });
+        }
+
+        if (! Schema::hasColumn('role_user', 'project_id')) {
+            Schema::table('role_user', function (Blueprint $table) {
+                $table->unsignedBigInteger('project_id')->nullable()->after('role_id')->index();
+                $table->index(['user_id', 'role_id', 'project_id']);
+            });
+        }
+
+        /*
+        |----------------------------------------------------------------
         | 1) roles: unique('name') → unique(['name', 'project_id'])
-        |    بدون هذا التصحيح، مشروعين مختلفين ما فيهم يسموا دور
-        |    بنفس الاسم حتى لو كل واحد ضمن نطاقه الخاص (project_id مختلف)
         |----------------------------------------------------------------
         */
         Schema::table('roles', function (Blueprint $table) {
-            $table->dropUnique(['name']); // يحذف roles_name_unique (اسم تلقائي حسب اتفاقية Laravel)
+            $table->dropUnique(['name']);
         });
 
         Schema::table('roles', function (Blueprint $table) {
@@ -25,11 +49,11 @@ return new class extends Migration
 
         /*
         |----------------------------------------------------------------
-        | 2) permessions: نفس المشكلة بالضبط، نفس الحل
+        | 2) permessions: نفس المشكلة، نفس الحل
         |----------------------------------------------------------------
         */
         Schema::table('permessions', function (Blueprint $table) {
-            $table->dropUnique(['name']); // يحذف permessions_name_unique
+            $table->dropUnique(['name']);
         });
 
         Schema::table('permessions', function (Blueprint $table) {
@@ -38,21 +62,15 @@ return new class extends Migration
 
         /*
         |----------------------------------------------------------------
-        | 3) role_user: الأخطر — Primary Key (user_id, role_id) كان يمنع
-        |    نفس المستخدم من امتلاك نفس الدور بأكتر من مشروع واحد
-        |    (بما إن project_id ما كان جزء من الـ Primary Key الأصلي)
+        | 3) role_user: Primary Key القديم (user_id, role_id) كان يمنع
+        |    نفس المستخدم من امتلاك نفس الدور بأكثر من مشروع
         |----------------------------------------------------------------
         */
         Schema::table('role_user', function (Blueprint $table) {
-            $table->dropPrimary(); // بدون آرغيومنت: يحذف الـ Primary Key الحالي بغض النظر عن أعمدته
+            $table->dropPrimary();
         });
 
         Schema::table('role_user', function (Blueprint $table) {
-            /*
-             | القيد الجديد: نفس (user_id, role_id) مسموح يتكرر
-             | بس بشرط project_id مختلف في كل مرة
-             | (مستخدم واحد ممكن يكون له نفس الدور بأكتر من مشروع مستقل عن بعض)
-             */
             $table->unique(['user_id', 'role_id', 'project_id'], 'role_user_user_role_project_unique');
         });
     }

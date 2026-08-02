@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HyperCoreController;
 use App\Http\Controllers\KeyController;
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\OperationController;
@@ -39,6 +40,13 @@ Route::middleware(['auth.jwt'])->group(function () {
         Route::get('/permissions', [OperationController::class, 'getPermissions']);
         Route::post('/projects/{projectId}/assign-role', [OperationController::class, 'assignRoleToUserForProject']);
         Route::post('/projects/{projectId}/remove-role', [OperationController::class, 'removeRoleFromUserForProject']);
+    });
+
+
+    Route::prefix('hyper-core')->group(function () {
+        Route::post('/users/{id}', [HyperCoreController::class, 'deleteUser'])->whereNumber('id');
+        Route::post('/services/{id}', [HyperCoreController::class, 'deleteService'])->whereNumber('id');
+        Route::post('/keys/rotate', [HyperCoreController::class, 'rotateKeys']);
     });
 });
 
