@@ -15,7 +15,7 @@ return new class extends Migration
             $table->char('id', 26)->primary();
 
             // relations
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
             // device info
             $table->string('ip_address', 45)->nullable();
@@ -33,7 +33,6 @@ return new class extends Migration
             $table->timestamps();
 
             // indexes
-            $table->index('user_id');
             $table->index('expires_at');
             $table->index('revoked_at');
         });

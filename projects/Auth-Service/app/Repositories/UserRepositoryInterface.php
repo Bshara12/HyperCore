@@ -18,4 +18,6 @@ interface UserRepositoryInterface
     public function updatePassword($userId, $hashedPassword);
 
     public function getUsersByIds(array $ids): Collection;
+
+    public function delete(User $user): bool;
 }

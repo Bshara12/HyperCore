@@ -7,18 +7,9 @@ use Illuminate\Support\Facades\DB;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $now = now();
-
-        /*
-        |--------------------------------------------------------------------------
-        | 1) إنشاء الصلاحيات أو تحديثها
-        |--------------------------------------------------------------------------
-        */
 
         $permissions = [
             'read.data',
@@ -32,30 +23,19 @@ class RolesAndPermissionsSeeder extends Seeder
         $permissionIds = [];
 
         foreach ($permissions as $permission) {
-
             DB::table('permessions')->updateOrInsert(
                 ['name' => $permission],
-                [
-                    'guard_name' => 'api',
-                    'updated_at' => $now,
-                    'created_at' => $now,
-                ]
+                ['guard_name' => 'api', 'updated_at' => $now, 'created_at' => $now]
             );
 
-            $permissionIds[$permission] = DB::table('permessions')
-                ->where('name', $permission)
-                ->value('id');
+            $permissionIds[$permission] = DB::table('permessions')->where('name', $permission)->value('id');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 2) إنشاء الأدوار أو تحديثها
-        |--------------------------------------------------------------------------
-        */
-
+        // ✅ super_admin استُبدل بـ hyper_core — دور مطوري النظام حصراً
+        // لا يُسند أبداً عبر الـ Seeder، فقط عبر: php artisan hypercore:assign {email}
         $roles = [
             'owner',
-            'super_admin',
+            'hyper_core',
             'admin',
             'user',
         ];
@@ -63,26 +43,13 @@ class RolesAndPermissionsSeeder extends Seeder
         $roleIds = [];
 
         foreach ($roles as $role) {
-
             DB::table('roles')->updateOrInsert(
                 ['name' => $role],
-                [
-                    'guard_name' => 'api',
-                    'updated_at' => $now,
-                    'created_at' => $now,
-                ]
+                ['guard_name' => 'api', 'updated_at' => $now, 'created_at' => $now]
             );
 
-            $roleIds[$role] = DB::table('roles')
-                ->where('name', $role)
-                ->value('id');
+            $roleIds[$role] = DB::table('roles')->where('name', $role)->value('id');
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 3) توزيع الصلاحيات بدون تكرار
-        |--------------------------------------------------------------------------
-        */
 
         $this->syncPermissions($roleIds['owner'], [
             $permissionIds['read.data'],
@@ -90,19 +57,14 @@ class RolesAndPermissionsSeeder extends Seeder
             $permissionIds['delete.data'],
         ]);
 
-        $this->syncPermissions($roleIds['admin'], [
-            $permissionIds['read.data'],
-            $permissionIds['update.data'],
-            $permissionIds['delete.data'],
-        ]);
+        // ✅ admin أصبح يمتلك كل صلاحيات super_admin السابقة بالإضافة لصلاحياته الأصلية
+        $this->syncPermissions($roleIds['admin'], array_values($permissionIds));
 
-        // super_admin → جميع الصلاحيات
-        $this->syncPermissions(
-            $roleIds['super_admin'],
-            array_values($permissionIds)
-        );
+        // hyper_core → كل الصلاحيات أيضاً على مستوى الكتالوج
+        // الفرق الحقيقي عن admin مفروض بالكود لا بهذا الجدول: حذف مستخدم/خدمة،
+        // إعادة إصدار المفاتيح، وحصرية إسناد دور hyper_core نفسه
+        $this->syncPermissions($roleIds['hyper_core'], array_values($permissionIds));
 
-        // user → read فقط
         $this->syncPermissions($roleIds['user'], [
             $permissionIds['read.data'],
         ]);
@@ -111,15 +73,12 @@ class RolesAndPermissionsSeeder extends Seeder
     private function syncPermissions(int $roleId, array $permissionIds): void
     {
         foreach ($permissionIds as $permissionId) {
-
+            // 🔴 إصلاح: كانت created_at/updated_at جوا شرط البحث بـ updateOrInsert
+            // بما إن now() تتغيّر بكل استدعاء، الشرط ما كان يتطابق أبداً مع صف سابق
+            // فكانت تتكرر صفوف جديدة بدل تحديث الموجود، بكل مرة يُشغَّل فيها الـ Seeder
             DB::table('permession_role')->updateOrInsert(
-                [
-                    'role_id' => $roleId,
-                    'permession_id' => $permissionId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                []
+                ['role_id' => $roleId, 'permession_id' => $permissionId],
+                ['created_at' => now(), 'updated_at' => now()]
             );
         }
     }

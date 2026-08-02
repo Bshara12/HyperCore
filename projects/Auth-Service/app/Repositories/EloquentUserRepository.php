@@ -36,4 +36,9 @@ class EloquentUserRepository implements UserRepositoryInterface
     {
         return User::query()->whereIn('id', $ids)->select('id', 'name')->get();
     }
+
+    public function delete(User $user): bool
+    {
+        return (bool) $user->delete();
+    }
 }
