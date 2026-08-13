@@ -5,7 +5,7 @@ namespace App\Domains\Subscription\Repositories\Interface;
 use App\Domains\Subscription\DTOs\Subscription\SubscribeUserDTO;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
-
+use Illuminate\Database\Eloquent\Collection;
 interface SubscriptionRepositoryInterface
 {
     public function create(
@@ -56,4 +56,15 @@ interface SubscriptionRepositoryInterface
         string $featureKey,
         ?string $nextResetAt
     ): void;
+
+
+     public function findForUser(
+        int $userId,
+        ?int $projectId,
+        ?string $status
+    ): Collection;
+
+    public function findByIdWithUsages(
+        int $id
+    ): ?Subscription;
 }

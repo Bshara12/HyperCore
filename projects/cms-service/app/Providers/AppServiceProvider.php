@@ -64,6 +64,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 
@@ -459,5 +460,11 @@ class AppServiceProvider extends ServiceProvider
       return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
     });
     // @codeCoverageIgnoreEnd
+
+    Route::bind('project', function (string $value) {
+        return is_numeric($value)
+            ? Project::findOrFail($value)
+            : Project::where('slug', $value)->firstOrFail();
+    });
   }
 }

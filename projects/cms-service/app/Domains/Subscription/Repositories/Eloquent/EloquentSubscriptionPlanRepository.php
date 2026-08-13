@@ -63,4 +63,27 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
             ->where('slug', $slug)
             ->exists();
     }
+
+    public function getActivePlans(
+        ?int $projectId
+    ): Collection {
+
+        return SubscriptionPlan::query()
+            ->when(
+                $projectId,
+                fn ($query) => $query->where('project_id', $projectId)
+            )
+            ->where('is_active', true)
+            ->with('features')
+            ->get();
+    }
+
+    public function findById(
+        int $id
+    ): ?SubscriptionPlan {
+
+        return SubscriptionPlan::query()
+            ->with('features')
+            ->find($id);
+    }
 }

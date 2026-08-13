@@ -61,6 +61,7 @@ return [
   ],
   'auth_service' => [
     'url' => env('AUTH_SERVICE_URL'),
+    'internal_api_key' => env('INTERNAL_SERVICES_API_KEY'),
   ],
   'ecommerce_service' => [
     'url' => env('ECOMMERCE_URL'),

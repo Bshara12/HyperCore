@@ -175,27 +175,60 @@ class SearchCacheService
    * queryHash = md5(lowercase query) لتجنب مشاكل الأحرف الخاصة
    * prefType = نوع التفضيل وليس الـ userId (لأن users مختلفين بنفس التفضيل يأخذون نفس النتائج)
    */
-  public function buildKey(
-    SearchQueryDTO $dto,
-    UserPreferenceDTO $preference,
-    string $intent
-  ): string {
-    $queryHash = md5(mb_strtolower(trim($dto->keyword), 'UTF-8'));
-    $prefType = $preference->hasHistory ? $preference->preferredType : 'none';
-    $dataTypeKey = $dto->dataTypeSlug ?? 'all';
 
-    return sprintf(
-      'search:%d:%s:%s:%d:%d:%s:%s:%s',
-      $dto->projectId,
-      $dto->language,
-      $queryHash,
-      $dto->page,
-      $dto->perPage,
-      $intent,
-      $prefType,
-      $dataTypeKey
-    );
-  }
+
+  // public function buildKey(
+  //   SearchQueryDTO $dto,
+  //   UserPreferenceDTO $preference,
+  //   string $intent
+  // ): string {
+  //   $queryHash = md5(mb_strtolower(trim($dto->keyword), 'UTF-8'));
+  //   $prefType = $preference->hasHistory ? $preference->preferredType : 'none';
+  //   $dataTypeKey = $dto->dataTypeSlug ?? 'all';
+
+  //   return sprintf(
+  //     'search:%d:%s:%s:%d:%d:%s:%s:%s',
+  //     $dto->projectId,
+  //     $dto->language,
+  //     $queryHash,
+  //     $dto->page,
+  //     $dto->perPage,
+  //     $intent,
+  //     $prefType,
+  //     $dataTypeKey
+  //   );
+  // }
+
+
+public function buildKey(
+        SearchQueryDTO $dto,
+        UserPreferenceDTO $preference,
+        string $intent
+    ): string {
+        $queryHash = md5(mb_strtolower(trim($dto->keyword), 'UTF-8'));
+
+        $topAffinityIds = array_keys($preference->topAffinities(3));
+        $topTermWords   = array_keys($preference->topTerms(5));
+
+        $prefType = (!$preference->hasHistory || (empty($topAffinityIds) && empty($topTermWords)))
+            ? 'none'
+            : md5(implode(',', $topAffinityIds) . '|' . implode(',', $topTermWords));
+
+        $dataTypeKey = $dto->dataTypeSlug ?? 'all';
+
+        return sprintf(
+            'search:%d:%s:%s:%d:%d:%s:%s:%s',
+            $dto->projectId,
+            $dto->language,
+            $queryHash,
+            $dto->page,
+            $dto->perPage,
+            $intent,
+            $prefType,
+            $dataTypeKey
+        );
+    }
+
 
   /**
    * Hot key: أقصر وأسرع للـ burst traffic
