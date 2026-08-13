@@ -4,17 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Domains\CMS\Read\Services\EntryReadService;
 use App\Domains\CMS\Requests\ProjectEntriesRequest;
-
+// ها جديد
+use App\Models\Project;
 class ProjectEntriesController extends Controller
 {
     public function __construct(
         private EntryReadService $service
     ) {}
-
-    public function index(ProjectEntriesRequest $request, int $projectId)
+// 👈 2. استبدال int $projectId بـ Project $project
+    public function index(ProjectEntriesRequest $request, Project $project)
     {
         $result = $this->service->getProjectEntriesTree(
-            projectId: $projectId,
+            projectId: $project->id,
             filters: $request->getFilters()
         );
 

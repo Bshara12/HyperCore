@@ -369,13 +369,68 @@ Route::get('/debug/search-user', function (Request $request) {
   ]);
 })->middleware(['auth.user', 'resolve.project']);
 
+
+Route::middleware(['auth.user'])->prefix('ai')->group(function () {
+  Route::get('/conversations', [AiConversationController::class, 'index'])
+    ->name('ai-conversations.index');
+
+  Route::post('/conversations', [AiConversationController::class, 'store'])
+    ->name('ai-conversations.store');
+
+  Route::get('/conversations/{id}', [AiConversationController::class, 'show'])
+    ->name('ai-conversations.show');
+
+  Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy'])
+    ->name('ai-conversations.destroy');
+});
+
+// Route::prefix('subscriptions')->group(function () {
+
+//   Route::post('/plans', [PlanController::class, 'store']);
+// });
+
+// Route::post(
+//   '/subscriptions',
+//   [SubscriptionController::class, 'store']
+// )->middleware('auth.user');
+
+// Route::post(
+//   '/subscriptions/{subscription}/renew',
+//   [SubscriptionController::class, 'renew']
+// )->middleware('auth.user');
+
+// Route::post(
+//   '/subscriptions/{subscription}/cancel',
+//   [SubscriptionController::class, 'cancel']
+// )->middleware('auth.user');
+
+// Route::post(
+//   '/subscription-feature-rules',
+//   [SubscriptionFeatureRuleController::class, 'store']
+// );
+
+
+
 Route::prefix('subscriptions')->group(function () {
   Route::post('/plans', [PlanController::class, 'store']);
+
+  // --- جديد ---
+  // TODO(admin): لو حبيت تحمي هاد الـ endpoint لاحقًا، أضف صلاحية أدمن هون، مثلاً:
+  // ->middleware(['auth.user', 'permission:subscription.plan.manage'])
+  Route::get('/plans', [PlanController::class, 'index']);
+
+  Route::get('/plans/{id}', [PlanController::class, 'show']);
 });
 
 Route::post(
   '/subscriptions',
   [SubscriptionController::class, 'store']
+)->middleware('auth.user');
+
+// --- جديد ---
+Route::get(
+  '/subscriptions',
+  [SubscriptionController::class, 'index']
 )->middleware('auth.user');
 
 Route::post(
@@ -388,10 +443,20 @@ Route::post(
   [SubscriptionController::class, 'cancel']
 )->middleware('auth.user');
 
+// --- جديد ---
+// لازم يتسجل بعد '/subscriptions/plans' وبعد '/subscriptions/{subscription}/renew|cancel'
+// عشان Laravel يفضّل الأجزاء الثابتة (plans, renew, cancel) قبل ما يوصل لهاد الـ wildcard route.
+Route::get(
+  '/subscriptions/{subscription}',
+  [SubscriptionController::class, 'show']
+)->middleware('auth.user');
+
 Route::post(
   '/subscription-feature-rules',
   [SubscriptionFeatureRuleController::class, 'store']
 );
+
+
 
 Route::post(
   '/content-access',
