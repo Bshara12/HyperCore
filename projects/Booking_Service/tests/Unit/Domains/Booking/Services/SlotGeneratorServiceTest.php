@@ -2,13 +2,14 @@
 
 namespace Tests\Integration\Domains\Booking\Services;
 
-use Tests\TestCase;
 use App\Models\Booking;
 use App\Models\Resource;
 use App\Models\ResourceAvailability;
 use App\Domains\Booking\Services\SlotGeneratorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Carbon\Carbon;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
 
 class SlotGeneratorServiceTest extends TestCase
 {
@@ -22,7 +23,7 @@ class SlotGeneratorServiceTest extends TestCase
     $this->service = app(SlotGeneratorService::class);
   }
 
-  /** @test */
+  #[Test]
   public function it_returns_empty_array_if_no_availability_for_the_day()
   {
     $resource = Resource::factory()->create();
@@ -34,9 +35,12 @@ class SlotGeneratorServiceTest extends TestCase
     $this->assertEmpty($result);
   }
 
-  /** @test */
+  #[Test]
   public function it_generates_slots_correctly_with_availability()
   {
+    // تثبيت الوقت قبل موعد الـ slots ليتم اعتبارها في المستقبل
+    Carbon::setTestNow('2026-06-01 08:00:00');
+
     $resource = Resource::factory()->create(['capacity' => 2]);
     $date = Carbon::parse('2026-06-01'); // Monday (1)
 
@@ -61,9 +65,12 @@ class SlotGeneratorServiceTest extends TestCase
     $this->assertCount(2, $result);
     $this->assertEquals(1, $result[0]['booked_count']);
     $this->assertTrue($result[0]['available']);
+
+    // إعادة ضبط الوقت الفعلي
+    Carbon::setTestNow();
   }
 
-  /** @test */
+  #[Test]
   public function it_marks_past_slots_as_unavailable()
   {
     $resource = Resource::factory()->create(['capacity' => 10]);
@@ -94,7 +101,7 @@ class SlotGeneratorServiceTest extends TestCase
     Carbon::setTestNow();
   }
 
-  /** @test */
+  #[Test]
   public function it_marks_full_slots_as_unavailable()
   {
     $resource = Resource::factory()->create(['capacity' => 1]);

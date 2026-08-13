@@ -141,10 +141,10 @@ Route::prefix('cms/analytics')->middleware(['auth.user', 'throttle:api.standard'
 Route::prefix('ai')
   ->middleware(['auth.user', 'throttle:api.standard'])
   ->group(function () {
-    Route::get('/conversations', [AiConversationController::class, 'index'])->name('ai.conversations.index');
-    Route::get('/conversations/{id}', [AiConversationController::class, 'show'])->name('ai.conversations.show');
-    Route::post('/conversations', [AiConversationController::class, 'store'])->middleware('throttle:api.ai')->name('ai.conversations.store');
-    Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy'])->middleware('throttle:api.heavy')->name('ai.conversations.destroy');
+    Route::get('/conversations', [AiConversationController::class, 'index'])->name('ai-conversations.index');
+    Route::get('/conversations/{id}', [AiConversationController::class, 'show'])->name('ai-conversations.show');
+    Route::post('/conversations', [AiConversationController::class, 'store'])->middleware('throttle:api.ai')->name('ai-conversations.store');
+    Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy'])->middleware('throttle:api.heavy')->name('ai-conversations.destroy');
   });
 
 

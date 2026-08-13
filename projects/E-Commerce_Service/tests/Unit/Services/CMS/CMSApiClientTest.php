@@ -647,7 +647,7 @@ class CMSApiClientTest extends TestCase
 
     Http::fake([
       config('services.cms.url') . '/api/projects/resolve' => Http::response(['original' => ['id' => 1]], 200),
-      config('services.cms.url') . '/api/cms/projects/1/data-types/products/entries' => Http::response(['entries' => []], 200)
+      config('services.cms.url') . '/api/projects/1/data-types/products/entries' => Http::response(['entries' => []], 200)
     ]);
 
     $result = $this->cmsApiClient->getEntriesByDataType($dataTypeSlug);
@@ -675,7 +675,7 @@ class CMSApiClientTest extends TestCase
 
     Http::fake([
       config('services.cms.url') . '/api/projects/resolve' => Http::response(['original' => ['id' => 1]], 200),
-      config('services.cms.url') . '/api/cms/projects/1/data-types/invalid/entries' => Http::response($longErrorBody, 500)
+      config('services.cms.url') . '/api/projects/1/data-types/invalid/entries' => Http::response($longErrorBody, 500)
     ]);
 
     try {

@@ -82,7 +82,7 @@ COMBINATION RULE:
 NATIVE (DO NOT recreate as custom types):
 - ecommerce: Cart, Orders, OrderItems, Payments, Offers, Wishlist, Returns
 - booking: Resources, Bookings, ResourceAvailabilities, CancellationPolicies
-- cms: Projects, DataTypes, DataEntries, Collections, SEO, Ratings
+- cms: Projects, DataTypes, DataEntries, Collections, SEO, Ratings, Supscription
 
 CUSTOM DATA TYPES: Only for unique business entities.
 

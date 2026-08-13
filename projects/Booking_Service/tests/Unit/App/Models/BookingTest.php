@@ -6,12 +6,22 @@ use Tests\TestCase;
 use App\Models\Booking;
 use App\Models\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Carbon\Carbon;
-use PHPUnit\Framework\Attributes\Test; // استيراد الـ Attribute
+use PHPUnit\Framework\Attributes\Test;
 
 class BookingTest extends TestCase
 {
   use RefreshDatabase;
+
+  protected function setUp(): void
+  {
+    parent::setUp();
+
+    // 🛑 إيقاف جميع الـ Observers والأحداث أثناء اختبارات الموديل
+    Booking::unsetEventDispatcher();
+  }
+
   #[Test]
   public function it_has_correct_casts_and_fillables()
   {
@@ -25,6 +35,7 @@ class BookingTest extends TestCase
     $this->assertIsFloat($booking->amount);
     $this->assertEquals(250.50, $booking->amount);
   }
+
   #[Test]
   public function it_belongs_to_a_resource()
   {
@@ -34,6 +45,7 @@ class BookingTest extends TestCase
     $this->assertInstanceOf(Resource::class, $booking->resource);
     $this->assertEquals($resource->id, $booking->resource->id);
   }
+
   #[Test]
   public function it_checks_confirmation_status()
   {
@@ -43,6 +55,7 @@ class BookingTest extends TestCase
     $booking->status = Booking::STATUS_PENDING;
     $this->assertFalse($booking->isConfirmed());
   }
+
   #[Test]
   public function it_checks_if_booking_is_cancellable()
   {
@@ -55,34 +68,33 @@ class BookingTest extends TestCase
     $booking->status = Booking::STATUS_COMPLETED;
     $this->assertFalse($booking->isCancellable());
   }
+
   #[Test]
   public function it_checks_if_booking_is_reschedulable()
   {
-    // حالةConfirmed وفي المستقبل
     $booking = new Booking([
       'status' => Booking::STATUS_CONFIRMED,
       'start_at' => now()->addDay()
     ]);
     $this->assertTrue($booking->isReschedulable());
 
-    // حالة Confirmed ولكن في الماضي
     $booking->start_at = now()->subDay();
     $this->assertFalse($booking->isReschedulable());
 
-    // حالة أخرى وفي المستقبل
     $booking->status = Booking::STATUS_PENDING;
     $booking->start_at = now()->addDay();
     $this->assertFalse($booking->isReschedulable());
   }
+
   #[Test]
   public function it_calculates_hours_until_booking()
   {
     $startTime = now()->addHours(5);
     $booking = new Booking(['start_at' => $startTime]);
 
-    // نستخدم delta لأن الوقت يتحرك بالملي ثانية
     $this->assertEqualsWithDelta(5.0, $booking->hoursUntilBooking(), 0.1);
   }
+
   #[Test]
   public function it_calculates_duration_in_minutes()
   {
@@ -95,6 +107,7 @@ class BookingTest extends TestCase
 
     $this->assertEquals(45, $booking->durationInMinutes());
   }
+
   #[Test]
   public function it_uses_soft_deletes()
   {

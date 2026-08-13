@@ -4,10 +4,9 @@ use App\Domains\E_Commerce\Actions\Cart\GetCartAction;
 use App\Domains\E_Commerce\Actions\Pricing\EnrichEntriesWithPricesAction;
 use App\Domains\E_Commerce\Actions\Pricing\FetchEntriesByIdsAction;
 use App\Domains\E_Commerce\Repositories\Interfaces\Cart\CartRepositoryInterface;
-use App\Services\CMS\CMSApiClient;
+use App\Domains\E_Commerce\Support\StockStatusResolver;
 use App\Models\Cart;
 use App\Models\CartItem;
-use Illuminate\Support\Facades\Cache;
 
 it('returns empty structure when cart has no items', function () {
   $projectId = 1;
@@ -16,7 +15,7 @@ it('returns empty structure when cart has no items', function () {
   $cartRepo = Mockery::mock(CartRepositoryInterface::class);
   $fetchEntries = Mockery::mock(FetchEntriesByIdsAction::class);
   $enrichPrices = Mockery::mock(EnrichEntriesWithPricesAction::class);
-  $cms = Mockery::mock(CMSApiClient::class);
+  $stockResolver = Mockery::mock(StockStatusResolver::class);
 
   $mockCart = new Cart(['id' => 1]);
   $mockCart->setRelation('items', collect()); // سلة فارغة
@@ -24,7 +23,7 @@ it('returns empty structure when cart has no items', function () {
   $cartRepo->shouldReceive('getOrCreate')->once()->andReturn($mockCart);
   $cartRepo->shouldReceive('loadItems')->once()->andReturn($mockCart);
 
-  $action = new GetCartAction($cartRepo, $fetchEntries, $enrichPrices, $cms);
+  $action = new GetCartAction($cartRepo, $fetchEntries, $enrichPrices, $stockResolver);
   $result = $action->execute($projectId, $userId);
 
   expect($result['items'])->toBeEmpty();
@@ -45,53 +44,51 @@ it('enriches cart items with prices and stock status correctly', function () {
 
   $mockEntries = [['id' => 101], ['id' => 102], ['id' => 103]];
   $mockEnriched = [
-    ['id' => 101, 'final_price' => 100, 'original_price' => 120],
-    ['id' => 102, 'final_price' => 50],
-    ['id' => 103, 'final_price' => 30]
-  ];
-  $mockStock = [
-    101 => ['available' => 5],    // متاح (أكثر من المطلوب 2)
-    102 => ['available' => 3],    // غير كافٍ (أقل من المطلوب 10)
-    103 => ['available' => 0],    // نفد
+    ['id' => 101, 'final_price' => 100, 'original_price' => 120, 'available_stock' => 5],
+    ['id' => 102, 'final_price' => 50, 'available_stock' => 3],
+    ['id' => 103, 'final_price' => 30, 'available_stock' => 0],
   ];
 
   // 2. بناء الـ Mocks
   $cartRepo = Mockery::mock(CartRepositoryInterface::class);
   $fetchEntries = Mockery::mock(FetchEntriesByIdsAction::class);
   $enrichPrices = Mockery::mock(EnrichEntriesWithPricesAction::class);
-  $cms = Mockery::mock(CMSApiClient::class);
+  $stockResolver = Mockery::mock(StockStatusResolver::class);
 
   $cartRepo->shouldReceive('getOrCreate')->andReturn($mockCart);
   $cartRepo->shouldReceive('loadItems')->andReturn($mockCart);
 
   $fetchEntries->shouldReceive('execute')->once()->andReturn($mockEntries);
   $enrichPrices->shouldReceive('execute')->once()->andReturn($mockEnriched);
-  $cms->shouldReceive('getStockStatus')->once()->andReturn($mockStock);
 
-  $action = new GetCartAction($cartRepo, $fetchEntries, $enrichPrices, $cms);
+  // توقعات الـ StockResolver
+  $stockResolver->shouldReceive('resolve')->with(5, 2)->once()->andReturn('available');
+  $stockResolver->shouldReceive('resolve')->with(3, 10)->once()->andReturn('insufficient');
+  $stockResolver->shouldReceive('resolve')->with(0, 1)->once()->andReturn('out_of_stock');
+
+  $action = new GetCartAction($cartRepo, $fetchEntries, $enrichPrices, $stockResolver);
   $result = $action->execute($projectId, $userId);
 
-  // 3. التحقق من النتائج ومنطق الـ resolveStockStatus
+  // 3. التحقق من النتائج
   expect($result['cart_id'])->toBe(1);
   expect($result['items'])->toHaveCount(3);
 
-  // فحص المنتج الأول (متوفر)
+  // فحص المنتج الأول
   expect($result['items'][0]['stock_status'])->toBe('available');
-  expect($result['items'][0]['subtotal'])->toBe(200); // 100 * 2
+  expect($result['items'][0]['subtotal'])->toBe(200);
 
-  // فحص المنتج الثاني (غير كافٍ)
+  // فحص المنتج الثاني
   expect($result['items'][1]['stock_status'])->toBe('insufficient');
 
-  // فحص المنتج الثالث (نفد)
+  // فحص المنتج الثالث
   expect($result['items'][2]['stock_status'])->toBe('out_of_stock');
 
-  // التحقق من الإجمالي
-  expect($result['total'])->toBe(730); // (100*2) + (50*10) + (30*1)
-  expect($result['total_items'])->toBe(13); // 2 + 10 + 1
+  // الإجمالي
+  expect($result['total'])->toBe(730);
+  expect($result['total_items'])->toBe(13);
 });
 
-it('resolves stock as available when stock info is null', function () {
-  // اختبار حالة الـ null في الـ Private Method لتغطية الـ 100%
+it('resolves stock status when stock info is null', function () {
   $projectId = 1;
   $userId = 10;
   $mockCart = new Cart(['id' => 1]);
@@ -101,15 +98,16 @@ it('resolves stock as available when stock info is null', function () {
   $cartRepo = Mockery::mock(CartRepositoryInterface::class);
   $fetchEntries = Mockery::mock(FetchEntriesByIdsAction::class);
   $enrichPrices = Mockery::mock(EnrichEntriesWithPricesAction::class);
-  $cms = Mockery::mock(CMSApiClient::class);
+  $stockResolver = Mockery::mock(StockStatusResolver::class);
 
   $cartRepo->shouldReceive('getOrCreate')->andReturn($mockCart);
   $cartRepo->shouldReceive('loadItems')->andReturn($mockCart);
   $fetchEntries->shouldReceive('execute')->andReturn([['id' => 999]]);
-  $enrichPrices->shouldReceive('execute')->andReturn([['id' => 999, 'final_price' => 10]]);
-  $cms->shouldReceive('getStockStatus')->andReturn([999 => null]); // الستوك غير موجود
+  $enrichPrices->shouldReceive('execute')->andReturn([['id' => 999, 'final_price' => 10, 'available_stock' => null]]);
 
-  $action = new GetCartAction($cartRepo, $fetchEntries, $enrichPrices, $cms);
+  $stockResolver->shouldReceive('resolve')->with(null, 1)->once()->andReturn('available');
+
+  $action = new GetCartAction($cartRepo, $fetchEntries, $enrichPrices, $stockResolver);
   $result = $action->execute($projectId, $userId);
 
   expect($result['items'][0]['stock_status'])->toBe('available');

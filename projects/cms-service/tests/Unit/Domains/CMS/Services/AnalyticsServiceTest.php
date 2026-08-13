@@ -9,6 +9,7 @@ use App\Domains\CMS\Analytics\Actions\GetTopRatedEntriesAction;
 use App\Domains\CMS\Analytics\DTOs\AdminOverviewDTO;
 use App\Domains\CMS\Analytics\DTOs\AnalyticsFilterDTO;
 use App\Domains\CMS\Services\AnalyticsService;
+use App\Models\Project;
 
 beforeEach(function () {
   // 💡 عمل ميوك لجميع الـ Actions التي تعتمد عليها الخدمة
@@ -18,6 +19,10 @@ beforeEach(function () {
   $this->contentGrowth     = Mockery::mock(GetContentGrowthAction::class);
   $this->topRatedEntries   = Mockery::mock(GetTopRatedEntriesAction::class);
   $this->ratingsReport     = Mockery::mock(GetRatingsReportAction::class);
+
+  // إنشاء مودل مشروع افتراضي لتمريره للـ DTOs
+  $this->mockProject = new Project();
+  $this->mockProject->id = 5;
 
   // حقن الـ Mocks داخل الخدمة
   $this->service = new AnalyticsService(
@@ -67,7 +72,14 @@ test('projectsGrowth proxies request to GetProjectsGrowthAction', function () {
 // ─── اختبارات التوابع التي تستخدم AnalyticsFilterDTO ──────────────────
 
 test('contentSummary proxies request to GetContentSummaryAction', function () {
-  $dto = new AnalyticsFilterDTO(from: '2026-01-01', to: '2026-01-31', period: 'daily', projectId: 5, limit: 10);
+  $dto = new AnalyticsFilterDTO(
+    from: '2026-01-01',
+    to: '2026-01-31',
+    period: 'daily',
+    projectId: 5,
+    project: $this->mockProject,
+    limit: 10
+  );
 
   $this->contentSummary
     ->shouldReceive('execute')
@@ -81,7 +93,14 @@ test('contentSummary proxies request to GetContentSummaryAction', function () {
 });
 
 test('contentGrowth proxies request to GetContentGrowthAction', function () {
-  $dto = new AnalyticsFilterDTO(from: '2026-01-01', to: '2026-01-31', period: 'weekly', projectId: 5, limit: 10);
+  $dto = new AnalyticsFilterDTO(
+    from: '2026-01-01',
+    to: '2026-01-31',
+    period: 'weekly',
+    projectId: 5,
+    project: $this->mockProject,
+    limit: 10
+  );
 
   $this->contentGrowth
     ->shouldReceive('execute')
@@ -95,7 +114,14 @@ test('contentGrowth proxies request to GetContentGrowthAction', function () {
 });
 
 test('topRatedEntries proxies request to GetTopRatedEntriesAction', function () {
-  $dto = new AnalyticsFilterDTO(from: '2026-01-01', to: '2026-01-31', period: 'daily', projectId: 5, limit: 5);
+  $dto = new AnalyticsFilterDTO(
+    from: '2026-01-01',
+    to: '2026-01-31',
+    period: 'daily',
+    projectId: 5,
+    project: $this->mockProject,
+    limit: 5
+  );
 
   $this->topRatedEntries
     ->shouldReceive('execute')
@@ -109,7 +135,14 @@ test('topRatedEntries proxies request to GetTopRatedEntriesAction', function () 
 });
 
 test('ratingsReport proxies request to GetRatingsReportAction', function () {
-  $dto = new AnalyticsFilterDTO(from: '2026-01-01', to: '2026-01-31', period: 'monthly', projectId: 5, limit: 20);
+  $dto = new AnalyticsFilterDTO(
+    from: '2026-01-01',
+    to: '2026-01-31',
+    period: 'monthly',
+    projectId: 5,
+    project: $this->mockProject,
+    limit: 20
+  );
 
   $this->ratingsReport
     ->shouldReceive('execute')
