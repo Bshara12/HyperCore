@@ -176,68 +176,43 @@ Route::get('/user', function (Request $request) {
   return $request->user();
 })->middleware('auth:sanctum');
 
-/*
- * |--------------------------------------------------------------------------
- * | Project Creation (بدون resolve.project)
- * |--------------------------------------------------------------------------
- */
-
-// Route::prefix('projects')->group(function () {
-
-//   Route::post('/', [ProjectController::class, 'store']);
-// })->middleware('auth.user');
-
-Route::post('/projects', [ProjectController::class, 'store'])->middleware('auth.user');
 
 /*
- * |--------------------------------------------------------------------------
- * | Test Routes
- * |--------------------------------------------------------------------------
- */
+* |--------------------------------------------------------------------------
+* | Projects
+* |--------------------------------------------------------------------------
+*/
 
-Route::middleware('resolve.project')->get('/tenant-test', function () {
-  return response()->json([
-    'project_id' => app('currentProject')->id,
-    'project_name' => app('currentProject')->name,
-  ]);
-});
+Route::post('/projects', [ProjectController::class, 'store'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
 
-Route::get('/test-auth', function (AuthServiceClient $auth) {
-  $token = request()->bearerToken();
+Route::get('/projects', [ProjectController::class, 'index'])
+  ->middleware(['auth.user', 'throttle:api.standard']);
 
-  $user = $auth->getUserFromToken($token);
-
-  return response()->json($user);
-});
-
-/*
- * |--------------------------------------------------------------------------
- * | Projects
- * |--------------------------------------------------------------------------
- */
-
-Route::get('/projects', [ProjectController::class, 'index']);
-Route::middleware('resolve.project')->group(function () {
-  // CMS routes لاحقًا
+Route::middleware(['resolve.project', 'auth.user', 'throttle:api.standard'])->group(function () {
   Route::get('/projects/resolve', [ProjectController::class, 'resolve']);
-  Route::post('/projects/{project}', [ProjectController::class, 'update']);
+  Route::post('/projects/{project}', [ProjectController::class, 'update'])
+    ->middleware('throttle:api.heavy');
   Route::get('/projects/{project}', [ProjectController::class, 'show']);
-  Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
-  // Route::get('/entries/{id}', [EntryDetailController::class, 'show']);
+  Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])
+    ->middleware('throttle:api.heavy');
   Route::post('/check-project-access', [ProjectAccessController::class, 'check']);
 });
 
 Route::get(
   '/projects/{project}/data-types/{slug}/entries',
   [DataTypeEntriesController::class, 'index']
-)->middleware(['auth.user']);
+)->middleware(['auth.user', 'resolve.project', 'throttle:api.standard']);
 
-Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(function () {
-  /*
-   * |--------------------------------------------------------------------------
-   * | Entries
-   * |--------------------------------------------------------------------------
-   */
+
+/*
+* |--------------------------------------------------------------------------
+* | Entries
+* |--------------------------------------------------------------------------
+*/
+
+  Route::prefix('cms')->middleware(['resolve.project', 'auth.user','throttle:api.standard'])->group(function () {
+
   Route::get('/projects/{project}/entries', [ProjectEntriesController::class, 'index']);
   Route::get('/entries/{entry:slug}', [EntryDetailController::class, 'show']);
   Route::post('/entries/bulk', [EntryDetailController::class, 'showMany']);
@@ -261,45 +236,19 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
     '/entries/{entry:slug}/same-type',
     [EntryDetailController::class, 'showwithsametype']
   );
-  // Route::get(
-  //   '/projects/{project}/data-types/{slug}/entries',
-  //   [DataTypeEntriesController::class, 'index']
-  // );
   Route::post(
     '/entries/{entry:slug}/publish',
     DataEntryPublishController::class
   );
-
-  /*
-   * |--------------------------------------------------------------------------
-   * | Data Entries
-   * |--------------------------------------------------------------------------
-   */
 
   Route::post(
     '/data-types/{dataType:slug}/entries',
     [DataEntryController::class, 'store']
   )->middleware(['auth.user', 'resolve.project']);
 
-  // -------------------------
-  // Data Entries
-  // -------------------------
-  Route::put('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'update']);
-
-  Route::post('/data-types/{dataType}/entries', [DataEntryController::class, 'store'])->middleware('resolve.project');
-  // Route::post('/projects/{project}/data-types/{dataType}/entries', [DataEntryController::class, 'store']);
 
   Route::delete('/entries/{entry}', [DataEntryController::class, 'destroy']);
-  // Route::delete('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'destroy']);
-
   Route::post('/entries/{entry}/publish', DataEntryPublishController::class);
-
-  Route::middleware('auth:sanctum')->group(function () {});
-  // Route::post('/data-entries/{id}', [DataEntryController::class, 'update']);
-  Route::put(
-    '/data-types/{dataType:slug}/entries/{entry:slug}',
-    [DataEntryController::class, 'update']
-  );
 
   Route::patch(
     '/data-entries/{entry:slug}',
@@ -319,55 +268,43 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user'])->group(functi
   );
 });
 
-/*
- * |--------------------------------------------------------------------------
- * | Permission Test
- * |--------------------------------------------------------------------------
- */
 
-// });
-// });
 
 // Rate
-Route::post('/ratings', [RatingController::class, 'store'])->middleware(['auth.user', 'resolve.project']);
-Route::get('/ratings', [RatingController::class, 'index'])->middleware('auth.user');
-Route::get('/ratings/stats', [RatingController::class, 'stats'])->middleware('auth.user');
+Route::post('/ratings', [RatingController::class, 'store'])
+  ->middleware(['auth.user', 'resolve.project', 'throttle:api.heavy']);
+Route::get('/ratings', [RatingController::class, 'index'])
+  ->middleware(['auth.user', 'throttle:api.standard']);
+Route::get('/ratings/stats', [RatingController::class, 'stats'])
+  ->middleware(['auth.user', 'throttle:api.standard']);
 
 // search
-Route::get('/search', SearchController::class)->middleware('auth.user', 'resolve.project');
-Route::post('/search/click', SearchClickController::class)->middleware('auth.user', 'resolve.project');
+Route::get('/search', SearchController::class)
+  ->middleware(['auth.user', 'resolve.project', 'throttle:api.standard']);
+Route::post('/search/click', SearchClickController::class)
+  ->middleware(['auth.user', 'resolve.project', 'throttle:api.standard']);
 Route::get('/search/suggestions', SearchSuggestionController::class)
-  ->middleware(['resolve.project']);  // لا يحتاج auth إلزامي
+  ->middleware(['resolve.project', 'throttle:api.standard']);  // لا يحتاج auth إلزامي
 
 Route::get('/search/popular', PopularSearchController::class)
-  ->middleware(['resolve.project']);
+  ->middleware(['resolve.project', 'throttle:api.standard']);
 
 // ─── Search Admin / Debug APIs ────────────────────────────────────────────
 Route::prefix('admin/search')
-  ->middleware(['auth.user'])
+  ->middleware(['auth.user', 'throttle:api.heavy'])
   ->group(function () {
+    // TODO(admin): هاد كلو admin/debug endpoints، لازم permission middleware
+    // مثلاً ->middleware('permission:search.admin') قبل ما يوصلها أي مستخدم auth عادي
     Route::post('/debug', [SearchAdminController::class, 'debug']);
     Route::get('/logs', [SearchAdminController::class, 'logs']);
     Route::get('/problems', [SearchAdminController::class, 'problems']);
-    Route::post('/ai/re-run', [SearchAdminController::class, 'aiReRun']);
+    Route::post('/ai/re-run', [SearchAdminController::class, 'aiReRun'])
+      ->middleware('throttle:api.ai');
     Route::post('/compare', [SearchAdminController::class, 'compare']);
     Route::get('/config', [SearchAdminController::class, 'getConfig']);
     Route::post('/config', [SearchAdminController::class, 'setConfig']);
   });
 
-// routes/api.php - مؤقت للـ debugging فقط
-Route::get('/debug/search-user', function (Request $request) {
-  $user = $request->attributes->get('auth_user');
-  $projectId = CurrentProject::id();
-
-  return response()->json([
-    'user_raw' => $user,
-    'user_id' => $user['id'] ?? $user['data']['id'] ?? null,
-    'user_structure' => is_array($user) ? array_keys($user) : gettype($user),
-    'project_id' => $projectId,
-    'token' => substr($request->bearerToken() ?? '', 0, 15) . '...',
-  ]);
-})->middleware(['auth.user', 'resolve.project']);
 
 
 Route::middleware(['auth.user'])->prefix('ai')->group(function () {
@@ -384,42 +321,16 @@ Route::middleware(['auth.user'])->prefix('ai')->group(function () {
     ->name('ai-conversations.destroy');
 });
 
-// Route::prefix('subscriptions')->group(function () {
-
-//   Route::post('/plans', [PlanController::class, 'store']);
-// });
-
-// Route::post(
-//   '/subscriptions',
-//   [SubscriptionController::class, 'store']
-// )->middleware('auth.user');
-
-// Route::post(
-//   '/subscriptions/{subscription}/renew',
-//   [SubscriptionController::class, 'renew']
-// )->middleware('auth.user');
-
-// Route::post(
-//   '/subscriptions/{subscription}/cancel',
-//   [SubscriptionController::class, 'cancel']
-// )->middleware('auth.user');
-
-// Route::post(
-//   '/subscription-feature-rules',
-//   [SubscriptionFeatureRuleController::class, 'store']
-// );
-
 
 
 Route::prefix('subscriptions')->group(function () {
   Route::post('/plans', [PlanController::class, 'store']);
 
-  // --- جديد ---
-  // TODO(admin): لو حبيت تحمي هاد الـ endpoint لاحقًا، أضف صلاحية أدمن هون، مثلاً:
-  // ->middleware(['auth.user', 'permission:subscription.plan.manage'])
-  Route::get('/plans', [PlanController::class, 'index']);
+  Route::get('/plans', [PlanController::class, 'index'])
+  ->middleware(['auth.user', 'throttle:api.standard']);
 
-  Route::get('/plans/{id}', [PlanController::class, 'show']);
+Route::get('/plans/{id}', [PlanController::class, 'show'])
+  ->middleware(['auth.user', 'throttle:api.standard']);
 });
 
 Route::post(
@@ -427,93 +338,34 @@ Route::post(
   [SubscriptionController::class, 'store']
 )->middleware('auth.user');
 
-// --- جديد ---
-Route::get(
-  '/subscriptions',
-  [SubscriptionController::class, 'index']
-)->middleware('auth.user');
 
-Route::post(
-  '/subscriptions/{subscription}/renew',
-  [SubscriptionController::class, 'renew']
-)->middleware('auth.user');
+Route::post('/subscriptions', [SubscriptionController::class, 'store'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
+Route::post('/subscriptions/{subscription}/renew', [SubscriptionController::class, 'renew'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
+Route::post('/subscriptions/{subscription}/cancel', [SubscriptionController::class, 'cancel'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
 
-Route::post(
-  '/subscriptions/{subscription}/cancel',
-  [SubscriptionController::class, 'cancel']
-)->middleware('auth.user');
-
-// --- جديد ---
-// لازم يتسجل بعد '/subscriptions/plans' وبعد '/subscriptions/{subscription}/renew|cancel'
-// عشان Laravel يفضّل الأجزاء الثابتة (plans, renew, cancel) قبل ما يوصل لهاد الـ wildcard route.
 Route::get(
   '/subscriptions/{subscription}',
   [SubscriptionController::class, 'show']
-)->middleware('auth.user');
+)->middleware(['auth.user', 'throttle:api.standard']);
 
-Route::post(
-  '/subscription-feature-rules',
-  [SubscriptionFeatureRuleController::class, 'store']
-);
+Route::post('/subscription-feature-rules', [SubscriptionFeatureRuleController::class, 'store'])
+  ->middleware(['throttle:api.heavy']);
 
-
-
-Route::post(
-  '/content-access',
-  [ContentAccessController::class, 'store']
-);
-
-Route::put(
-  '/content-access-metadata/{metadata}',
-  [ContentAccessController::class, 'update']
-);
-
-Route::delete(
-  '/content-access/{metadata}',
-  [ContentAccessController::class, 'destroy']
-);
-
-Route::patch(
-  '/content-access/{metadata}/activate',
-  [ContentAccessController::class, 'activate']
-);
-
-Route::get(
-  '/content-access',
-  [ContentAccessController::class, 'index']
-);
-
-Route::get(
-  '/content-access/{id}',
-  [ContentAccessController::class, 'show']
-);
-
-// -------------------------
-// Data Entries
-// -------------------------
-// Route::put('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'update']);
-
-// Route::post('/projects/{project}/data-types/{dataType}/entries', [DataEntryController::class, 'store']);
-
-// Route::delete('/projects/{project}/data-types/{dataType}/entries/{entry}', [DataEntryController::class, 'destroy']);
-
-// Route::post('/entries/{entry}/publish', DataEntryPublishController::class);
-
-// Route::middleware('auth:sanctum')->group(function () {});
-// Route::post('/data-entries/{id}', [DataEntryController::class, 'update']);
-
-// Route::post(
-//   '/data-entries/versions/{version}/restore',
-//   [DataEntryController::class, 'restore']
-// );
-// Route::get(
-//   '/entries/{id}/with-relations',
-//   [EntryDetailController::class, 'showwithrelation']
-// );
-// Route::get(
-//   '/entries/{id}/same-type',
-//   [EntryDetailController::class, 'showwithsametype']
-// );
+Route::post('/content-access', [ContentAccessController::class, 'store'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
+Route::put('/content-access-metadata/{metadata}', [ContentAccessController::class, 'update'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
+Route::delete('/content-access/{metadata}', [ContentAccessController::class, 'destroy'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
+Route::patch('/content-access/{metadata}/activate', [ContentAccessController::class, 'activate'])
+  ->middleware(['auth.user', 'throttle:api.heavy']);
+Route::get('/content-access', [ContentAccessController::class, 'index'])
+  ->middleware(['auth.user', 'throttle:api.standard']);
+Route::get('/content-access/{id}', [ContentAccessController::class, 'show'])
+  ->middleware(['auth.user', 'throttle:api.standard']);
 
 /*
 |--------------------------------------------------------------------------
@@ -558,3 +410,31 @@ Route::get('/test', function () {
 });
 
 
+Route::middleware('resolve.project')->get('/tenant-test', function () {
+  return response()->json([
+    'project_id' => app('currentProject')->id,
+    'project_name' => app('currentProject')->name,
+  ]);
+});
+
+Route::get('/test-auth', function (AuthServiceClient $auth) {
+  $token = request()->bearerToken();
+
+  $user = $auth->getUserFromToken($token);
+
+  return response()->json($user);
+});
+
+// routes/api.php - مؤقت للـ debugging فقط
+Route::get('/debug/search-user', function (Request $request) {
+  $user = $request->attributes->get('auth_user');
+  $projectId = CurrentProject::id();
+
+  return response()->json([
+    'user_raw' => $user,
+    'user_id' => $user['id'] ?? $user['data']['id'] ?? null,
+    'user_structure' => is_array($user) ? array_keys($user) : gettype($user),
+    'project_id' => $projectId,
+    'token' => substr($request->bearerToken() ?? '', 0, 15) . '...',
+  ]);
+})->middleware(['auth.user', 'resolve.project']);

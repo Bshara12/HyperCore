@@ -451,9 +451,17 @@ class AppServiceProvider extends ServiceProvider
     });
 
     // 2. للعمليات الثقيلة (الكتابة، التعديل، الحفظ والدفع)
+
+    // RateLimiter::for('api.heavy', function (Request $request) {
+    //   return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+    // });
     RateLimiter::for('api.heavy', function (Request $request) {
-      return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
-    });
+    $key = $request->user()?->id ?: $request->ip();
+    return [
+        Limit::perSecond(2)->by($key),   // يمنع burst/spam مفاجئ
+        Limit::perMinute(15)->by($key),  // الكوتا العامة زي ما هي
+    ];
+});
 
     // 3. لعمليات الذكاء الاصطناعي المكلفة
     RateLimiter::for('api.ai', function (Request $request) {
