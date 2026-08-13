@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Domains\Search\Actions;
 
 use App\Domains\Search\DTOs\LogSearchDTO;
@@ -10,113 +8,85 @@ use App\Domains\Search\DTOs\SearchResultDTO;
 use App\Domains\Search\DTOs\SearchResultItemDTO;
 use App\Domains\Search\DTOs\UserPreferenceDTO;
 use App\Domains\Search\Repositories\Interfaces\SearchRepositoryInterface;
-use App\Domains\Search\Services\AIQueryInterpreter;   // ← was AIQueryEnhancer
+use App\Domains\Search\Services\AIQueryEnhancer;
 use App\Domains\Search\Services\KeyboardLayoutFixer;
 use App\Domains\Search\Support\ArabicQueryNormalizer;
 use App\Domains\Search\Support\EnglishQueryNormalizer;
 use App\Domains\Search\Support\KeywordProcessor;
 use App\Domains\Search\Support\ProcessedKeyword;
-use App\Domains\Search\Support\QueryLanguageDetector;
-use App\Domains\Search\Support\TypoCorrector;
 use App\Domains\Search\Support\UserPreferenceAnalyzer;
 use App\Jobs\IncrementViewCountJob;
 use Illuminate\Support\Facades\Log;
 
-final class SearchEntriesAction
+class SearchEntriesAction
 {
     public function __construct(
         private readonly SearchRepositoryInterface $repository,
         private readonly KeywordProcessor          $processor,
         private readonly UserPreferenceAnalyzer    $preferenceAnalyzer,
         private readonly LogSearchAction           $logSearchAction,
-        private readonly AIQueryInterpreter        $aiInterpreter,   // ← was AIQueryEnhancer
+        private readonly AIQueryEnhancer           $aiEnhancer,
         private readonly KeyboardLayoutFixer       $keyboardFixer,
         private readonly ArabicQueryNormalizer     $arabicNormalizer,
         private readonly EnglishQueryNormalizer    $englishNormalizer,
-        private readonly TypoCorrector             $typoCorrector,
     ) {}
-
-    // ─────────────────────────────────────────────────────────────────
 
     public function execute(SearchQueryDTO $dto): SearchResultDTO
     {
-        $trace = [];
-
-        // ── Step 1: Arabic Keyboard Mismatch ──────────────────────────
-        $kbMismatch = $this->keyboardFixer->detectArabicKeyboardMismatch($dto->keyword);
-
-        if ($kbMismatch['isKeyboardMismatch']) {
-            $convertedDto    = $this->withKeyword($dto, $kbMismatch['convertedQuery']);
-            $convertedResult = $this->runPipeline($convertedDto, $trace);
-
-            if ($convertedResult->total > 0) {
-                return new SearchResultDTO(
-                    keyword:       $dto->keyword,
-                    total:         $convertedResult->total,
-                    page:          $dto->page,
-                    perPage:       $dto->perPage,
-                    lastPage:      (int) ceil($convertedResult->total / $dto->perPage),
-                    items:         $convertedResult->items,
-                    keyboardFixed: true,
-                    keyboardQuery: $kbMismatch['convertedQuery'],
-                    debugTrace:    $dto->debug ? $trace : [],
-                );
-            }
-        }
-
-        return $this->runPipeline($dto, $trace);
-    }
-
-    // ─────────────────────────────────────────────────────────────────
-    // Core Pipeline
-    // ─────────────────────────────────────────────────────────────────
-
-    private function runPipeline(SearchQueryDTO $dto, array &$trace): SearchResultDTO
-    {
-        $isArabic    = QueryLanguageDetector::isArabic($dto->keyword);
-        $isMixed     = QueryLanguageDetector::isMixed($dto->keyword);
-        $isGibberish = QueryLanguageDetector::isGibberish($dto->keyword);
-
-        $this->trace($trace, $dto->debug, 'classification', [
-            'is_arabic'    => $isArabic,
-            'is_mixed'     => $isMixed,
-            'is_gibberish' => $isGibberish,
+        Log::debug('SearchEntriesAction: start', [
+            'keyword'    => $dto->keyword,
+            'project_id' => $dto->projectId,
+            'language'   => $dto->language,
         ]);
 
-        // ── Normalization ─────────────────────────────────────────────
+        // STEP 1 — Query Type Detection
+        $isArabic    = $this->isArabicQuery($dto->keyword);
+        $isMixed     = $this->isMixedQuery($dto->keyword);
+        $isGibberish = $this->aiEnhancer->isGibberish($dto->keyword);
+
+        // STEP 2 — Normalization
         [$effectiveKeyword, $normalizeInfo] = $this->normalizeQuery(
-            $dto->keyword, $dto->language, $isArabic
+            $dto->keyword,
+            $dto->language,
+            $isArabic
         );
-        $excludeTerms = $normalizeInfo['excludeTerms'] ?? [];
 
-        $this->trace($trace, $dto->debug, 'normalization', [
-            'original'      => $dto->keyword,
-            'effective'     => $effectiveKeyword,
-            'exclude_terms' => $excludeTerms,
+        $excludeTerms      = $normalizeInfo['excludeTerms']      ?? [];
+        $isNaturalLanguage = (bool)($normalizeInfo['isNaturalLanguage'] ?? false);
+
+        Log::debug('SearchEntriesAction: normalized', [
+            'effective'            => $effectiveKeyword,
+            'exclude_terms'        => $excludeTerms,
+            'is_natural_language'  => $isNaturalLanguage,
+            'is_arabic'            => $isArabic,
         ]);
 
-        // ── Keyword Processing ────────────────────────────────────────
-        $processed  = $this->processor->processWithExpansion(
-            $effectiveKeyword, $dto->projectId, $dto->language
+        // STEP 3 — Keyword Processing
+        $processed = $this->processor->processWithExpansion(
+            $effectiveKeyword,
+            $dto->projectId,
+            $dto->language
         );
+
         $preference = $this->preferenceAnalyzer->analyze(
-            $dto->projectId, $dto->userId, $dto->sessionId
+            $dto->projectId,
+            $dto->userId,
+            $dto->sessionId
         );
 
-        $this->trace($trace, $dto->debug, 'processing', [
-            'clean_words'   => $processed->cleanWords,
-            'boolean_query' => $processed->booleanQuery,
-            'intent'        => $processed->intent,
-        ]);
+        // STEP 4 — Initial Search
+        $effectiveDto = $this->cloneDtoWithKeyword($dto, $effectiveKeyword);
 
-        // ── Initial Search ────────────────────────────────────────────
         $result = $this->repository->searchWithExclusions(
-            $this->withKeyword($dto, $effectiveKeyword),
-            $processed, $preference, $excludeTerms
+            $effectiveDto,
+            $processed,
+            $preference,
+            $excludeTerms
         );
 
-        $this->trace($trace, $dto->debug, 'initial_search', [
-            'total' => $result['total'],
+        Log::debug('SearchEntriesAction: initial search', [
+            'keyword' => $effectiveKeyword,
+            'total'   => $result['total'],
         ]);
 
         $keyboardFixed = false;
@@ -124,62 +94,58 @@ final class SearchEntriesAction
         $aiEnhanced    = false;
         $aiQuery       = null;
 
-        $threshold     = (int) config('search.ai_trigger_threshold', 0);
-        $aiEnabled     = (bool) config('search.ai_enabled', false);
+        $threshold = (int)config('search.ai_trigger_threshold', 0);
+        $aiEnabled = (bool)config('search.ai_enabled', false);
 
-        // ✅ Issue #4 Fix: $hasNegation حُذف من needsFallback
+        // FIX #2: needsFallback يشمل isNaturalLanguage
+        // "ايفون برو ماكس" → isNaturalLanguage=true → needsFallback=true → AI يعمل
         $needsFallback = $result['total'] <= $threshold
             || $isGibberish
-            || empty($processed->cleanWords);
+            || empty($processed->cleanWords)
+            || $isNaturalLanguage;
 
+        // STEP 5 — Fallback Pipeline
         if ($needsFallback) {
 
-            // ── 5A: Keyboard Fix ──────────────────────────────────────
-            if (! $isArabic && ! $isMixed && ! $isGibberish) {
-                $kbResult = $this->tryKeyboardFix($dto, $preference, $result);
+            // 5A. Keyboard Fix — English خالص فقط وليس natural language
+            if (!$isArabic && !$isMixed && !$isNaturalLanguage) {
+                $kbResult = $this->tryKeyboardFix($dto, $preference, $result, $isGibberish);
                 if ($kbResult !== null) {
                     $result        = $kbResult['result'];
                     $processed     = $kbResult['processed'];
                     $keyboardFixed = true;
                     $keyboardQuery = $kbResult['fixedQuery'];
-                    $this->trace($trace, $dto->debug, 'keyboard_fix', [
+                    Log::info('SearchEntriesAction: keyboard fix succeeded', [
                         'fixed_query' => $keyboardQuery,
-                        'total_after' => $result['total'],
+                        'total'       => $result['total'],
                     ]);
                 }
             }
 
-            // ── 5B: Typo Correction ───────────────────────────────────
-            if ($result['total'] <= $threshold && ! $isArabic && ! $isMixed) {
-                $typoResult = $this->tryTypoCorrection($dto, $preference, $result, $excludeTerms);
-                if ($typoResult !== null) {
-                    $result        = $typoResult['result'];
-                    $processed     = $typoResult['processed'];
-                    $keyboardFixed = true;
-                    $keyboardQuery = $typoResult['correctedQuery'];
-                    $this->trace($trace, $dto->debug, 'typo_correction', [
-                        'corrected_query' => $typoResult['correctedQuery'],
-                        'total_after'     => $result['total'],
-                    ]);
-                }
-            }
+            // 5B. AI Fallback
+            // FIX #3: stillNeedsAI يشمل isNaturalLanguage
+            $stillNeedsAI = $result['total'] <= $threshold
+                || $isGibberish
+                || $isNaturalLanguage;
 
-            // ── 5C: AI Fallback ───────────────────────────────────────
-            if (($result['total'] <= $threshold || $isGibberish) && $aiEnabled) {
+            if ($stillNeedsAI && $aiEnabled) {
                 $aiResult = $this->tryAIFallback($dto, $preference, $result, $excludeTerms);
                 if ($aiResult !== null) {
                     $result     = $aiResult['result'];
                     $processed  = $aiResult['processed'];
                     $aiEnhanced = true;
                     $aiQuery    = $aiResult['aiQuery'];
-                    $this->trace($trace, $dto->debug, 'ai_fallback', [
-                        'ai_query'   => $aiQuery,
-                        'total_after'=> $result['total'],
+                    Log::info('SearchEntriesAction: AI fallback succeeded', [
+                        'ai_query' => $aiQuery,
+                        'total'    => $result['total'],
                     ]);
                 }
+            } elseif ($stillNeedsAI && !$aiEnabled) {
+                Log::debug('SearchEntriesAction: AI needed but disabled (AI_SEARCH_ENABLED=false)');
             }
         }
 
+        // STEP 6 — Build Response
         $total = $result['total'];
         $rows  = $result['items'];
         $items = array_map(fn($row) => $this->mapToItemDTO($row, $processed), $rows);
@@ -192,74 +158,67 @@ final class SearchEntriesAction
             total:         $total,
             page:          $dto->page,
             perPage:       $dto->perPage,
-            lastPage:      $total > 0 ? (int) ceil($total / $dto->perPage) : 1,
+            lastPage:      $total > 0 ? (int)ceil($total / $dto->perPage) : 1,
             items:         $items,
             aiEnhanced:    $aiEnhanced,
             aiQuery:       $aiQuery,
             keyboardFixed: $keyboardFixed,
             keyboardQuery: $keyboardQuery,
-            debugTrace:    $dto->debug ? $trace : [],
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Fallback Methods
-    // ─────────────────────────────────────────────────────────────────
+    private function normalizeQuery(string $keyword, string $language, bool $isArabic): array
+    {
+        if ($isArabic || $language === 'ar') {
+            $info             = $this->arabicNormalizer->normalize($keyword);
+            $effectiveKeyword = !empty($info['normalized']) ? $info['normalized'] : $keyword;
+            return [$effectiveKeyword, $info];
+        }
+
+        if ($this->englishNormalizer->hasNegation($keyword)) {
+            $info             = $this->englishNormalizer->normalize($keyword);
+            $effectiveKeyword = !empty($info['normalized']) ? $info['normalized'] : $keyword;
+            Log::debug('SearchEntriesAction: English negation detected', [
+                'original'      => $keyword,
+                'effective'     => $effectiveKeyword,
+                'exclude_terms' => $info['excludeTerms'],
+            ]);
+            return [$effectiveKeyword, $info];
+        }
+
+        return [$keyword, [
+            'normalized'        => $keyword,
+            'excludeTerms'      => [],
+            'isNaturalLanguage' => false,
+            'cleanWords'        => [],
+        ]];
+    }
 
     private function tryKeyboardFix(
         SearchQueryDTO    $dto,
         UserPreferenceDTO $preference,
-        array             $prevResult
+        array             $prevResult,
+        bool              $isGibberish
     ): ?array {
         try {
             $fixResult = $this->keyboardFixer->fix($dto->keyword);
         } catch (\Throwable $e) {
-            Log::warning('SearchEntriesAction: keyboardFixer failed', ['error' => $e->getMessage()]);
+            Log::warning('SearchEntriesAction: keyboardFixer threw', ['error' => $e->getMessage()]);
             return null;
         }
 
-        if ($fixResult['fixed'] === null || $fixResult['confidence'] < 0.40) {
-            return null;
-        }
+        if ($fixResult['fixed'] === null) return null;
 
-        $fixedProcessed = $this->processor->processWithExpansion(
-            $fixResult['fixed'], $dto->projectId, $dto->language
-        );
-        $fixedResult = $this->repository->searchWithExclusions(
-            $this->withKeyword($dto, $fixResult['fixed']),
-            $fixedProcessed, $preference, []
-        );
+        $minConf = $isGibberish ? 0.25 : 0.40;
+        if ($fixResult['confidence'] < $minConf) return null;
+
+        $fixedQuery     = $fixResult['fixed'];
+        $fixedProcessed = $this->processor->processWithExpansion($fixedQuery, $dto->projectId, $dto->language);
+        $fixedDto       = $this->cloneDtoWithKeyword($dto, $fixedQuery);
+        $fixedResult    = $this->repository->searchWithExclusions($fixedDto, $fixedProcessed, $preference, []);
 
         return $fixedResult['total'] > $prevResult['total']
-            ? ['result' => $fixedResult, 'processed' => $fixedProcessed, 'fixedQuery' => $fixResult['fixed']]
-            : null;
-    }
-
-    private function tryTypoCorrection(
-        SearchQueryDTO    $dto,
-        UserPreferenceDTO $preference,
-        array             $prevResult,
-        array             $excludeTerms
-    ): ?array {
-        $correction = $this->typoCorrector->correct($dto->keyword);
-
-        if (! $correction['hadCorrection']
-            || $correction['corrected'] === null
-            || $correction['confidence'] < 0.50
-        ) {
-            return null;
-        }
-
-        $correctedProcessed = $this->processor->processWithExpansion(
-            $correction['corrected'], $dto->projectId, $dto->language
-        );
-        $correctedResult = $this->repository->searchWithExclusions(
-            $this->withKeyword($dto, $correction['corrected']),
-            $correctedProcessed, $preference, $excludeTerms
-        );
-
-        return $correctedResult['total'] > $prevResult['total']
-            ? ['result' => $correctedResult, 'processed' => $correctedProcessed, 'correctedQuery' => $correction['corrected']]
+            ? ['result' => $fixedResult, 'processed' => $fixedProcessed, 'fixedQuery' => $fixedQuery]
             : null;
     }
 
@@ -270,76 +229,101 @@ final class SearchEntriesAction
         array             $excludeTerms
     ): ?array {
         try {
-            // ✅ Now uses AIQueryInterpreter::enhance() — same schema as AIQueryEnhancer
-            $enhancement = $this->aiInterpreter->enhance($dto->keyword, $dto->language);
+            $enhancement = $this->aiEnhancer->enhance($dto->keyword, $dto->language);
         } catch (\Throwable $e) {
-            Log::error('SearchEntriesAction: AI failed', ['error' => $e->getMessage()]);
+            Log::error('SearchEntriesAction: AIEnhancer threw', [
+                'error' => $e->getMessage(),
+                'query' => $dto->keyword,
+            ]);
             return null;
         }
 
+        Log::debug('SearchEntriesAction: AI result', [
+            'original'   => $dto->keyword,
+            'include'    => $enhancement['include']    ?? [],
+            'exclude'    => $enhancement['exclude']    ?? [],
+            'confidence' => $enhancement['confidence'],
+            'source'     => $enhancement['source']     ?? 'unknown',
+        ]);
+
         if ($enhancement['confidence'] < 0.20) {
+            Log::info('SearchEntriesAction: AI confidence too low');
             return null;
         }
 
         $includeTerms = $enhancement['include'] ?? [];
 
         if (empty($includeTerms)) {
-            // ✅ Same key as before: correctedQuery
             $corrected = trim($enhancement['correctedQuery'] ?? '');
-            if (empty($corrected) || mb_strtolower($corrected) === mb_strtolower($dto->keyword)) {
+            $original  = mb_strtolower(trim($dto->keyword), 'UTF-8');
+
+            if (empty($corrected) || mb_strtolower($corrected, 'UTF-8') === $original) {
+                Log::info('SearchEntriesAction: AI produced no usable terms');
                 return null;
             }
+
             $includeTerms = array_values(array_filter(
                 explode(' ', $corrected),
-                fn($w) => mb_strlen($w) >= 2
+                fn($w) => mb_strlen(trim($w), 'UTF-8') >= 2
             ));
         }
 
         if (empty($includeTerms)) return null;
 
+        $aiExclude       = $enhancement['exclude'] ?? [];
+        $combinedExclude = array_values(array_unique(array_merge($excludeTerms, $aiExclude)));
         $aiKeyword       = implode(' ', array_unique($includeTerms));
-        $combinedExclude = array_unique(array_merge($excludeTerms, $enhancement['exclude'] ?? []));
-        $aiProcessed     = $this->processor->processWithExpansion($aiKeyword, $dto->projectId, $dto->language);
-        $aiResult        = $this->repository->searchWithExclusions(
-            $this->withKeyword($dto, $aiKeyword),
-            $aiProcessed, $preference, $combinedExclude
-        );
 
-        return $aiResult['total'] > $prevResult['total']
+        if (empty(trim($aiKeyword))) return null;
+
+        $aiProcessed = $this->processor->processWithExpansion($aiKeyword, $dto->projectId, $dto->language);
+        $aiDto       = $this->cloneDtoWithKeyword($dto, $aiKeyword);
+        $aiResult    = $this->repository->searchWithExclusions($aiDto, $aiProcessed, $preference, $combinedExclude);
+
+        Log::info('SearchEntriesAction: AI search done', [
+            'include'    => $includeTerms,
+            'exclude'    => $combinedExclude,
+            'ai_keyword' => $aiKeyword,
+            'prev_total' => $prevResult['total'],
+            'new_total'  => $aiResult['total'],
+        ]);
+
+        // FIX #4: نقبل AI إذا keyword تغيّر semantically + total > 0
+        // القديم: aiTotal > prevTotal فقط
+        // الجديد: نقبل إذا keyword مختلف + وجد نتائج
+        $keywordChanged = trim($aiKeyword) !== trim(mb_strtolower($dto->keyword, 'UTF-8'));
+
+        $shouldAccept = $aiResult['total'] > $prevResult['total']
+            || ($keywordChanged && $aiResult['total'] > 0);
+
+        return $shouldAccept
             ? ['result' => $aiResult, 'processed' => $aiProcessed, 'aiQuery' => $aiKeyword]
             : null;
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Normalization
-    // ─────────────────────────────────────────────────────────────────
-
-    private function normalizeQuery(string $keyword, string $language, bool $isArabic): array
+    private function isArabicQuery(string $text): bool
     {
-        if ($isArabic || $language === 'ar') {
-            $info = $this->arabicNormalizer->normalize($keyword);
-            return [! empty($info['normalized']) ? $info['normalized'] : $keyword, $info];
-        }
-
-        if ($this->englishNormalizer->hasNegation($keyword)) {
-            $info = $this->englishNormalizer->normalize($keyword);
-            return [! empty($info['normalized']) ? $info['normalized'] : $keyword, $info];
-        }
-
-        return [$keyword, ['normalized' => $keyword, 'excludeTerms' => [], 'isNaturalLanguage' => false, 'cleanWords' => []]];
+        $arabicChars = preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
+        $totalChars  = mb_strlen(preg_replace('/\s+/', '', $text), 'UTF-8');
+        return $totalChars > 0 && ($arabicChars / $totalChars) > 0.30;
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Utilities
-    // ─────────────────────────────────────────────────────────────────
-
-    private function trace(array &$trace, bool $debug, string $step, array $data): void
+    private function isMixedQuery(string $text): bool
     {
-        if (! $debug) return;
-        $trace[$step] = $data;
+        $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
+        $total = $arabic = $english = 0;
+        foreach ($chars as $char) {
+            if ($char === ' ') continue;
+            $total++;
+            $code = mb_ord($char, 'UTF-8');
+            if ($code >= 0x0600 && $code <= 0x06FF) $arabic++;
+            elseif (ctype_alpha($char) && ord($char) < 128) $english++;
+        }
+        if ($total === 0) return false;
+        return ($arabic / $total) > 0.15 && ($english / $total) > 0.15;
     }
 
-    private function withKeyword(SearchQueryDTO $dto, string $keyword): SearchQueryDTO
+    private function cloneDtoWithKeyword(SearchQueryDTO $dto, string $keyword): SearchQueryDTO
     {
         return new SearchQueryDTO(
             keyword:      $keyword,
@@ -350,29 +334,32 @@ final class SearchEntriesAction
             dataTypeSlug: $dto->dataTypeSlug,
             userId:       $dto->userId,
             sessionId:    $dto->sessionId,
-            debug:        $dto->debug,
         );
     }
 
     private function dispatchViewTracking(array $rows, string $language): void
     {
         if (empty($rows)) return;
-        $entryIds = array_values(array_unique(array_map(fn($row) => (int) $row->entry_id, $rows)));
+        $entryIds = array_values(array_unique(array_map(fn($row) => (int)$row->entry_id, $rows)));
         IncrementViewCountJob::dispatch($entryIds, $language)->onQueue('search-tracking');
     }
 
-    private function logSearch(SearchQueryDTO $dto, ProcessedKeyword $processed, UserPreferenceDTO $preference, int $total): void
-    {
+    private function logSearch(
+        SearchQueryDTO    $dto,
+        ProcessedKeyword  $processed,
+        UserPreferenceDTO $preference,
+        int               $total
+    ): void {
         try {
             $this->logSearchAction->execute(new LogSearchDTO(
-                projectId:        $dto->projectId,
-                keyword:          $dto->keyword,
-                language:         $dto->language,
-                resultsCount:     $total,
-                detectedIntent:   $processed->intent['intent'],
-                intentConfidence: $processed->intent['confidence'],
-                userId:           $dto->userId,
-                sessionId:        $dto->sessionId,
+                projectId:         $dto->projectId,
+                keyword:           $dto->keyword,
+                language:          $dto->language,
+                resultsCount:      $total,
+                detectedIntent:    $processed->intent['intent'],
+                intentConfidence:  $processed->intent['confidence'],
+                userId:            $dto->userId,
+                sessionId:         $dto->sessionId,
             ));
         } catch (\Throwable $e) {
             Log::warning('SearchEntriesAction: logSearch failed', ['error' => $e->getMessage()]);
@@ -383,34 +370,50 @@ final class SearchEntriesAction
     {
         $snippet = $this->generateSnippet($row->content ?? '', $processed->cleanWords);
         return new SearchResultItemDTO(
-            entryId:     (int)  $row->entry_id,
-            dataTypeId:  (int)  $row->data_type_id,
-            projectId:   (int)  $row->project_id,
-            language:           $row->language,
+            entryId:     (int)$row->entry_id,
+            dataTypeId:  (int)$row->data_type_id,
+            projectId:   (int)$row->project_id,
+            language:    $row->language,
             title:       $this->highlightText($row->title ?? '', $processed->cleanWords),
-            snippet:     $this->highlightText($snippet,           $processed->cleanWords),
-            status:             $row->status,
-            score:       round((float) ($row->final_score ?? $row->weighted_score ?? 0), 4),
-            publishedAt:        $row->published_at,
+            snippet:     $this->highlightText($snippet, $processed->cleanWords),
+            status:      $row->status,
+            score:       round((float)($row->final_score ?? $row->weighted_score ?? 0), 4),
+            publishedAt: $row->published_at,
         );
     }
 
     private function generateSnippet(string $content, array $words, int $before = 60, int $after = 100): string
     {
         if (empty($content)) return '';
-        $plain = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        $plain = trim(preg_replace('/\s+/', ' ',
+            html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8')
+        ));
         if (empty($plain)) return '';
-        $pos = null;
-        foreach ($words as $word) {
-            $p = mb_stripos($plain, $word, 0, 'UTF-8');
-            if ($p !== false && ($pos === null || $p < $pos)) $pos = $p;
-        }
+
+        $pos = $this->findFirstMatch($plain, $words);
         if ($pos === null) {
-            return mb_strlen($plain, 'UTF-8') <= 160 ? $plain : mb_substr($plain, 0, 160, 'UTF-8') . '...';
+            return mb_strlen($plain, 'UTF-8') <= 160
+                ? $plain
+                : mb_substr($plain, 0, 160, 'UTF-8') . '...';
         }
+
         $start = max(0, $pos - $before);
         $end   = min(mb_strlen($plain, 'UTF-8'), $pos + $after);
-        return ($start > 0 ? '...' : '') . trim(mb_substr($plain, $start, $end - $start, 'UTF-8')) . ($end < mb_strlen($plain, 'UTF-8') ? '...' : '');
+        return ($start > 0 ? '...' : '')
+            . trim(mb_substr($plain, $start, $end - $start, 'UTF-8'))
+            . ($end < mb_strlen($plain, 'UTF-8') ? '...' : '');
+    }
+
+    private function findFirstMatch(string $text, array $words): ?int
+    {
+        $earliest = null;
+        foreach ($words as $word) {
+            $pos = mb_stripos($text, $word, 0, 'UTF-8');
+            if ($pos !== false && ($earliest === null || $pos < $earliest)) {
+                $earliest = $pos;
+            }
+        }
+        return $earliest;
     }
 
     private function highlightText(string $text, array $words): string
