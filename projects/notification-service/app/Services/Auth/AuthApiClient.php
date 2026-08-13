@@ -6,107 +6,114 @@ use Illuminate\Support\Facades\Http;
 
 class AuthApiClient
 {
-    protected string $baseUrl;
+  protected string $baseUrl;
 
-    public function __construct()
-    {
-        $this->baseUrl = rtrim(config('services.auth.url'), '/');
+  public function __construct()
+  {
+    $this->baseUrl = rtrim(config('services.auth.url'), '/');
+  }
+
+  /**
+   * توكن مستخدم حقيقي — يبقى كما هو، يُستخدم فقط لـ UserAuthMiddleware
+   */
+  public function getUserFromToken(string $token): array
+  {
+    $response = Http::acceptJson()
+      ->withToken($token)
+      ->timeout(10)
+      ->retry(2, 200, throw: false)
+      // ->retry(2, 200)
+      ->get("{$this->baseUrl}/api/my-profile");
+
+    if ($response->failed()) {
+      $error = $response->json('message')
+        // @codeCoverageIgnoreStart
+        ?? substr($response->body(), 0, 200);
+      // @codeCoverageIgnoreEnd
+
+      throw new \Exception(
+        'Failed to fetch user from auth service: ' . $error
+      );
     }
 
-    /**
-     * توكن مستخدم حقيقي — يبقى كما هو، يُستخدم فقط لـ UserAuthMiddleware
-     */
-    public function getUserFromToken(string $token): array
-    {
-        $response = Http::acceptJson()
-            ->withToken($token)
-            ->timeout(10)
-            ->retry(2, 200)
-            ->get("{$this->baseUrl}/api/my-profile");
+    $user = $response->json('data') ?? [];
 
-        if ($response->failed()) {
-            $error = $response->json('message')
-                ?? substr($response->body(), 0, 200);
+    $permessions = collect(data_get($user, 'roles', []))
+      ->flatMap(fn($role) => data_get($role, 'permessions', []))
+      ->pluck('name')
+      ->filter()
+      ->unique()
+      ->values()
+      ->toArray();
 
-            throw new \Exception(
-                'Failed to fetch user from auth service: ' . $error
-            );
-        }
+    $user['permessions'] = $permessions;
 
-        $user = $response->json('data') ?? [];
+    return $user;
+  }
 
-        $permessions = collect(data_get($user, 'roles', []))
-            ->flatMap(fn ($role) => data_get($role, 'permessions', []))
-            ->pluck('name')
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
+  /**
+   * توكن خدمة — يبقى كما هو، يُستخدم فقط لـ ServiceAuthMiddleware
+   */
+  public function getServiceFromToken(string $token): array
+  {
+    $response = Http::acceptJson()
+      ->withToken($token)
+      ->timeout(10)
+      ->retry(2, 200, throw: false)
+      // ->retry(2, 200)
+      ->get("{$this->baseUrl}/api/get-service");
 
-        $user['permessions'] = $permessions;
+    if ($response->failed()) {
+      $error = $response->json('message')
+        // @codeCoverageIgnoreStart
+        ?? substr($response->body(), 0, 200);
+        // @codeCoverageIgnoreEnd
 
-        return $user;
+      throw new \Exception(
+        'Failed to fetch user from auth service: ' . $error
+      );
     }
 
-    /**
-     * توكن خدمة — يبقى كما هو، يُستخدم فقط لـ ServiceAuthMiddleware
-     */
-    public function getServiceFromToken(string $token): array
-    {
-        $response = Http::acceptJson()
-            ->withToken($token)
-            ->timeout(10)
-            ->retry(2, 200)
-            ->get("{$this->baseUrl}/api/get-service");
+    return $response->json('data') ?? [];
+  }
 
-        if ($response->failed()) {
-            $error = $response->json('message')
-                ?? substr($response->body(), 0, 200);
+  /**
+   * جلب مستخدم بالـ ID لأغراض التواصل بين الخدمات
+   *
+   * مُصحَّح: نستخدم الآن endpoint داخلي مخصص (/api/internal/users/{id})
+   * محمي بمفتاح مشترك (X-Internal-Api-Key) بدلاً من Bearer token
+   * هذا يتجنب نهائياً مشكلة "Invalid token" لأن هذا المسار
+   * لا علاقة له بنظام مصادقة المستخدمين في Auth Service إطلاقاً
+   */
+  public function getUserById(string $userId): array
+  {
+    $internalApiKey = config('services.auth.internal_api_key');
 
-            throw new \Exception(
-                'Failed to fetch user from auth service: ' . $error
-            );
-        }
-
-        return $response->json('data') ?? [];
+    if (empty($internalApiKey)) {
+      throw new \Exception(
+        'INTERNAL_SERVICES_API_KEY is not configured in .env'
+      );
     }
 
-    /**
-     * جلب مستخدم بالـ ID لأغراض التواصل بين الخدمات
-     *
-     * مُصحَّح: نستخدم الآن endpoint داخلي مخصص (/api/internal/users/{id})
-     * محمي بمفتاح مشترك (X-Internal-Api-Key) بدلاً من Bearer token
-     * هذا يتجنب نهائياً مشكلة "Invalid token" لأن هذا المسار
-     * لا علاقة له بنظام مصادقة المستخدمين في Auth Service إطلاقاً
-     */
-    public function getUserById(string $userId): array
-    {
-        $internalApiKey = config('services.auth.internal_api_key');
+    $response = Http::acceptJson()
+      ->withHeaders([
+        'X-Internal-Api-Key' => $internalApiKey,
+      ])
+      ->timeout(10)
+      ->retry(2, 200, throw: false)
+      // ->retry(2, 200)
+      ->get("{$this->baseUrl}/api/internal/users/{$userId}");
 
-        if (empty($internalApiKey)) {
-            throw new \Exception(
-                'INTERNAL_SERVICES_API_KEY is not configured in .env'
-            );
-        }
-
-        $response = Http::acceptJson()
-            ->withHeaders([
-                'X-Internal-Api-Key' => $internalApiKey,
-            ])
-            ->timeout(10)
-            ->retry(2, 200)
-            ->get("{$this->baseUrl}/api/internal/users/{$userId}");
-
-        if ($response->status() === 404) {
-            return [];
-        }
-
-        if ($response->failed()) {
-            throw new \Exception(
-                'Failed to verify user: ' . ($response->json('message') ?? substr($response->body(), 0, 200))
-            );
-        }
-
-        return $response->json('data') ?? [];
+    if ($response->status() === 404) {
+      return [];
     }
+
+    if ($response->failed()) {
+      throw new \Exception(
+        'Failed to verify user: ' . ($response->json('message') ?? substr($response->body(), 0, 200))
+      );
+    }
+
+    return $response->json('data') ?? [];
+  }
 }

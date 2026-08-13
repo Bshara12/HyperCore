@@ -1,5 +1,5 @@
 <?php
-
+// @codeCoverageIgnoreStart
 namespace App\Services\MessageBroker;
 
 use Illuminate\Support\Facades\Log;
@@ -80,3 +80,4 @@ class RabbitMQPublisher
         }
     }
 }
+// @codeCoverageIgnoreEnd

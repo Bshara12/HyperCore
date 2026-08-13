@@ -17,6 +17,7 @@ use App\Domains\CMS\Requests\DataEntryRequest;
 use App\Domains\CMS\Services\DataEntryService;
 use App\Events\DataEntrySavedEvent;
 use App\Events\EntryChanged;
+use App\Events\EntryRemovedFromSearch;
 use App\Models\DataType;
 use Illuminate\Support\Facades\Event;
 
@@ -168,7 +169,73 @@ test('it updates a data entry via PATCH method partially', function () {
 // ─── اختبار التابع Destroy ─────────────────────────────────────────
 
 test('it triggers data entry destruction action', function () {
+  $mockedEntry = Mockery::mock(\App\Models\DataEntry::class)->makePartial();
+  $mockedEntry->status = 'draft'; // لضبط حالة السجل عند فحصه بواسطة in_array
+
+  $this->entries->shouldReceive('findForProjectOrFail')
+    ->once()
+    ->with(50, 1)
+    ->andReturn($mockedEntry);
+
   $this->deleteEntry->shouldReceive('execute')->once()->with(50, 1);
 
   $this->service->destroy(50, 1);
+});
+
+test('it dispatches EntryRemovedFromSearch when updating published entry to draft', function () {
+  $request = Mockery::mock(DataEntryRequest::class);
+  $request->shouldReceive('entryId')->once()->andReturn(50);
+  $request->shouldReceive('projectId')->once()->andReturn(1);
+  $request->shouldReceive('filesInput')->once()->andReturn([]);
+  $request->shouldReceive('isMethod')->with('patch')->andReturn(true);
+  $request->shouldReceive('filled')->with('status')->andReturn(true);
+  $request->shouldReceive('filled')->with('seo')->andReturn(false);
+  $request->shouldReceive('filled')->with('relations')->andReturn(false);
+
+  $dto = new CreateDataEntryDTO(values: ['title' => 'Test'], status: 'draft');
+
+  // استخدام Mock جزئي لمنع الاستعلامات الحقيقية ومحاكاة الـ load
+  $mockedEntry = Mockery::mock(\App\Models\DataEntry::class)->makePartial();
+  $mockedEntry->id = 50;
+  $mockedEntry->data_type_id = 5;
+  $mockedEntry->status = 'published'; // تبدأ بحالة published ليتحقق شرط $wasPublished
+  $mockedEntry->shouldReceive('load')->once()->with('values')->andReturnSelf();
+
+  $this->entries->shouldReceive('findForProjectOrFail')->once()->with(50, 1)->andReturn($mockedEntry);
+  $this->mergeFiles->shouldReceive('execute')->once()->andReturn($dto->values);
+  $this->normalizeScheduledAt->shouldReceive('execute')->once()->andReturn(null);
+  $this->validateFields->shouldReceive('execute')->once()->andReturn(true);
+  $this->datavalue->shouldReceive('replacePartial')->once()->andReturn(true);
+
+  // محاكاة تغيير الحالة إلى 'draft' عند تنفيذ resolveState
+  $this->resolveState->shouldReceive('execute')->once()->with($mockedEntry, 'draft', null)->andReturnUsing(function ($entry) {
+    $entry->status = 'draft';
+  });
+
+  $this->service->update($request, $dto, 1);
+
+  Event::assertDispatched(EntryRemovedFromSearch::class, function ($event) {
+    return $event->entryId === 50 && $event->reason === 'unpublished';
+  });
+});
+
+test('it dispatches EntryRemovedFromSearch with reason deleted when destroying an indexed entry', function () {
+  // إنشاء موديل حقيقي حالته 'published' (مفهرس)
+  $entry = new \App\Models\DataEntry();
+  $entry->id = 50;
+  $entry->status = 'published'; // هذا سيجعل $wasIndexed = true
+
+  $this->entries->shouldReceive('findForProjectOrFail')
+    ->once()
+    ->with(50, 1)
+    ->andReturn($entry);
+
+  $this->deleteEntry->shouldReceive('execute')->once()->with(50, 1);
+
+  $this->service->destroy(50, 1);
+
+  // التأكد من إطلاق الحدث بالسبب 'deleted'
+  Event::assertDispatched(EntryRemovedFromSearch::class, function ($event) {
+    return $event->entryId === 50 && $event->reason === 'deleted';
+  });
 });

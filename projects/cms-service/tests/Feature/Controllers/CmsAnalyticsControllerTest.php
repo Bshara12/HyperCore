@@ -25,30 +25,37 @@ class CmsAnalyticsControllerTest extends TestCase
     // 1. Mock للخدمة الأساسية
     $this->analyticsServiceMock = $this->mock(AnalyticsService::class);
 
-    // 2. Mock للـ Repository باستخدام الواجهة (Interface) لأن الـ DTO يطلبها
+    // 2. Mock للـ Repository باستخدام الواجهة لأن الـ DTO يطلبها
     $this->projectRepositoryMock = $this->mock(ProjectRepositoryInterface::class);
     $this->app->instance(ProjectRepositoryInterface::class, $this->projectRepositoryMock);
   }
 
   private function createAnalyticsRequest(array $params = []): Request
   {
-    // 1. إنشاء نسخة حقيقية من الموديل بدلاً من stdClass
     $mockProject = new \App\Models\Project();
     $mockProject->id = 1;
     $mockProject->public_id = 'proj_test_1';
     $mockProject->name = 'Test Project';
+    $mockProject->enabled_modules = [];
 
-    // حقن المشروع في الـ Container
     $this->app->instance('currentProject', $mockProject);
 
-    // إجبار الـ Repository على إرجاع الموديل الحقيقي
     $this->projectRepositoryMock
       ->shouldReceive('findByKey')
       ->zeroOrMoreTimes()
-      ->andReturn($mockProject); // الآن سنعيد الموديل الذي يتوقعه الـ DTO
+      ->andReturn($mockProject);
 
     $data = array_merge(['project' => 'proj_test_1', 'from' => '2026-01-01', 'to' => '2026-05-01'], $params);
-    $request = Request::create('/api/cms/analytics/dummy', 'GET', $data);
+
+    // إضافة Bearer Token افتراضي للطلبات لتجنب أخطاء النوع (TypeError)
+    $request = Request::create(
+      '/api/cms/analytics/dummy',
+      'GET',
+      $data,
+      [],
+      [],
+      ['HTTP_AUTHORIZATION' => 'Bearer fake-jwt-token']
+    );
 
     $this->app->instance('request', $request);
 
@@ -58,91 +65,95 @@ class CmsAnalyticsControllerTest extends TestCase
   #[Test]
   public function it_can_fetch_admin_overview()
   {
-    $this->analyticsServiceMock->shouldReceive('adminOverview')->once()->andReturn(['data' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('adminOverview')->once()->andReturn(['platform_data' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('projectsGrowth')->once()->andReturn(['growth_data' => 'ok']);
 
     $request = $this->createAnalyticsRequest();
     $controller = new CmsAnalyticsController($this->analyticsServiceMock);
 
     $response = $controller->adminOverview($request);
     $this->assertEquals(200, $response->getStatusCode());
-  }
 
-  #[Test]
-  public function it_can_fetch_projects_growth()
-  {
-    // 1. تعريف البيانات الوهمية التي ستعيدها الـ Service
-    $mockData = [
-      'labels' => ['Jan', 'Feb', 'Mar'],
-      'values' => [10, 25, 40]
-    ];
-
-    // 2. توقع استدعاء الـ Service وتمرير الـ DTO
-    $this->analyticsServiceMock
-      ->shouldReceive('projectsGrowth')
-      ->once()
-      ->andReturn($mockData);
-
-    // 3. استدعاء الطلب (سيقوم بحل الـ DTO تلقائياً)
-    $request = $this->createAnalyticsRequest();
-    $controller = new CmsAnalyticsController($this->analyticsServiceMock);
-
-    // 4. تنفيذ التابع
-    $response = $controller->projectsGrowth($request);
-
-    // 5. التحقق من النتيجة
-    $this->assertEquals(200, $response->getStatusCode());
-
-    // التحقق من أن الاستجابة تحتوي على success و data بشكل صحيح
     $responseData = $response->getData();
     $this->assertTrue($responseData->success);
-    $this->assertEquals($mockData, (array)$responseData->data);
+    $this->assertNotNull($responseData->data);
   }
 
   #[Test]
-  public function it_can_fetch_content_summary()
+  public function it_can_fetch_project_overview()
   {
-    $this->analyticsServiceMock->shouldReceive('contentSummary')->once()->andReturn(['data' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('contentSummary')->once()->andReturn(['summary' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('contentGrowth')->once()->andReturn(['growth' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('topRatedEntries')->once()->andReturn(['top' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('ratingsReport')->once()->andReturn(['report' => 'ok']);
 
     $request = $this->createAnalyticsRequest();
     $controller = new CmsAnalyticsController($this->analyticsServiceMock);
 
-    $response = $controller->contentSummary($request);
+    $ecommerceMock = \Mockery::mock(\App\Services\EcommerceAnalyticsClient::class);
+    $bookingMock = \Mockery::mock(\App\Services\BookingAnalyticsClient::class);
+
+    $response = $controller->projectOverview($request, $ecommerceMock, $bookingMock);
+
+    $this->assertEquals(200, $response->getStatusCode());
+
+    $responseData = $response->getData();
+    $this->assertTrue($responseData->success);
+    $this->assertObjectHasProperty('data', $responseData);
+  }
+
+  #[Test]
+  public function it_can_fetch_project_overview_with_modules()
+  {
+    $this->analyticsServiceMock->shouldReceive('contentSummary')->once()->andReturn(['summary' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('contentGrowth')->once()->andReturn(['growth' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('topRatedEntries')->once()->andReturn(['top' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('ratingsReport')->once()->andReturn(['report' => 'ok']);
+
+    $request = $this->createAnalyticsRequest();
+    $mockProject = app('currentProject');
+    $mockProject->enabled_modules = ['ecommerce', 'booking'];
+
+    $controller = new CmsAnalyticsController($this->analyticsServiceMock);
+
+    $ecommerceMock = \Mockery::mock(\App\Services\EcommerceAnalyticsClient::class);
+    $ecommerceMock->shouldReceive('getSummary')->once()->andReturn(['ecommerce_data' => 'ok']);
+
+    $bookingMock = \Mockery::mock(\App\Services\BookingAnalyticsClient::class);
+    $bookingMock->shouldReceive('getOverview')->once()->andThrow(new \Exception('Booking service down'));
+
+    $response = $controller->projectOverview($request, $ecommerceMock, $bookingMock);
+
     $this->assertEquals(200, $response->getStatusCode());
   }
 
   #[Test]
-  public function it_can_fetch_content_growth()
+  public function it_handles_ecommerce_service_exception_gracefully()
   {
-    $this->analyticsServiceMock->shouldReceive('contentGrowth')->once()->andReturn(['data' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('contentSummary')->once()->andReturn(['summary' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('contentGrowth')->once()->andReturn(['growth' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('topRatedEntries')->once()->andReturn(['top' => 'ok']);
+    $this->analyticsServiceMock->shouldReceive('ratingsReport')->once()->andReturn(['report' => 'ok']);
 
     $request = $this->createAnalyticsRequest();
+    $mockProject = app('currentProject');
+    $mockProject->enabled_modules = ['ecommerce']; // تفعيل الموديول ليدخل إلى الشرط
+
     $controller = new CmsAnalyticsController($this->analyticsServiceMock);
 
-    $response = $controller->contentGrowth($request);
+    // جعل الـ Client يرمي Exception لتغطية كود الـ catch
+    $ecommerceMock = \Mockery::mock(\App\Services\EcommerceAnalyticsClient::class);
+    $ecommerceMock->shouldReceive('getSummary')->once()->andThrow(new \Exception('Ecommerce service down'));
+
+    $bookingMock = \Mockery::mock(\App\Services\BookingAnalyticsClient::class);
+
+    $response = $controller->projectOverview($request, $ecommerceMock, $bookingMock);
+
     $this->assertEquals(200, $response->getStatusCode());
-  }
 
-  #[Test]
-  public function it_can_fetch_top_rated()
-  {
-    $this->analyticsServiceMock->shouldReceive('topRatedEntries')->once()->andReturn(['data' => 'ok']);
-
-    $request = $this->createAnalyticsRequest();
-    $controller = new CmsAnalyticsController($this->analyticsServiceMock);
-
-    $response = $controller->topRated($request);
-    $this->assertEquals(200, $response->getStatusCode());
-  }
-
-  #[Test]
-  public function it_can_fetch_ratings_report()
-  {
-    $this->analyticsServiceMock->shouldReceive('ratingsReport')->once()->andReturn(['data' => 'ok']);
-
-    $request = $this->createAnalyticsRequest();
-    $controller = new CmsAnalyticsController($this->analyticsServiceMock);
-
-    $response = $controller->ratingsReport($request);
-    $this->assertEquals(200, $response->getStatusCode());
+    // التأكد أن الـ catch قامت بتعيين القيمة إلى null وعدم إيقاف التنفيذ
+    $responseData = $response->getData();
+    $this->assertTrue($responseData->success);
+    $this->assertNull($responseData->data->ecommerce);
   }
 }

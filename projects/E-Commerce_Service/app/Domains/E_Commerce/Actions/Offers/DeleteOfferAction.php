@@ -10,28 +10,33 @@ use Illuminate\Support\Facades\Cache;
 
 class DeleteOfferAction extends Action
 {
-    protected function circuitServiceName(): string
-    {
-        return 'offer.delete';
-    }
+  protected function circuitServiceName(): string
+  {
+    return 'offer.delete';
+  }
 
-    public function __construct(
-        protected OfferRepositoryInterface $repository,
-        protected CMSApiClient $cms
-    ) {}
+  public function __construct(
+    protected OfferRepositoryInterface $repository,
+    protected CMSApiClient $cms
+  ) {}
 
-    public function execute(string $collectionSlug)
-    {
-        return $this->run(function () use ($collectionSlug) {
+  public function execute(string $collectionSlug)
+  {
+    return $this->run(function () use ($collectionSlug) {
 
-            $collection = $this->cms->getCollectionBySlug($collectionSlug);
-            $offer = $this->repository->findByCollectionId($collection['id']);
+      $collection = $this->cms->getCollectionBySlug($collectionSlug);
+      $offer = $this->repository->findByCollectionId($collection['id']);
 
-            $this->repository->deleteOfferByCollectionId($collection['id']);
+      $this->repository->deleteOfferByCollectionId($collection['id']);
 
-            Cache::forget(CacheKeys::offer($collection['id']));
-            Cache::forget(CacheKeys::offerBySlug($collectionSlug));
-            Cache::forget(CacheKeys::offers($offer->project_id));
-        });
-    }
+      $cache = Cache::tags(['offers']);
+
+      Cache::forget(CacheKeys::offer($collection['id']));
+      Cache::forget(CacheKeys::offerBySlug($collectionSlug));
+
+      if ($offer && isset($offer->project_id)) {
+        $cache->forget(CacheKeys::offers($offer->project_id));
+      }
+    });
+  }
 }

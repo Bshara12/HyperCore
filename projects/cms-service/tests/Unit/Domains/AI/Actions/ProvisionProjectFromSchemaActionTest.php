@@ -54,7 +54,7 @@ function setupSanitizeActionWithReflection()
 {
   $action = app(ProvisionProjectFromSchemaAction::class);
   $reflection = new \ReflectionClass($action);
-  
+
   $method = $reflection->getMethod('sanitizeValidationRules');
   $method->setAccessible(true);
 
@@ -66,7 +66,7 @@ function setupSanitizeActionWithReflection()
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    test()->spy(RabbitMQPublisher::class);
+  test()->spy(RabbitMQPublisher::class);
 });
 
 // ─── الاختبارات الحالية (Existing Test Cases) ───────────────────────────
@@ -317,12 +317,15 @@ test('it returns an empty array if the field type is not defined in allowed type
   expect($result)->toBeEmpty();
 });
 
-
 // ─── الاختبارات الجديدة المضافة لتغطية الأسطر المطلوبة 🚀 ───────────────────
 
 test('it skips field creation loop if data type id cannot be resolved (Lines 77-79)', function () {
-  // تزييف الـ Log والاعتراض سراً لتفريغ الـ Map في منتصف تنفيذ الـ Action
-  Log::shouldReceive('info')->andReturnUsing(function ($message) use (&$action) {
+  Log::spy();
+
+  $action = app(ProvisionProjectFromSchemaAction::class);
+
+  // تزييف الـ Log والاعتراض لتفريغ الـ Map بعد إنشاء الـ DataType مباشرة
+  Log::shouldReceive('info')->andReturnUsing(function ($message) use ($action) {
     if (str_contains($message, 'DataType created')) {
       $reflection = new \ReflectionClass($action);
       $mapProperty = $reflection->getProperty('dataTypeMap');
@@ -330,7 +333,6 @@ test('it skips field creation loop if data type id cannot be resolved (Lines 77-
       $mapProperty->setValue($action, []); // تفريغ الخريطة سراً لتخطي السطر القادم!
     }
   });
-  Log::shouldReceive('warning');
 
   $data = [
     'project_info' => ['name' => 'Skipped Map Project', 'languages' => ['en'], 'modules' => ['cms']],
@@ -347,7 +349,6 @@ test('it skips field creation loop if data type id cannot be resolved (Lines 77-
   ];
 
   $dto = ProvisionProjectFromSchemaDTO::fromRequest($data, ownerId: 1);
-  $action = app(ProvisionProjectFromSchemaAction::class);
 
   $action->execute($dto);
 
@@ -369,8 +370,8 @@ test('it defers inline relation fields and processes them in pending loop (Lines
         'fields' => [
           ['name' => 'title', 'type' => 'text'],
           [
-            'name' => 'category_id', 
-            'type' => 'relation', 
+            'name' => 'category_id',
+            'type' => 'relation',
             'settings' => ['related_data_type_id' => 'Category']
           ], // حقل علاقة مدمج وسط الحقول العادية لتفعيل الـ pending array
         ]
@@ -391,10 +392,10 @@ test('it defers inline relation fields and processes them in pending loop (Lines
 
   // التحقق 1: الحقل العادي تم إنشاؤه بنجاح
   $this->assertDatabaseHas('data_type_fields', ['name' => 'title', 'type' => 'text']);
-  
+
   // التحقق 2: حقل العلاقة المندرج تم تأجيله ومعالجته عبر دالة processRelationField بنجاح
   $this->assertDatabaseHas('data_type_fields', ['name' => 'category_id', 'type' => 'relation']);
-  
+
   // التأكد من مجموع الحقول الكلي المرجع
   expect($result['total_fields'])->toBe(2);
 });

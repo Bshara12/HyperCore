@@ -43,8 +43,15 @@ class ReturnRequestController extends Controller
   public function index(Request $request)
   {
     $user = $request->attributes->get('auth_user');
-    // 🔥 Authorization
-    if ($user['roles'][0]['name'] !== 'owner' || $user['roles'][0]['name'] !== 'admin') {
+    // // 🔥 Authorization
+    // if ($user['roles'][0]['name'] !== 'owner' || $user['roles'][0]['name'] !== 'admin') {
+    //   throw new \Exception('Unauthorized');
+    // }
+
+    $role = $user['roles'][0]['name'] ?? null;
+
+    // ✅ التحقق الصحيح: إذا لم يكن المالك ولا الأدمن
+    if (! in_array($role, ['owner', 'admin'])) {
       throw new \Exception('Unauthorized');
     }
 

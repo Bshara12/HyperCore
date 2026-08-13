@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Api\InAppNotificationController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\BroadcastController;
+use App\Http\Controllers\Api\BroadcastController;
 use Illuminate\Support\Facades\Route;
 
 /*

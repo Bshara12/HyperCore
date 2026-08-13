@@ -7,6 +7,7 @@ use App\Domains\Search\Actions\IndexDataEntryAction;
 use App\Events\DataEntrySavedEvent;
 use App\Models\DataEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 
@@ -14,14 +15,12 @@ uses(RefreshDatabase::class);
 
 /**
  * ─── Fake Index Data Entry Action ───
- * كلاس صافي يرث الأكشن الأصلي ليعزل بيئة الاختبار عن منطق الفهرسة المعقد
  */
 class FakeIndexDataEntryAction extends IndexDataEntryAction
 {
   public bool $wasExecuted = false;
   public ?DataEntry $passedEntry = null;
 
-  // تفريغ الـ Constructor لمنع طلب أي Dependencies خارجية
   public function __construct() {}
 
   public function execute(DataEntry $entry): void
@@ -31,14 +30,15 @@ class FakeIndexDataEntryAction extends IndexDataEntryAction
   }
 }
 
-// ─── كود الاختبارات والتغطية الشاملة ───────────────────────────────────────
+afterEach(function () {
+  Mockery::close(); // تنظيف الـ Mocks والـ Spies بعد كل اختبار لمنع التداخل
+});
 
-// 1. اختبار الحالات التي يجب عمل فهرسة (Index) لها فعلياً
-test('it indexes the entry when status is published or archived', function (string $status) {
-  // استخدام الـ Spy المدمج كحالة ضرورة قصوى لفحص أسطر الـ Log::info دون الكتابة في ملفات حقيقية
+// 1. اختبار حالة الـ published
+test('it indexes the entry when status is published', function () {
   Log::spy();
 
-  $entry = DataEntry::factory()->create(['status' => $status]);
+  $entry = DataEntry::factory()->create(['status' => 'published']);
   $event = new DataEntrySavedEvent($entry);
 
   $fakeAction = new FakeIndexDataEntryAction();
@@ -46,18 +46,45 @@ test('it indexes the entry when status is published or archived', function (stri
 
   $listener->handle($event);
 
-  // التأكد من تنفيذ الأكشن وتمرير الموديل الصحيح له
   expect($fakeAction->wasExecuted)->toBeTrue();
   expect($fakeAction->passedEntry->id)->toBe($entry->id);
 
-  // التأكد من طباعة الـ Logs الخاصة بالنجاح
   Log::shouldHaveReceived('info')->with('SearchIndex: received indexing job', Mockery::any());
   Log::shouldHaveReceived('info')->with('SearchIndex: entry indexed successfully', Mockery::any());
-})->with(['published', 'archived']);
+});
 
+// 2. اختبار حالة الـ archived
+test('it updates status in search index when status is archived without full action execution', function () {
+  Log::spy();
 
-// 2. اختبار حالات التجاهل (Draft, Scheduled) والتأكد من الخروج المبكر (Return)
-test('it skips indexing when status is not published or archived', function (string $status) {
+  $entry = DataEntry::factory()->create(['status' => 'archived']);
+
+  DB::table('search_indices')->insert([
+    'entry_id'     => $entry->id,
+    'data_type_id' => 1,
+    'project_id'   => 1,
+    'language'     => 'en',
+    'title'        => 'Test Entry',
+    'status'       => 'published',
+    'created_at'   => now(),
+    'updated_at'   => now(),
+  ]);
+
+  $event = new DataEntrySavedEvent($entry);
+
+  $fakeAction = new FakeIndexDataEntryAction();
+  $listener = new IndexDataEntryListener($fakeAction);
+
+  $listener->handle($event);
+
+  expect($fakeAction->wasExecuted)->toBeFalse();
+
+  Log::shouldHaveReceived('info')->with('SearchIndex: received indexing job', Mockery::any());
+  Log::shouldHaveReceived('info')->with('SearchIndex: entry archived in index', Mockery::any());
+});
+
+// 3. اختبار حالات التجاهل (Draft, Scheduled)
+test('it skips indexing when status is draft or scheduled', function (string $status) {
   Log::spy();
 
   $entry = DataEntry::factory()->create(['status' => $status]);
@@ -68,38 +95,33 @@ test('it skips indexing when status is not published or archived', function (str
 
   $listener->handle($event);
 
-  // التأكد من أن الأكشن لَم يُنفذ نهائياً بسبب الـ Return المبكر
   expect($fakeAction->wasExecuted)->toBeFalse();
 
-  // التأكد من طباعة لوج التخطي وسحب البيانات
   Log::shouldHaveReceived('info')->with('SearchIndex: received indexing job', Mockery::any());
-  Log::shouldHaveReceived('info')->with('SearchIndex: skipping non-published entry', Mockery::any());
+  Log::shouldHaveReceived('info')->with('SearchIndex: skipping status', Mockery::any());
 })->with(['draft', 'scheduled']);
 
-
-// 3. اختبار دالة الـ failed لتغطية أسطر الـ Log::error عند انهيار الـ Job
+// 4. اختبار دالة الـ failed باستخدام shouldReceive لمنع تداخل السجلات
 test('it logs error details when the listener fails permanently', function () {
-  Log::spy();
-
   $entry = DataEntry::factory()->create();
   $event = new DataEntrySavedEvent($entry);
   $exception = new \Exception('Elasticsearch cluster is unreachable');
 
+  // تحديد التوقع مسبقاً بدقة لتجنب تداخل الـ spies
+  Log::shouldReceive('error')
+    ->once()
+    ->with(
+      'SearchIndex: listener failed permanently',
+      Mockery::on(fn($args) => $args['entry_id'] === $entry->id && $args['error'] === 'Elasticsearch cluster is unreachable')
+    );
+
   $fakeAction = new FakeIndexDataEntryAction();
   $listener = new IndexDataEntryListener($fakeAction);
 
-  // استدعاء دالة الفشل مباشرة لمحاكاة خروج الـ Queue عن مساره
   $listener->failed($event, $exception);
-
-  // التأكد من توثيق الخطأ الحادث بدقة داخل الـ Logs
-  Log::shouldHaveReceived('error')->once()->with(
-    'SearchIndex: listener failed permanently',
-    Mockery::on(fn($args) => $args['entry_id'] === $entry->id && $args['error'] === 'Elasticsearch cluster is unreachable')
-  );
 });
 
-
-// 4. اختبار خصائص الـ Queue والتأكد من إعداداتها الثابتة
+// 5. اختبار إعدادات الـ Queue الثابتة
 test('it has the correct queue configuration parameters', function () {
   $fakeAction = new FakeIndexDataEntryAction();
   $listener = new IndexDataEntryListener($fakeAction);

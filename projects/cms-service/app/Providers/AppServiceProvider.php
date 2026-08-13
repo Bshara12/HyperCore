@@ -74,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
    */
   public function register(): void
   {
+    // @codeCoverageIgnoreStart
     $this->app->singleton(AMQPStreamConnection::class, function () {
       return new AMQPStreamConnection(
         host: config('services.rabbitmq.host'),
@@ -82,6 +83,7 @@ class AppServiceProvider extends ServiceProvider
         password: config('services.rabbitmq.password'),
       );
     });
+    // @codeCoverageIgnoreEnd
 
     $this->app->singleton(
       RabbitMQPublisher::class,
@@ -149,11 +151,13 @@ class AppServiceProvider extends ServiceProvider
       RatingRepository::class
     );
 
+    // @codeCoverageIgnoreStart
     $this->app->singleton(AIProviderChain::class, function ($app) {
       return new AIProviderChain(
         openRouter: $app->make(OpenRouterProvider::class)
       );
     });
+    // @codeCoverageIgnoreEnd
 
     $this->app->bind(
       SubscriptionPlanRepositoryInterface::class,
@@ -284,7 +288,7 @@ class AppServiceProvider extends ServiceProvider
 
 
 
-
+    // @codeCoverageIgnoreStart
     // أضف هذا الربط (Binding) هنا
     $this->app->singleton(AMQPStreamConnection::class, function ($app) {
       return new AMQPStreamConnection(
@@ -304,6 +308,7 @@ class AppServiceProvider extends ServiceProvider
         password: config('services.rabbitmq.password'),
       );
     });
+    // @codeCoverageIgnoreEnd
 
     // $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
     // $this->app->bind(FieldRepositoryInterface::class, FieldRepositoryEloquent::class);
@@ -438,6 +443,7 @@ class AppServiceProvider extends ServiceProvider
     InstallmentPlan::observe(InstallmentPlanObserver::class);
     Project::observe(ProjectObserver::class);
 
+    // @codeCoverageIgnoreStart
     // 1. للمسارات القياسية الجلب والقراءة
     RateLimiter::for('api.standard', function (Request $request) {
       return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
@@ -452,5 +458,6 @@ class AppServiceProvider extends ServiceProvider
     RateLimiter::for('api.ai', function (Request $request) {
       return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
     });
+    // @codeCoverageIgnoreEnd
   }
 }

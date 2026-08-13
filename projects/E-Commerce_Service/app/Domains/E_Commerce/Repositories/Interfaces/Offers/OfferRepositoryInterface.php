@@ -13,6 +13,8 @@ interface OfferRepositoryInterface
 
     public function update(int $collectionId, array $data): Offer;
 
+    public function find(int $offerId): Offer;
+
     public function findByCollectionId(int $collectionId): Offer;
 
     public function reEvaluate(int $entryId): void;
