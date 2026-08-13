@@ -29,15 +29,15 @@ test('it updates collection, clears all associated caches, and dispatches update
     ]
   );
 
-  // 2. تجهيز الموديل
+  // 2. تجهيز الموديل مع تعيين الـ slug لتجنب خطأ الـ TypeError
   $collection = new DataCollection();
   $collection->id = 55;
   $collection->project_id = 10;
+  $collection->slug = 'updated-name'; // 👈 تعيين الـ slug هنا
 
   // 3. تجهيز الـ Mock
   $repoMock = Mockery::mock(DataCollectionRepositoryInterface::class);
 
-  // الآن الـ update يتوقع بالضبط هذا النوع من الـ DTO
   $repoMock->shouldReceive('update')
     ->once()
     ->with($dto)
@@ -52,11 +52,12 @@ test('it updates collection, clears all associated caches, and dispatches update
   $result = $action->execute($dto);
 
   // 6. التأكيدات
-  // التأكد من مسح مفاتيح الكاش الأربعة
+  // التأكد من مسح مفاتيح الكاش (بما فيها المفتاح الجديد الخاص بالـ slug)
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionById($dto->collection_id));
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionItems($dto->collection_id));
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionEntries($dto->collection_id));
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collections($collection->project_id));
+  Cache::shouldHaveReceived('forget')->with(CacheKeys::collection($collection->project_id, $collection->slug)); // 👈 التأكد من مسحه أيضاً
 
   // التأكد من إطلاق الحدث بالمعلومات الصحيحة
   Event::assertDispatched(SystemLogEvent::class, function ($event) use ($dto) {

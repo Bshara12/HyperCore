@@ -24,4 +24,34 @@ class PlanController extends Controller
             'data' => $plan,
         ], 201);
     }
+
+
+    
+      public function index(
+        ListPlansRequest $request
+    ) {
+
+        $dto = ListPlansDTO::fromRequest(
+            $request
+        );
+
+        $plans = $this->service
+            ->listActive($dto);
+
+        return response()->json([
+            'data' => $plans,
+        ]);
+    }
+
+    public function show(
+        int $id
+    ) {
+
+        $plan = $this->service
+            ->show($id);
+
+        return response()->json([
+            'data' => $plan,
+        ]);
+    }
 }

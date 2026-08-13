@@ -16,14 +16,14 @@ beforeEach(function () {
   $this->mockedCurrentProject = (object) ['public_id' => 'proj_summary123'];
   app()->instance('currentProject', $this->mockedCurrentProject);
 
-  // 2. إنشاء المودل الحقيقي لتخطي قيود الـ Return Type الخاص بالـ Repository
-  $mockProject = new Project();
-  $mockProject->id = 88; // سنستخدم معرف مشروع مختلف (88) للتأكيد
+  // 2. إنشاء المودل الحقيقي وحفظه كخاصية لتسهيل الوصول إليه في الاختبارات
+  $this->mockProject = new Project();
+  $this->mockProject->id = 88; // سنستخدم معرف مشروع مختلف (88) للتأكيد
 
   $this->projectRepoMock = Mockery::mock(ProjectRepositoryInterface::class);
   $this->projectRepoMock->shouldReceive('findByKey')
     ->with('proj_summary123')
-    ->andReturn($mockProject);
+    ->andReturn($this->mockProject);
   app()->instance(ProjectRepositoryInterface::class, $this->projectRepoMock);
 
   // 3. محاكاة مستودع التحليلات وتجهيز الـ Action الجديد ⭐
@@ -38,12 +38,13 @@ afterEach(function () {
 // 🧠 --- قسم اختبار الـ GetContentSummaryAction وسلوك الكاش ---
 
 test('it returns content summary from repository and caches it precisely by project id', function () {
-  // بناء الـ DTO (يمكن بناؤه عبر Request أو يدوياً)
+  // بناء الـ DTO مع تمرير الـ project المفقود
   $dto = new AnalyticsFilterDTO(
     from: '2026-05-01',
     to: '2026-05-27',
     period: 'daily',
     projectId: 88,
+    project: $this->mockProject, // 👈 تمرير مودل الـ Project هنا
     limit: 10
   );
 
@@ -84,7 +85,7 @@ test('it executes successfully when integrated with DTO created from HTTP reques
     'limit' => 5
   ]);
 
-  // توليد الـ DTO عبر الـ request (سينفذ كود الحاوية والمودل المجهزة في beforeEach بسلام)
+  // توليد الـ DTO عبر الـ request
   $dto = AnalyticsFilterDTO::fromRequest($request);
 
   $expectedData = ['total_items' => 100];

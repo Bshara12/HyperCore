@@ -10,7 +10,8 @@ class UpdateOfferDTO
     public function __construct(
         public string $collectionSlug,
         public array $collectionData,
-        public array $offerData
+        public array $offerData,
+        public int $projectId
     ) {}
 
     public static function fromRequest(string $collectionSlug, UpdateOfferRequest $request): self
@@ -38,7 +39,7 @@ class UpdateOfferDTO
                 $offerData[$field] = $request->$field;
             }
         }
-
-        return new self($collectionSlug, $collectionData, $offerData);
+        $projectId = $request->project_id;
+        return new self($collectionSlug, $collectionData, $offerData, $projectId);
     }
 }

@@ -11,35 +11,41 @@ use Illuminate\Support\Facades\Cache;
 
 class RemoveOfferItemsAction extends Action
 {
-    protected function circuitServiceName(): string
-    {
-        return 'offer.removeItems';
-    }
+  protected function circuitServiceName(): string
+  {
+    return 'offer.removeItems';
+  }
 
-    public function __construct(
-        protected CMSApiClient $cms,
-        protected OfferRepositoryInterface $offerRepository,
-        protected OfferPriceRepositoryInterface $offerPriceRepository
-    ) {}
+  public function __construct(
+    protected CMSApiClient $cms,
+    protected OfferRepositoryInterface $offerRepository,
+    protected OfferPriceRepositoryInterface $offerPriceRepository
+  ) {}
 
-    public function execute($dto)
-    {
-        return $this->run(function () use ($dto) {
+  public function execute($dto)
+  {
+    return $this->run(function () use ($dto) {
 
-            $message = $this->cms->removeCollectionItems($dto->collectionSlug, $dto->items);
+      $message = $this->cms->removeCollectionItems($dto->collectionSlug, $dto->items);
 
-            if ($message === 'Items removed successfully') {
+      if ($message === 'Items removed successfully') {
 
-                $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
-                $offer = $this->offerRepository->findByCollectionId($collection['id']);
+        $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
+        $offer = $this->offerRepository->findByCollectionId($collection['id']);
 
-                foreach ($dto->items as $item) {
-                    $this->offerPriceRepository->deleteOfferPriceForEntryAndProject($item, $offer->id);
-                }
+        foreach ($dto->items as $item) {
+          $this->offerPriceRepository->deleteOfferPriceForEntryAndProject($item, $offer->id);
+        }
 
-                Cache::forget(CacheKeys::offer($collection['id']));
-                Cache::forget(CacheKeys::offerBySlug($dto->collectionSlug));
-            }
-        });
-    }
+        $cache = Cache::tags(['offers']);
+
+        $cache->forget(CacheKeys::offer($collection['id']));
+        $cache->forget(CacheKeys::offerBySlug($dto->collectionSlug));
+
+        if ($offer && isset($offer->project_id)) {
+          $cache->forget(CacheKeys::offers($offer->project_id));
+        }
+      }
+    });
+  }
 }

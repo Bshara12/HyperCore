@@ -154,14 +154,10 @@ class SearchCacheService
      * بناء الـ cache key
      *
      * الصيغة:
-     *   search:{projectId}:{lang}:{queryHash}:{page}:{perPage}:{intent}:{prefType}:{dataTypeKey}
+     *   search:{projectId}:{lang}:{queryHash}:{page}:{perPage}:{intent}:{prefType}
      *
      * queryHash = md5(lowercase query) لتجنب مشاكل الأحرف الخاصة
-     * prefType  = هاش لأعلى 3 data_type_ids تفضيلاً (وليس قيم الـ affinity نفسها،
-     *             لأنها تتغير مع كل نقرة فتُبدد الكاش بلا فائدة). نأخذ فقط
-     *             مجموعة الـ data_type_ids المفضّلة، فيبقى المفتاح مستقراً
-     *             ما دام ترتيب التفضيل الأساسي لم يتغيّر.
-     *             'none' إذا لا يوجد تاريخ سلوكي أو لا توجد أي affinity فعلية.
+     * prefType = نوع التفضيل وليس الـ userId
      */
     public function buildKey(
         SearchQueryDTO $dto,
@@ -171,10 +167,11 @@ class SearchCacheService
         $queryHash = md5(mb_strtolower(trim($dto->keyword), 'UTF-8'));
 
         $topAffinityIds = array_keys($preference->topAffinities(3));
+        $topTermWords   = array_keys($preference->topTerms(5));
 
-        $prefType = (!$preference->hasHistory || empty($topAffinityIds))
+        $prefType = (!$preference->hasHistory || (empty($topAffinityIds) && empty($topTermWords)))
             ? 'none'
-            : md5(implode(',', $topAffinityIds));
+            : md5(implode(',', $topAffinityIds) . '|' . implode(',', $topTermWords));
 
         $dataTypeKey = $dto->dataTypeSlug ?? 'all';
 

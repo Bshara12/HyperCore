@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 
 class UserRoleSeeder extends Seeder
 {
@@ -13,14 +14,23 @@ class UserRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = now();
-        $numberOfUsers = 50; // عدد المستخدمين الوهميين
+        $now = Carbon::now();
+        $numberOfUsers = 50;
 
-        // الحصول على الـ Roles
-        $roles = DB::table('roles')->pluck('id', 'name')->toArray();
+        // جلب الأدوار بترتيب ثابت حتى يكون التوزيع ثابتًا
+        // ✅ استثناء hyper_core: دور حصري لمطوري النظام الحقيقيين، لا يُسند عشوائياً لمستخدمين وهميين
+        $roles = DB::table('roles')
+            ->where('name', '!=', 'hyper_core')
+            ->orderBy('name')
+            ->pluck('id', 'name')
+            ->toArray();
 
-        // قائمة أسماء الأدوار لتوزيع عشوائي
-        $roleNames = array_keys($roles);
+        if (empty($roles)) {
+            return;
+        }
+
+        $roleIds = array_values($roles);
+        $rolesCount = count($roleIds);
 
         for ($i = 1; $i <= $numberOfUsers; $i++) {
             $email = "user{$i}@example.com";
@@ -37,23 +47,29 @@ class UserRoleSeeder extends Seeder
                 ]
             );
 
-            $userId = DB::table('users')->where('email', $email)->value('id');
+            $userId = DB::table('users')
+                ->where('email', $email)
+                ->value('id');
 
-            // توزيع دور عشوائي
-            $assignedRoleName = $roleNames[array_rand($roleNames)];
-            $roleId = $roles[$assignedRoleName];
+            if (!$userId) {
+                continue;
+            }
 
-            // ربط المستخدم بالدور في pivot بدون تكرار
-            DB::table('role_user')->updateOrInsert(
-                [
-                    'user_id' => $userId,
-                    'role_id' => $roleId,
-                ],
-                [
-                    'updated_at' => $now,
-                    'created_at' => $now,
-                ]
-            );
+            // توزيع ثابت: نفس المستخدم يأخذ نفس الدور دائمًا
+            $roleIndex = ($i - 1) % $rolesCount;
+            $roleId = $roleIds[$roleIndex];
+
+            // حذف أي ربط سابق ثم إضافة الربط الجديد
+            DB::table('role_user')
+                ->where('user_id', $userId)
+                ->delete();
+
+            DB::table('role_user')->insert([
+                'user_id' => $userId,
+                'role_id' => $roleId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         }
     }
 }

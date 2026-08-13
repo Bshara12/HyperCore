@@ -16,14 +16,14 @@ beforeEach(function () {
   $this->mockedCurrentProject = (object) ['public_id' => 'proj_ratings77'];
   app()->instance('currentProject', $this->mockedCurrentProject);
 
-  // 2. إنشاء مودل حقيقي لـ Project وتعيين معرفه لتخطي قيود الـ Type Hinting
-  $mockProject = new Project();
-  $mockProject->id = 77; // سنعتمد المعرف 77 في اختبارات هذا الملف
+  // 2. إنشاء مودل حقيقي لـ Project وحفظه كخاصية في الكلاس للاستخدام في الاختبارات
+  $this->mockProject = new Project();
+  $this->mockProject->id = 77; // سنعتمد المعرف 77 في اختبارات هذا الملف
 
   $this->projectRepoMock = Mockery::mock(ProjectRepositoryInterface::class);
   $this->projectRepoMock->shouldReceive('findByKey')
     ->with('proj_ratings77')
-    ->andReturn($mockProject);
+    ->andReturn($this->mockProject);
   app()->instance(ProjectRepositoryInterface::class, $this->projectRepoMock);
 
   // 3. محاكاة مستودع التحليلات وتجهيز الـ Action المستهدف
@@ -38,12 +38,13 @@ afterEach(function () {
 // 🧠 --- قسم اختبار الـ GetRatingsReportAction ونظام الكاش الديناميكي ---
 
 test('it returns ratings report from repository and caches it, then hits cache next time', function () {
-  // تجهيز كائن الـ DTO بقيم مخصصة للاختبار
+  // تجهيز كائن الـ DTO مع تمرير الـ project المفقود
   $dto = new AnalyticsFilterDTO(
     from: '2026-04-01',
     to: '2026-04-30',
     period: 'weekly',
     projectId: 77,
+    project: $this->mockProject, // 👈 تمرير مودل المشروع هنا
     limit: 10
   );
 

@@ -18,4 +18,10 @@ enum SubscriptionErrorCode: string
 
     case SUBSCRIPTION_EXPIRED =
         'SUBSCRIPTION_EXPIRED';
+        
+   case PLAN_NOT_FOUND =
+        'PLAN_NOT_FOUND';
+
+    case SUBSCRIPTION_ACCESS_DENIED =
+        'SUBSCRIPTION_ACCESS_DENIED';
 }

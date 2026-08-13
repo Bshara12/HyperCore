@@ -7,29 +7,30 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class RabbitMQPublisher
 {
-    public function publish(array $data)
-    {
-        $connection = new AMQPStreamConnection(
-            config('services.rabbitmq.host'),
-            config('services.rabbitmq.port'),
-            config('services.rabbitmq.user'),
-            config('services.rabbitmq.password')
-        );
+  public function publish(array $data)
+  {
+    // الاعتماد على الـ Service Container لإنشاء الكائن بدلاً من الـ new الصريحة
+    $connection = app(AMQPStreamConnection::class, [
+      'host'     => config('services.rabbitmq.host'),
+      'port'     => config('services.rabbitmq.port'),
+      'user'     => config('services.rabbitmq.user'),
+      'password' => config('services.rabbitmq.password')
+    ]);
 
-        $channel = $connection->channel();
+    $channel = $connection->channel();
 
-        $channel->queue_declare('logs_queue', false, true, false, false);
+    $channel->queue_declare('logs_queue', false, true, false, false);
 
-        $msg = new AMQPMessage(
-            json_encode($data),
-            ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]
-        );
+    $msg = new AMQPMessage(
+      json_encode($data),
+      ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]
+    );
 
-        $channel->basic_publish($msg, '', 'logs_queue');
+    $channel->basic_publish($msg, '', 'logs_queue');
 
-        $channel->close();
-        $connection->close();
-    }
+    $channel->close();
+    $connection->close();
+  }
 }
 
 // // audit

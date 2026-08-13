@@ -9,6 +9,8 @@ use App\Models\Resource;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Mockery;
+use ReflectionClass;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -530,4 +532,30 @@ test('resolveGroupBy returns correct SQL strings for different periods', functio
   // 3. حالة الأسبوعي
   $weekly = $repo->resolveGroupBy('weekly', $column);
   expect($weekly)->toBe("DATE_FORMAT(created_at, '%x-W%v')");
+});
+
+test('it generates MySQL TIMESTAMPDIFF query when driver is not sqlite', function () {
+  // 1. تزييف اتصال قاعدة البيانات ليعيد mysql بدلاً من sqlite
+  $connectionMock = Mockery::mock(\Illuminate\Database\Connection::class);
+  $connectionMock->shouldReceive('getDriverName')->andReturn('mysql');
+
+  DB::shouldReceive('connection')
+    ->zeroOrMoreTimes()
+    ->andReturn($connectionMock);
+
+  // 2. استدعاء الميثودات الخاصة (Private Methods) باستخدام Reflection
+  $repository = new \App\Domains\Booking\Analytics\Repositories\EloquentBookingAnalyticsRepository();
+  $reflection = new ReflectionClass($repository);
+
+  $minutesMethod = $reflection->getMethod('timestampDiffMinutes');
+  $minutesMethod->setAccessible(true);
+  $minutesResult = $minutesMethod->invoke($repository, 'start_at', 'end_at');
+
+  $hoursMethod = $reflection->getMethod('timestampDiffHours');
+  $hoursMethod->setAccessible(true);
+  $hoursResult = $hoursMethod->invoke($repository, 'start_at', 'end_at');
+
+  // 3. التحقق من النتيجة المطابقة لـ MySQL
+  expect($minutesResult)->toBe('TIMESTAMPDIFF(MINUTE, start_at, end_at)');
+  expect($hoursResult)->toBe('TIMESTAMPDIFF(HOUR, start_at, end_at)');
 });

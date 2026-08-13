@@ -16,14 +16,14 @@ beforeEach(function () {
   $this->mockedCurrentProject = (object) ['public_id' => 'proj_top_entries'];
   app()->instance('currentProject', $this->mockedCurrentProject);
 
-  // 2. إنشاء مودل حقيقي لـ Project لتخطي قيود الـ Type Hinting الخاص بالـ Repository
-  $mockProject = new Project();
-  $mockProject->id = 66; // سنعتمد المعرف 66 في اختبارات هذا الملف
+  // 2. إنشاء مودل حقيقي لـ Project وحفظه كخاصية لتسهيل الاستخدام
+  $this->mockProject = new Project();
+  $this->mockProject->id = 66; // سنعتمد المعرف 66 في اختبارات هذا الملف
 
   $this->projectRepoMock = Mockery::mock(ProjectRepositoryInterface::class);
   $this->projectRepoMock->shouldReceive('findByKey')
     ->with('proj_top_entries')
-    ->andReturn($mockProject);
+    ->andReturn($this->mockProject);
   app()->instance(ProjectRepositoryInterface::class, $this->projectRepoMock);
 
   // 3. محاكاة مستودع التحليلات وتجهيز الـ Action المستهدف ⭐
@@ -38,12 +38,13 @@ afterEach(function () {
 // 🧠 --- قسم اختبار الـ GetTopRatedEntriesAction وسلوك الكاش المبني على الـ Limit ---
 
 test('it returns top rated entries from repository and caches it based on project id and limit', function () {
-  // تجهيز كائن الـ DTO بـ limit مخصص (مثلاً: 5 عناصر)
+  // تجهيز كائن الـ DTO مع تمرير الـ project المفقود
   $dto = new AnalyticsFilterDTO(
     from: '2026-01-01',
     to: '2026-05-27',
     period: 'daily',
     projectId: 66,
+    project: $this->mockProject, // 👈 تمرير مودل المشروع هنا
     limit: 5
   );
 

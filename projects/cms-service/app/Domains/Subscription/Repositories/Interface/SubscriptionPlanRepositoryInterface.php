@@ -15,4 +15,12 @@ interface SubscriptionPlanRepositoryInterface
         ?int $projectId,
         string $slug
     ): bool;
+
+      public function getActivePlans(
+        ?int $projectId
+    ): Collection;
+
+    public function findById(
+        int $id
+    ): ?SubscriptionPlan;
 }

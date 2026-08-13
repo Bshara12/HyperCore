@@ -51,8 +51,20 @@ use App\Domains\Subscription\Repositories\Interface\SubscriptionFeatureRuleRepos
 use App\Domains\Subscription\Repositories\Interface\SubscriptionPlanRepositoryInterface;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Models\DataEntry;
+use App\Models\InstallmentPlan;
+use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Subscription;
+use App\Observers\InstallmentPlanObserver;
+use App\Observers\PaymentObserver;
+use App\Observers\ProjectObserver;
+use App\Observers\SubscriptionObserver;
+use App\Services\MessageBroker\RabbitMQPublisher;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 
@@ -63,8 +75,7 @@ class AppServiceProvider extends ServiceProvider
    */
   public function register(): void
   {
-
-
+    // @codeCoverageIgnoreStart
     $this->app->singleton(AMQPStreamConnection::class, function () {
       return new AMQPStreamConnection(
         host: config('services.rabbitmq.host'),
@@ -73,6 +84,109 @@ class AppServiceProvider extends ServiceProvider
         password: config('services.rabbitmq.password'),
       );
     });
+    // @codeCoverageIgnoreEnd
+
+    $this->app->singleton(
+      RabbitMQPublisher::class,
+      fn() => new RabbitMQPublisher()
+    );
+
+    $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
+    $this->app->bind(FieldRepositoryInterface::class, FieldRepositoryEloquent::class);
+    $this->app->bind(DataEntryRepositoryInterface::class, EloquentDataEntryRepository::class);
+    $this->app->bind(DataCollectionRepositoryInterface::class, DataCollectionRepositoryEloquent::class);
+    $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
+    $this->app->bind(AnalyticsRepositoryInterface::class, EloquentCmsAnalyticsRepository::class);
+    $this->app->bind(AiConversationRepositoryInterface::class, EloquentAiConversationRepository::class);
+    $this->app->bind(
+      ProjectRepositoryInterface::class,
+      EloquentProjectRepository::class
+    );
+    $this->app->bind(
+      DataEntryRepositoryInterface::class,
+      EloquentDataEntryRepository::class
+    );
+
+    $this->app->bind(
+      DataEntryValueRepository::class,
+      EloquentDataEntryValueRepository::class
+    );
+
+    $this->app->bind(
+      SeoEntryRepository::class,
+      EloquentSeoEntryRepository::class
+    );
+    $this->app->bind(
+      DataEntryRepositoryInterface::class,
+      EloquentDataEntryRepository::class
+    );
+
+    $this->app->bind(
+      DataEntryVersionRepository::class,
+      EloquentDataEntryVersionRepository::class
+    );
+    $this->app->bind(ProjectRepositoryInterface::class, EloquentProjectRepository::class);
+    $this->app->bind(
+      DataEntryRelationRepository::class,
+      EloquentDataEntryRelationRepository::class
+    );
+    $this->app->bind(
+      EntryReadRepositoryInterface::class,
+      EntryReadRepository::class
+    );
+
+    $this->app->bind(
+      EntryVersionReadRepositoryInterface::class,
+      EntryVersionReadRepository::class
+    );
+    $this->app->bind(
+      ProjectUserRepositoryInterface::class,
+      ProjectUserRepository::class
+    );
+    $this->app->bind(
+      EntryProjectReadRepositoryInterface::class,
+      EntryProjectReadRepository::class
+    );
+    $this->app->bind(
+      RatingRepositoryInterface::class,
+      RatingRepository::class
+    );
+
+    // @codeCoverageIgnoreStart
+    $this->app->singleton(AIProviderChain::class, function ($app) {
+      return new AIProviderChain(
+        openRouter: $app->make(OpenRouterProvider::class)
+      );
+    });
+    // @codeCoverageIgnoreEnd
+
+    $this->app->bind(
+      SubscriptionPlanRepositoryInterface::class,
+      EloquentSubscriptionPlanRepository::class
+    );
+    $this->app->bind(
+      SubscriptionRepositoryInterface::class,
+      EloquentSubscriptionRepository::class
+    );
+    $this->app->bind(
+      SubscriptionFeatureRuleRepositoryInterface::class,
+      EloquentSubscriptionFeatureRuleRepository::class
+    );
+    $this->app->bind(
+
+      SubscriptionAccessRuleRepositoryInterface::class,
+
+      EloquentSubscriptionAccessRuleRepository::class
+    );
+
+    $this->app->bind(
+      ContentAccessMetadataRepositoryInterface::class,
+      EloquentContentAccessMetadataRepository::class
+    );
+    $this->app->bind(
+      ContentTypeResolverInterface::class,
+      DataEntryContentTypeResolver::class
+    );
 
     $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
     $this->app->bind(FieldRepositoryInterface::class, FieldRepositoryEloquent::class);
@@ -168,6 +282,129 @@ class AppServiceProvider extends ServiceProvider
       ContentTypeResolverInterface::class,
       DataEntryContentTypeResolver::class
     );
+
+
+
+
+
+
+
+    // @codeCoverageIgnoreStart
+    // أضف هذا الربط (Binding) هنا
+    $this->app->singleton(AMQPStreamConnection::class, function ($app) {
+      return new AMQPStreamConnection(
+        env('RABBITMQ_HOST', 'rabbitmq'),
+        env('RABBITMQ_PORT', 5672),
+        env('RABBITMQ_USER', 'appuser'),
+        env('RABBITMQ_PASSWORD', 'apppass')
+      );
+    });
+
+
+    $this->app->singleton(AMQPStreamConnection::class, function () {
+      return new AMQPStreamConnection(
+        host: config('services.rabbitmq.host'),
+        port: config('services.rabbitmq.port'),
+        user: config('services.rabbitmq.user'),
+        password: config('services.rabbitmq.password'),
+      );
+    });
+    // @codeCoverageIgnoreEnd
+
+    // $this->app->bind(DataTypeRepositoryInterface::class, DataTypeRepositoryEloquent::class);
+    // $this->app->bind(FieldRepositoryInterface::class, FieldRepositoryEloquent::class);
+    // $this->app->bind(DataEntryRepositoryInterface::class, EloquentDataEntryRepository::class);
+    // $this->app->bind(DataCollectionRepositoryInterface::class, DataCollectionRepositoryEloquent::class);
+    // $this->app->bind(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
+    // $this->app->bind(AnalyticsRepositoryInterface::class, EloquentCmsAnalyticsRepository::class);
+    // $this->app->bind(AiConversationRepositoryInterface::class, EloquentAiConversationRepository::class);
+    // $this->app->bind(
+    //   ProjectRepositoryInterface::class,
+    //   EloquentProjectRepository::class
+    // );
+    // $this->app->bind(
+    //   DataEntryRepositoryInterface::class,
+    //   EloquentDataEntryRepository::class
+    // );
+
+    // $this->app->bind(
+    //   DataEntryValueRepository::class,
+    //   EloquentDataEntryValueRepository::class
+    // );
+
+    // $this->app->bind(
+    //   SeoEntryRepository::class,
+    //   EloquentSeoEntryRepository::class
+    // );
+    // $this->app->bind(
+    //   DataEntryRepositoryInterface::class,
+    //   EloquentDataEntryRepository::class
+    // );
+
+    // $this->app->bind(
+    //   DataEntryVersionRepository::class,
+    //   EloquentDataEntryVersionRepository::class
+    // );
+    // $this->app->bind(ProjectRepositoryInterface::class, EloquentProjectRepository::class);
+    // $this->app->bind(
+    //   DataEntryRelationRepository::class,
+    //   EloquentDataEntryRelationRepository::class
+    // );
+    // $this->app->bind(
+    //   EntryReadRepositoryInterface::class,
+    //   EntryReadRepository::class
+    // );
+
+    // $this->app->bind(
+    //   EntryVersionReadRepositoryInterface::class,
+    //   EntryVersionReadRepository::class
+    // );
+    // $this->app->bind(
+    //   ProjectUserRepositoryInterface::class,
+    //   ProjectUserRepository::class
+    // );
+    // $this->app->bind(
+    //   EntryProjectReadRepositoryInterface::class,
+    //   EntryProjectReadRepository::class
+    // );
+    // $this->app->bind(
+    //   RatingRepositoryInterface::class,
+    //   RatingRepository::class
+    // );
+
+    // $this->app->singleton(AIProviderChain::class, function ($app) {
+    //   return new AIProviderChain(
+    //     openRouter: $app->make(OpenRouterProvider::class)
+    //   );
+    // });
+
+    // $this->app->bind(
+    //   SubscriptionPlanRepositoryInterface::class,
+    //   EloquentSubscriptionPlanRepository::class
+    // );
+    // $this->app->bind(
+    //   SubscriptionRepositoryInterface::class,
+    //   EloquentSubscriptionRepository::class
+    // );
+    // $this->app->bind(
+    //   SubscriptionFeatureRuleRepositoryInterface::class,
+    //   EloquentSubscriptionFeatureRuleRepository::class
+    // );
+    // $this->app->bind(
+
+    //   SubscriptionAccessRuleRepositoryInterface::class,
+
+    //   EloquentSubscriptionAccessRuleRepository::class
+    // );
+
+    // $this->app->bind(
+    //   ContentAccessMetadataRepositoryInterface::class,
+    //   EloquentContentAccessMetadataRepository::class
+    // );
+    // $this->app->bind(
+    //   ContentTypeResolverInterface::class,
+    //   DataEntryContentTypeResolver::class
+    // );
   }
 
   /**
@@ -180,5 +417,62 @@ class AppServiceProvider extends ServiceProvider
       'project' => Project::class,
       'data' => DataEntry::class,
     ]);
+
+    /*
+         | SubscriptionObserver:
+         |   created → cms.subscription.created
+         |   updated:
+         |     status = cancelled    → cms.subscription.cancelled
+         |     status = grace_period → cms.subscription.grace_period
+         |     status = expired      → cms.subscription.expired
+         |     ends_at dirty         → cms.subscription.renewed
+         |
+         | PaymentObserver:
+         |   updated → cms.payment.{paid|failed|refunded}
+         |
+         | InstallmentPlanObserver:
+         |   updated:
+         |     paid_installments dirty → cms.installment.paid
+         |     status = completed      → cms.installment.completed
+         |     status = defaulted      → cms.installment.defaulted
+         |
+         | ProjectObserver:
+         |   created → cms.project.created
+         */
+    Subscription::observe(SubscriptionObserver::class);
+    Payment::observe(PaymentObserver::class);
+    InstallmentPlan::observe(InstallmentPlanObserver::class);
+    Project::observe(ProjectObserver::class);
+
+    // @codeCoverageIgnoreStart
+    // 1. للمسارات القياسية الجلب والقراءة
+    RateLimiter::for('api.standard', function (Request $request) {
+      return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+    });
+
+    // 2. للعمليات الثقيلة (الكتابة، التعديل، الحفظ والدفع)
+
+    // RateLimiter::for('api.heavy', function (Request $request) {
+    //   return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+    // });
+    RateLimiter::for('api.heavy', function (Request $request) {
+    $key = $request->user()?->id ?: $request->ip();
+    return [
+        Limit::perSecond(2)->by($key),   // يمنع burst/spam مفاجئ
+        Limit::perMinute(15)->by($key),  // الكوتا العامة زي ما هي
+    ];
+});
+
+    // 3. لعمليات الذكاء الاصطناعي المكلفة
+    RateLimiter::for('api.ai', function (Request $request) {
+      return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+    });
+    // @codeCoverageIgnoreEnd
+
+    Route::bind('project', function (string $value) {
+        return is_numeric($value)
+            ? Project::findOrFail($value)
+            : Project::where('slug', $value)->firstOrFail();
+    });
   }
 }

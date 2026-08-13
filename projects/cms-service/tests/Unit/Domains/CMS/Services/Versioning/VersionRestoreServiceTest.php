@@ -7,6 +7,7 @@ use App\Models\DataEntryVersion;
 use App\Models\DataType;
 use App\Models\DataTypeField;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
@@ -14,6 +15,10 @@ beforeEach(function () {
   // محاكاة VersionCreator لأننا نختبر الاستعادة وليس إنشاء النسخة
   $this->versionCreator = Mockery::mock(VersionCreator::class);
   $this->service = new VersionRestoreService($this->versionCreator);
+});
+
+afterEach(function () {
+  Mockery::close(); // 👈 هذا السطر ضروري جداً لتنظيف الموكز بعد كل اختبار وإيقاف تسرب الـ Logs
 });
 
 test('it restores entries using modern row format', function () {
@@ -100,8 +105,8 @@ test('it throws type error if snapshot values is not an array', function () {
 })->throws(\TypeError::class, 'Invalid snapshot values format: expected array.');
 
 test('it skips non-string keys and logs warning when field is not found in legacy format', function () {
-  // 1. التجهيز
-  Log::shouldReceive('warning')->once(); // التأكد من تسجيل التحذير
+  // 1. التجهيز باستخدام spy بدلاً من shouldReceive لمنع اعتراض بقية دوال الـ Log مثل error()
+  Log::spy();
 
   $dataType = DataType::factory()->create();
   $entry = DataEntry::factory()->create(['data_type_id' => $dataType->id]);
@@ -129,4 +134,7 @@ test('it skips non-string keys and logs warning when field is not found in legac
   // 3. التأكيد
   // يجب أن يكون الجدول فارغاً لأننا لم نقم بإنشاء حقول مطابقة في الـ setup
   $this->assertDatabaseCount('data_entry_values', 0);
+
+  // التأكد من أنه تم تسجيل التحذير بنجاح
+  Log::shouldHaveReceived('warning')->once();
 });

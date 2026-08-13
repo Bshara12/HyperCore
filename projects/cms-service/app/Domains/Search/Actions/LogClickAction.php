@@ -17,9 +17,6 @@ class LogClickAction
     {
         $this->repository->logClick($dto);
 
-        // مسح الـ cache حتى يُعاد حساب التفضيلات فوراً
-        if ($dto->userId !== null) {
-            $this->analyzer->invalidateCache($dto->projectId, $dto->userId);
-        }
+        $this->analyzer->invalidateCache($dto->projectId, $dto->userId, $dto->sessionId);
     }
 }

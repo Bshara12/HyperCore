@@ -15,6 +15,7 @@ use App\Domains\Booking\Read\DTOs\GetResourceBookingsDTO;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 
 class BookingServiceTest extends TestCase
 {
@@ -28,7 +29,7 @@ class BookingServiceTest extends TestCase
     $this->service = app(BookingService::class);
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_to_get_slots_if_resource_does_not_exist()
   {
     $this->expectException(\Exception::class);
@@ -40,7 +41,7 @@ class BookingServiceTest extends TestCase
     $this->service->getAvailableSlots($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_to_get_slots_if_resource_is_inactive()
   {
     // ننشئ مورد بحالة inactive
@@ -53,7 +54,7 @@ class BookingServiceTest extends TestCase
 
     $this->service->getAvailableSlots($dto);
   }
-  /** @test */
+  #[Test]
   public function it_fails_to_get_slots_for_past_dates()
   {
     $resource = Resource::factory()->create(['status' => 'active']);
@@ -67,7 +68,7 @@ class BookingServiceTest extends TestCase
 
     $this->service->getAvailableSlots($dto);
   }
-  /** @test */
+  #[Test]
   public function it_returns_available_slots_successfully_for_valid_resource_and_date()
   {
     // نستخدم withFullSetup لضمان وجود التوافر (Availability)
@@ -87,7 +88,7 @@ class BookingServiceTest extends TestCase
     $this->assertArrayHasKey('day', $result);
   }
 
-  /** @test */
+  #[Test]
   public function it_returns_a_collection_of_bookings_for_a_resource()
   {
     // 1. إعداد البيانات: إنشاء مورد وحجوزات مرتبطة به
@@ -110,7 +111,7 @@ class BookingServiceTest extends TestCase
     $this->assertEquals($resource->id, $result->first()->resource_id);
   }
 
-  /** @test */
+  #[Test]
   public function it_returns_an_empty_collection_if_resource_has_no_bookings()
   {
     // إنشاء مورد جديد بدون أي حجوزات
@@ -124,7 +125,7 @@ class BookingServiceTest extends TestCase
     $this->assertTrue($result->isEmpty());
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_to_create_booking_if_resource_not_found()
   {
     $this->expectException(\Exception::class);
@@ -146,7 +147,7 @@ class BookingServiceTest extends TestCase
     $this->service->create($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_to_create_booking_if_resource_is_inactive()
   {
     $resource = Resource::factory()->inactive()->create();
@@ -170,7 +171,7 @@ class BookingServiceTest extends TestCase
     $this->service->create($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_if_amount_does_not_match_resource_price()
   {
     // مورد سعره 100
@@ -198,7 +199,7 @@ class BookingServiceTest extends TestCase
     $this->service->create($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_creates_paid_booking_successfully_when_amount_is_correct()
   {
     Http::fake([
@@ -230,7 +231,7 @@ class BookingServiceTest extends TestCase
       'amount' => 150.00
     ]);
   }
-  /** @test */
+  #[Test]
   public function it_forces_amount_to_zero_for_free_resources_even_if_input_has_value()
   {
     $resource = Resource::factory()->withFullSetup()->create([
@@ -262,7 +263,6 @@ class BookingServiceTest extends TestCase
     ]);
   }
 
-  /** @test */
   // public function it_fails_secondary_active_check_if_status_changes()
   // {
   //   // ملاحظة: هذا السطر في كودك قد يبدو مكرراً لكن لتغطيته برمجياً:
@@ -286,7 +286,7 @@ class BookingServiceTest extends TestCase
 
   //   $this->service->create($dto);
   // }
-  /** @test */
+  #[Test]
   public function it_fails_primary_active_check()
   {
     $resource = Resource::factory()->inactive()->create();
@@ -311,7 +311,7 @@ class BookingServiceTest extends TestCase
     $this->service->create($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_to_cancel_if_user_is_not_the_owner()
   {
     // إنشاء حجز تابع لمستخدم رقم 1
@@ -329,7 +329,7 @@ class BookingServiceTest extends TestCase
     $this->service->cancel($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_cancels_booking_and_processes_refund_successfully()
   {
     // فبركة رد الـ API الخاص بالاسترداد
@@ -362,7 +362,7 @@ class BookingServiceTest extends TestCase
     ]);
   }
 
-  /** @test */
+  #[Test]
   public function it_cancels_booking_without_refund_when_amount_is_zero()
   {
     $userId = 123;
@@ -381,7 +381,7 @@ class BookingServiceTest extends TestCase
     // نتحقق من أن قاعدة البيانات لم تسجل أي مبالغ مستردة إذا كان لديك حقل لذلك
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_to_reschedule_if_user_is_not_the_owner()
   {
     $booking = Booking::factory()->create(['user_id' => 1]);
@@ -399,7 +399,7 @@ class BookingServiceTest extends TestCase
     $this->service->reschedule($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_fails_to_reschedule_if_booking_is_not_confirmed()
   {
     $userId = 1;
@@ -422,7 +422,7 @@ class BookingServiceTest extends TestCase
     $this->service->reschedule($dto);
   }
 
-  /** @test */
+  #[Test]
   public function it_reschedules_successfully_and_covers_all_logic()
   {
     $userId = 1;
@@ -449,7 +449,7 @@ class BookingServiceTest extends TestCase
     $this->assertEquals($newStart, $result->start_at->toDateTimeString());
   }
 
-  /** @test */
+  #[Test]
   public function it_returns_slots_for_today_successfully()
   {
     $resource = Resource::factory()->withFullSetup()->create(['status' => 'active']);
@@ -461,7 +461,7 @@ class BookingServiceTest extends TestCase
     $this->assertEquals($date, $result['date']);
   }
 
-  /** @test */
+  #[Test]
   public function it_skips_refund_process_if_payment_id_is_missing()
   {
     $userId = 123;

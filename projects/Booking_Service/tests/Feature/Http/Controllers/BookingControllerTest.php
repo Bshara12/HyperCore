@@ -27,76 +27,109 @@ class BookingControllerTest extends TestCase
   #[Test]
   public function it_returns_available_slots_successfully()
   {
-    // 1. تجهيز البيانات الوهمية التي من المفترض أن يعود بها الـ Service
+    // 1. إنشاء المورد في قاعدة البيانات لتجاوز فحص وجود المورد (404)
+    $resource = Resource::query()->create([
+      'id'            => 1,
+      'name'          => 'Test Resource',
+      'project_id'    => 1,
+      'data_entry_id' => 1,
+      'type'          => 'room',
+      'status'        => 'active',
+      'payment_type'  => 'paid'
+    ]);
+
+    // 2. تجهيز البيانات الوهمية
     $mockSlots = [
       '2026-05-10 09:00',
       '2026-05-10 10:00'
     ];
 
-    // 2. توقع استدعاء الدالة داخل الـ Service وإرجاع البيانات الوهمية
+    // 3. توقع استدعاء الدالة داخل الـ Service
     $this->serviceMock
       ->shouldReceive('getAvailableSlots')
       ->once()
       ->andReturn($mockSlots);
 
-    // 3. تنفيذ الطلب (تأكد من المسار الصحيح حسب api.php)
-    $response = $this->postJson('/api/booking/resources/1/slots', [
+    // 4. تنفيذ الطلب
+    $response = $this->postJson("/api/booking/resources/{$resource->id}/slots", [
       'date' => '2026-05-10'
     ]);
 
-    // 4. التأكد من النتيجة
+    // 5. التأكد من النتيجة
     $response->assertStatus(200)
       ->assertJson([
         'data' => $mockSlots
       ]);
   }
+
   #[Test]
   public function it_returns_422_status_when_service_throws_exception()
   {
-    // 1. توقع حدوث خطأ داخل الـ Service
+    // 1. إنشاء المورد لتجاوز فحص الـ 404 والوصول لمنطق الـ Service
+    $resource = Resource::query()->create([
+      'id'            => 1,
+      'name'          => 'Test Resource',
+      'project_id'    => 1,
+      'data_entry_id' => 1,
+      'type'          => 'room',
+      'status'        => 'active',
+      'payment_type'  => 'paid'
+    ]);
+
+    // 2. توقع حدوث خطأ داخل الـ Service
     $this->serviceMock
       ->shouldReceive('getAvailableSlots')
       ->once()
       ->andThrow(new \Exception("Resource not found"));
 
-    // 2. تنفيذ الطلب
-    $response = $this->postJson('/api/booking/resources/1/slots', [
+    // 3. تنفيذ الطلب
+    $response = $this->postJson("/api/booking/resources/{$resource->id}/slots", [
       'date' => '2026-05-10'
     ]);
 
-    // 3. التأكد من أن الـ Controller أمسك بالخطأ وعاد بـ 422 ورسالة الخطأ
+    // 4. التأكد من أن الـ Controller أرجع 422 ورسالة الخطأ
     $response->assertStatus(422)
       ->assertJson([
         'message' => 'Resource not found'
       ]);
   }
+
   #[Test]
   public function it_returns_resource_bookings_successfully()
   {
-    // 1. تجهيز بيانات وهمية (مجموعة من الحجوزات)
-    // نستخدم Collection لأن الـ Controller أو الـ Service قد يتوقعها بدلاً من Array
-    $mockBookings = new Collection([
-      ['id' => 1, 'resource_id' => 1, 'start_at' => '2026-05-10 09:00'],
-      ['id' => 2, 'resource_id' => 1, 'start_at' => '2026-05-10 10:00']
+    // 1. إنشاء المورد في قاعدة البيانات
+    $resource = Resource::query()->create([
+      'id'            => 1,
+      'name'          => 'Test Resource',
+      'project_id'    => 1,
+      'data_entry_id' => 1,
+      'type'          => 'room',
+      'status'        => 'active',
+      'payment_type'  => 'paid'
     ]);
 
-    // 2. توقع استدعاء الخدمة وإرجاع البيانات
+    // 2. تجهيز بيانات وهمية
+    $mockBookings = new Collection([
+      ['id' => 1, 'resource_id' => $resource->id, 'start_at' => '2026-05-10 09:00'],
+      ['id' => 2, 'resource_id' => $resource->id, 'start_at' => '2026-05-10 10:00']
+    ]);
+
+    // 3. توقع استدعاء الخدمة
     $this->serviceMock
       ->shouldReceive('getResourceBookings')
       ->once()
       ->andReturn($mockBookings);
 
-    // 3. تنفيذ الطلب
-    // نرسل طلب POST إلى المسار المخصص (تأكد من مطابقته لملف api.php)
-    $response = $this->postJson('/api/booking/resources/1/bookings', [
+    // 4. تنفيذ الطلب
+    $response = $this->postJson("/api/booking/resources/{$resource->id}/bookings", [
       'status' => 'confirmed',
       'from'   => '2026-05-01',
       'to'     => '2026-05-30'
     ]);
 
-    // 4. التحقق من حالة الاستجابة وشكل البيانات
+    // 5. التحقق من حالة الاستجابة
     $response->assertStatus(200)
-      ->assertJsonCount(2, 'data') // التأكد من وجود عنصرين في مصفوفة data
+      ->assertJsonCount(2, 'data')
       ->assertJson([
         'data' => $mockBookings->toArray()
       ]);
@@ -132,7 +165,7 @@ class BookingControllerTest extends TestCase
     });
 
     // 4. تنفيذ الطلب
-    $response = $this->postJson('/api/booking/create', [
+    $response = $this->postJson('/api/create', [
       'resource_id' => $resource->id,
       'project_id'  => 1,
       'start_at'    => '2026-05-10 09:00:00',
@@ -197,7 +230,7 @@ class BookingControllerTest extends TestCase
     });
 
     // 5. تنفيذ الطلب
-    $response = $this->postJson('/api/booking/cancel', [
+    $response = $this->postJson('/api/cancel', [
       'booking_id' => $booking->id
     ]);
 
@@ -256,7 +289,7 @@ class BookingControllerTest extends TestCase
     });
 
     // 5. تنفيذ طلب إعادة الجدولة بمواعيد جديدة
-    $response = $this->postJson('/api/booking/reschedule', [
+    $response = $this->postJson('/api/reschedule', [
       'booking_id' => $booking->id,
       'start_at'   => '2026-05-11 14:00:00',
       'end_at'     => '2026-05-11 15:00:00',

@@ -7,22 +7,16 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class VerifyOTPRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+  /**
+   * Get the validation rules that apply to the request.
+   *
+   * @return array<string, ValidationRule|array<mixed>|string>
+   */
+  // app/Http/Requests/VerifyOTPRequest.php
     public function rules(): array
     {
         return [
+            'user_id' => 'required|integer|exists:users,id',
             'otp' => 'required|string|size:6',
         ];
     }

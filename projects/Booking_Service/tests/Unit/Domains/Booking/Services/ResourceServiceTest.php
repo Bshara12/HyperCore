@@ -7,6 +7,7 @@ use App\Models\Resource;
 use App\Domains\Booking\Services\ResourceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Collection;
+use PHPUnit\Framework\Attributes\Test;
 
 class ResourceServiceTest extends TestCase
 {
@@ -24,7 +25,7 @@ class ResourceServiceTest extends TestCase
    * 1. Test listByProject
    * الهدف: تغطية استدعاء IndexResourcesAction بنجاح
    */
-  /** @test */
+  #[Test]
   public function it_can_list_resources_by_project_with_correct_user_structure()
   {
     // إعداد: إنشاء مشروع وموارد تابعة له
@@ -52,7 +53,7 @@ class ResourceServiceTest extends TestCase
    * 2. Test show
    * الهدف: التأكد من جلب مورد معين أو إعادة null في حال عدم الوجود
    */
-  /** @test */
+  #[Test]
   public function it_can_show_a_specific_resource_by_id()
   {
     // إعداد: إنشاء مورد
@@ -66,7 +67,7 @@ class ResourceServiceTest extends TestCase
     $this->assertEquals($resource->id, $result->id);
   }
 
-  /** @test */
+  #[Test]
   public function it_returns_null_when_showing_non_existent_resource()
   {
     // التنفيذ باستخدام معرف غير موجود
@@ -80,7 +81,7 @@ class ResourceServiceTest extends TestCase
    * 3. Test create
    * الهدف: التأكد من تحويل الـ DTO إلى سجل حقيقي في قاعدة البيانات
    */
-  /** @test */
+  #[Test]
   public function it_can_create_a_resource_successfully()
   {
     // 1. إعداد البيانات للـ DTO
@@ -116,7 +117,7 @@ class ResourceServiceTest extends TestCase
    * 4. Test update
    * الهدف: التأكد من تحديث بيانات مورد موجود مسبقاً بناءً على الـ DTO
    */
-  /** @test */
+  #[Test]
   public function it_can_update_an_existing_resource()
   {
     // 1. إعداد: إنشاء مورد قديم في قاعدة البيانات
@@ -162,7 +163,7 @@ class ResourceServiceTest extends TestCase
    * 5. Test delete
    * الهدف: التأكد من حذف المورد من قاعدة البيانات بنجاح
    */
-  /** @test */
+  #[Test]
   public function it_can_delete_a_resource_successfully()
   {
     // 1. إعداد: إنشاء مورد للحذف
@@ -184,7 +185,7 @@ class ResourceServiceTest extends TestCase
    * 6. Test setAvailability
    * الهدف: التأكد من تمرير مصفوفة التوافر للأكشن وحفظها للمورد
    */
-  /** @test */
+  #[Test]
   public function it_can_set_availability_for_a_resource()
   {
     // 1. إعداد: إنشاء مورد
@@ -230,7 +231,7 @@ class ResourceServiceTest extends TestCase
    * 7. Test setPolicy
    * الهدف: التأكد من ضبط سياسات الإلغاء والاسترداد للمورد
    */
-  /** @test */
+  #[Test]
   public function it_can_set_cancellation_policy_for_a_resource()
   {
     // 1. إعداد: إنشاء مورد

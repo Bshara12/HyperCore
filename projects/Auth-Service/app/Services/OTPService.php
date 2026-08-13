@@ -2,20 +2,39 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Cache;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
-class OTPService
+class OtpService
 {
-    public function generate($user)
+    /**
+     * إرسال OTP للمرة الأولى
+     */
+    public function send(User $user): User
     {
-        $code = rand(100000, 999999);
-        Cache::put("otp_{$user->id}", $code, now()->addMinutes(10));
+        return DB::transaction(function () use ($user) {
+            $user->update([
+                'otp_code'        => random_int(100000, 999999),
+                'otp_expires_at'  => now()->addMinutes(10),
+                'failed_attempts' => 0,
+            ]);
 
-        return $code;
+            return $user;
+        });
     }
 
-    public function verify($user, $code)
+    /**
+     * إعادة إرسال OTP عند طلب المستخدم
+     */
+    public function resend(User $user): User
     {
-        return Cache::get("otp_{$user->id}") == $code;
+        return DB::transaction(function () use ($user) {
+            $user->update([
+                'otp_code'       => random_int(100000, 999999),
+                'otp_expires_at' => now()->addMinutes(10),
+            ]);
+
+            return $user;
+        });
     }
 }

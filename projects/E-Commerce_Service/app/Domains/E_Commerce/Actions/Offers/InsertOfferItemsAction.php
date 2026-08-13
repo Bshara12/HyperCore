@@ -11,44 +11,50 @@ use Illuminate\Support\Facades\Cache;
 
 class InsertOfferItemsAction extends Action
 {
-    protected function circuitServiceName(): string
-    {
-        return 'offer.insertItems';
-    }
+  protected function circuitServiceName(): string
+  {
+    return 'offer.insertItems';
+  }
 
-    public function __construct(
-        protected CMSApiClient $cms,
-        protected OfferRepositoryInterface $repository
-    ) {}
+  public function __construct(
+    protected CMSApiClient $cms,
+    protected OfferRepositoryInterface $repository
+  ) {}
 
-    public function execute($dto)
-    {
-        return $this->run(function () use ($dto) {
+  public function execute($dto)
+  {
+    return $this->run(function () use ($dto) {
 
-            $message = $this->cms->addCollectionItems($dto->collectionSlug, $dto->items);
+      $message = $this->cms->addCollectionItems($dto->collectionSlug, $dto->items);
 
-            if ($message === 'Items added successfully') {
+      if ($message === 'Items added successfully') {
 
-                $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
-                $offer = $this->repository->findByCollectionId($collection['id']);
+        $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
+        $offer = $this->repository->findByCollectionId($collection['id']);
 
-                Cache::forget(CacheKeys::offer($collection['id']));
-                Cache::forget(CacheKeys::offerBySlug($dto->collectionSlug));
+        $cache = Cache::tags(['offers']);
 
-                event(new SystemLogEvent(
-                    module: 'ecommerce',
-                    eventType: 'isert_offer_item',
-                    userId: null,
-                    entityType: 'offer',
-                    entityId: $collection['id'] ?? null
-                ));
+        $cache->forget(CacheKeys::offer($collection['id']));
+        $cache->forget(CacheKeys::offerBySlug($dto->collectionSlug));
 
-                return [
-                    'message' => 'Items added successfully',
-                    'collection' => $collection,
-                    'offer' => $offer,
-                ];
-            }
-        });
-    }
+        if ($offer && isset($offer->project_id)) {
+          $cache->forget(CacheKeys::offers($offer->project_id));
+        }
+
+        event(new SystemLogEvent(
+          module: 'ecommerce',
+          eventType: 'insert_offer_item',
+          userId: null,
+          entityType: 'offer',
+          entityId: $collection['id'] ?? null
+        ));
+
+        return [
+          'message' => 'Items added successfully',
+          'collection' => $collection,
+          'offer' => $offer,
+        ];
+      }
+    });
+  }
 }

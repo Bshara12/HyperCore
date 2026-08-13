@@ -19,67 +19,76 @@ use Illuminate\Support\Facades\Log;
  */
 class UserPreferenceAnalyzer
 {
-    /**
-     * الحد الأدنى لعدد النقرات حتى يُعتبر data_type إشارة ذات معنى.
-     * أقل من هذا يُعتبر ضجيجاً (نقرة عرضية) ويُتجاهل تماماً.
-     */
+
     private const MIN_CLICKS_FOR_SIGNAL = 2;
-
-    /**
-     * ثابت التشبّع K في صيغة: affinity = count / (count + K)
-     */
     private const SATURATION_K = 3.0;
+    private const MIN_TERM_SIGNAL = 2;
+    private const TERM_SATURATION_K = 2.0;
+    private const VOCAB_CAP = 20;
+    private const MAX_CLICKS_ANALYZED = 100;
+    private const CACHE_TTL_MINUTES = 15;
+    private const ANALYSIS_DAYS = 30;
 
-    private const CACHE_TTL_MINUTES = 15;   // cache تفضيلات الـ user لـ 15 دقيقة
-
-    private const ANALYSIS_DAYS = 30;   // آخر 30 يوم فقط
+    private const DOMAIN_NEUTRAL_WORDS = [
+        'new' => true, 'best' => true, 'sale' => true, 'price' => true,
+        'free' => true, 'latest' => true, 'top' => true, 'cheap' => true,
+        'deal' => true, 'offer' => true, 'discount' => true, 'buy' => true,
+        'shop' => true, 'shipping' => true, 'delivery' => true,
+        'affordable' => true, 'compare' => true, 'guide' => true,
+        'review' => true, 'tutorial' => true,
+    ];
 
     public function __construct(
         private UserBehaviorRepositoryInterface $repository,
+        private KeywordTokenizer $tokenizer,
     ) {}
 
-    // ─────────────────────────────────────────────────────────────────
-
-    /**
-     * تحليل تفضيلات user مُسجَّل
-     */
     public function analyzeForUser(int $projectId, int $userId): UserPreferenceDTO
     {
         $cacheKey = "user_preference:{$projectId}:{$userId}";
 
         return $this->resolveFromCache(
             $cacheKey,
-            fn () => $this->buildPreference(
-                $this->repository->getClickCountsByDataType($projectId, $userId, self::ANALYSIS_DAYS)
-            )
+
+            function () use ($projectId, $userId) {
+                $clickCounts = $this->repository->getClickCountsByDataType(
+                    $projectId, $userId, self::ANALYSIS_DAYS
+                );
+                $indexedTexts = $this->repository->getClickedEntryTexts(
+                    $projectId, $userId, self::ANALYSIS_DAYS, self::MAX_CLICKS_ANALYZED
+                );
+
+                return $this->buildPreference($clickCounts, $indexedTexts);
+            }
         );
     }
 
-    /**
-     * تحليل تفضيلات guest عبر session
-     */
     public function analyzeForSession(int $projectId, string $sessionId): UserPreferenceDTO
     {
         $cacheKey = "session_preference:{$projectId}:{$sessionId}";
 
         return $this->resolveFromCache(
             $cacheKey,
-            fn () => $this->buildPreference(
-                $this->repository->getClickCountsByDataTypeForSession($projectId, $sessionId, self::ANALYSIS_DAYS)
-            )
+
+            function () use ($projectId, $sessionId) {
+                $clickCounts = $this->repository->getClickCountsByDataTypeForSession(
+                    $projectId, $sessionId, self::ANALYSIS_DAYS
+                );
+                $indexedTexts = $this->repository->getClickedEntryTextsForSession(
+                    $projectId, $sessionId, self::ANALYSIS_DAYS, self::MAX_CLICKS_ANALYZED
+                );
+
+                return $this->buildPreference($clickCounts, $indexedTexts);
+            }
         );
     }
 
-    /**
-     * تحليل عام: user إذا وُجد، وإلا session
-     */
     public function analyze(
         int $projectId,
         ?int $userId,
         ?string $sessionId
     ): UserPreferenceDTO {
 
-        // ─── DEBUG: تسجيل ما يصل فعلاً ──────────────────────────────
         Log::debug('UserPreferenceAnalyzer::analyze called', [
             'project_id' => $projectId,
             'user_id' => $userId,
@@ -98,29 +107,18 @@ class UserPreferenceAnalyzer
         return UserPreferenceDTO::noHistory();
     }
 
-    /**
-     * مسح الـ cache عند تسجيل نقرة جديدة
-     * (حتى يُعاد حساب التفضيلات)
-     */
-    public function invalidateCache(int $projectId, int $userId): void
+
+    public function invalidateCache(int $projectId, ?int $userId, ?string $sessionId = null): void
     {
-        Cache::forget("user_preference:{$projectId}:{$userId}");
+        if ($userId !== null) {
+            Cache::forget("user_preference:{$projectId}:{$userId}");
+        }
+
+        if ($sessionId !== null) {
+            Cache::forget("session_preference:{$projectId}:{$sessionId}");
+        }
     }
 
-    // ─────────────────────────────────────────────────────────────────
-
-    /**
-     * قراءة آمنة من الكاش مع rebuild تلقائي عند أي corruption.
-     *
-     * السبب: Cache::remember() يُرجع القيمة المخزَّنة "كما هي" بلا فحص نوع،
-     * فإذا فشل unserialize() داخلياً (مثلاً بعد تغيير بنية UserPreferenceDTO
-     * في نشر سابق) قد يُرجع false أو قيمة غريبة أخرى، وهي قيمة "غير null"
-     * فيعتبرها remember() صالحة ويُرجعها مباشرة → استدعاء affinityFor() على
-     * قيمة ليست UserPreferenceDTO يُسبب Fatal Error في SearchResultRanker.
-     *
-     * الحل: قراءة صريحة عبر Cache::get()، فحص instanceof، وإعادة البناء
-     * من الـ Repository فوراً عند أي عدم تطابق (بدل الوثوق بالقيمة عمياء).
-     */
     private function resolveFromCache(string $cacheKey, \Closure $builder): UserPreferenceDTO
     {
         $cached = Cache::get($cacheKey);
@@ -143,30 +141,32 @@ class UserPreferenceAnalyzer
         return $fresh;
     }
 
-    // ─────────────────────────────────────────────────────────────────
 
-    /**
-     * تحويل click counts إلى UserPreferenceDTO — Data-Type-Level Affinity
-     *
-     * مثال:
-     *   clickCounts: [101 => 12, 205 => 8, 310 => 1]   (101=phones, 205=laptops, 310=tablets)
-     *   totalClicks: 21
-     *   310 مستبعد لأن count=1 < MIN_CLICKS_FOR_SIGNAL
-     *   affinities:  [101 => 0.80, 205 => 0.73]         (كل data_type مستقل، بلا تطبيع لمجموع=1)
-     */
-    private function buildPreference(array $clickCounts): UserPreferenceDTO
+    private function buildPreference(array $clickCounts, array $indexedTexts): UserPreferenceDTO
     {
-        if (empty($clickCounts)) {
-            return UserPreferenceDTO::noHistory();
-        }
-
         $totalClicks = array_sum($clickCounts);
 
-        if ($totalClicks === 0) {
+        $dataTypeAffinities = $this->buildDataTypeAffinities($clickCounts);
+        $termAffinities = $this->buildTermAffinities($indexedTexts);
+
+        if (empty($dataTypeAffinities) && empty($termAffinities)) {
             return UserPreferenceDTO::noHistory();
         }
 
-        // ─── affinity مستقلة لكل data_type_id (بلا تجميع في فئات) ─────
+        return new UserPreferenceDTO(
+            affinities: $dataTypeAffinities,
+            termAffinities: $termAffinities,
+            totalClicks: $totalClicks,
+            hasHistory: true,
+        );
+    }
+
+    private function buildDataTypeAffinities(array $clickCounts): array
+    {
+        if (empty($clickCounts)) {
+            return [];
+        }
+
         $affinities = [];
 
         foreach ($clickCounts as $dataTypeId => $count) {
@@ -182,14 +182,53 @@ class UserPreferenceAnalyzer
             );
         }
 
-        if (empty($affinities)) {
-            return UserPreferenceDTO::noHistory();
+
+        return $affinities;
+    }
+
+    private function buildTermAffinities(array $indexedTexts): array
+    {
+        if (empty($indexedTexts)) {
+            return [];
         }
 
-        return new UserPreferenceDTO(
-            affinities: $affinities,
-            totalClicks: $totalClicks,
-            hasHistory: true,
-        );
+        $termCounts = [];
+
+        foreach ($indexedTexts as $text) {
+            $tokens = $this->tokenizer->tokenize($text);
+
+            foreach ($tokens as $token) {
+                if (isset(self::DOMAIN_NEUTRAL_WORDS[$token])) {
+                    continue;
+                }
+
+                $termCounts[$token] = ($termCounts[$token] ?? 0) + 1;
+            }
+        }
+
+        if (empty($termCounts)) {
+            return [];
+        }
+
+        $termAffinities = [];
+
+        foreach ($termCounts as $term => $count) {
+            if ($count < self::MIN_TERM_SIGNAL) {
+                continue;
+            }
+
+            $termAffinities[$term] = round(
+                $count / ($count + self::TERM_SATURATION_K),
+                4
+            );
+        }
+
+        if (empty($termAffinities)) {
+            return [];
+        }
+
+        arsort($termAffinities);
+
+        return array_slice($termAffinities, 0, self::VOCAB_CAP, true);
     }
 }

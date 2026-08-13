@@ -73,4 +73,44 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
 
         return $rows->pluck('click_count', 'data_type_id')->toArray();
     }
+
+    public function getClickedEntryTexts(
+        int $projectId,
+        int $userId,
+        int $days = 30,
+        int $limit = 100
+    ): array {
+        return DB::table('user_click_logs as ucl')
+            ->join('search_indices as si', 'si.entry_id', '=', 'ucl.entry_id')
+            ->where('ucl.project_id', $projectId)
+            ->where('ucl.user_id', $userId)
+            ->where('ucl.clicked_at', '>=', now()->subDays($days))
+            ->orderByDesc('ucl.clicked_at')
+            ->limit($limit)
+            ->selectRaw("CONCAT_WS(' ', si.title, si.content) as indexed_text")
+            ->pluck('indexed_text')
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    public function getClickedEntryTextsForSession(
+        int $projectId,
+        string $sessionId,
+        int $days = 30,
+        int $limit = 100
+    ): array {
+        return DB::table('user_click_logs as ucl')
+            ->join('search_indices as si', 'si.entry_id', '=', 'ucl.entry_id')
+            ->where('ucl.project_id', $projectId)
+            ->where('ucl.session_id', $sessionId)
+            ->where('ucl.clicked_at', '>=', now()->subDays($days))
+            ->orderByDesc('ucl.clicked_at')
+            ->limit($limit)
+            ->selectRaw("CONCAT_WS(' ', si.title, si.content) as indexed_text")
+            ->pluck('indexed_text')
+            ->filter()
+            ->values()
+            ->toArray();
+    }
 }
