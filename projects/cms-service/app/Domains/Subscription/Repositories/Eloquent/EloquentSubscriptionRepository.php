@@ -8,7 +8,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\SubscriptionUsage;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Database\Eloquent\Collection;
 class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
 {
   public function create(
@@ -195,5 +195,39 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
 
         'updated_at' => now(),
       ]);
+  }
+
+
+   public function findForUser(
+    int $userId,
+    ?int $projectId,
+    ?string $status
+  ): Collection {
+
+    return Subscription::query()
+      ->where('user_id', $userId)
+      ->when(
+        $projectId,
+        fn ($query) => $query->where('project_id', $projectId)
+      )
+      ->when(
+        $status,
+        fn ($query) => $query->where('status', $status)
+      )
+      ->with('plan')
+      ->latest()
+      ->get();
+  }
+
+  public function findByIdWithUsages(
+    int $id
+  ): ?Subscription {
+
+    return Subscription::query()
+      ->with([
+        'plan',
+        'usages',
+      ])
+      ->find($id);
   }
 }

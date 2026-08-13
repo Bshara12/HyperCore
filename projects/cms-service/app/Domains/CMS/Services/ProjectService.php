@@ -4,10 +4,14 @@ namespace App\Domains\CMS\Services;
 
 use App\Domains\CMS\Actions\Project\CreateProjectAction;
 use App\Domains\CMS\Actions\Project\DeleteProjectAction;
+use App\Domains\CMS\Actions\Project\JoinProjectAction;
+use App\Domains\CMS\Actions\Project\LeaveProjectAction;
+use App\Domains\CMS\Actions\Project\ListProjectMembersAction;
 use App\Domains\CMS\Actions\Project\ListProjectsAction;
 use App\Domains\CMS\Actions\Project\ShowProjectAction;
 use App\Domains\CMS\Actions\Project\UpdateProjectAction;
 use App\Domains\CMS\DTOs\CreateProjectDTO;
+use App\Domains\CMS\DTOs\Project\JoinProjectDTO;
 use App\Domains\CMS\DTOs\Project\UpdateProjectDTO;
 use App\Models\Project;
 use Illuminate\Support\Collection;
@@ -20,7 +24,11 @@ class ProjectService
         private ShowProjectAction $showAction,
         private ListProjectsAction $listAction,
         private DeleteProjectAction $deleteAction,
-        private Project $projectModel
+        private Project $projectModel,
+        // ─── جديد ─────────────────────────────────────────────────────────
+        private JoinProjectAction $joinAction,
+        private ListProjectMembersAction $listMembersAction,
+        private LeaveProjectAction $leaveAction
     ) {}
 
     public function resolve($request)
@@ -70,5 +78,26 @@ class ProjectService
     public function delete(Project $project): void
     {
         $this->deleteAction->execute($project);
+    }
+
+
+    /**
+     * تسجيل/دخول مستخدم ضمن هذا المشروع
+     * يُرجع array يحتوي access_token + user + is_new_user
+     * (وليس Project model، لأن الناتج بيانات مصادقة وليس كياناً من هذه الخدمة)
+     */
+    public function join(JoinProjectDTO $dto): array
+    {
+        return $this->joinAction->execute($dto);
+    }
+
+    public function members(Project $project): array
+    {
+        return $this->listMembersAction->execute($project);
+    }
+
+    public function leave(Project $project, int $userId): array
+    {
+        return $this->leaveAction->execute($project, $userId);
     }
 }

@@ -2,34 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\UserLoggedIn;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\GetUsersByIdsRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RefreshTokenRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\ResendOtpRequest;
 use App\Http\Requests\VerifyOTPRequest;
-use App\Models\User;
+use App\Repositories\UserRepositoryInterface;
 use App\Services\AuthService;
 use App\Services\JwtService;
 use App\Services\OtpService;
 use App\Services\SessionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
     protected $authService;
-
     protected $jwtService;
-
     protected $sessions;
-
     protected $otpService;
-    public function __construct(AuthService $authService, JwtService $jwtService, SessionService $sessionService, OtpService $otpService)
-    {
+    protected $users;
+
+    public function __construct(
+        AuthService $authService,
+        JwtService $jwtService,
+        SessionService $sessionService,
+        OtpService $otpService,
+        UserRepositoryInterface $userRepository
+    ) {
         $this->authService = $authService;
         $this->jwtService = $jwtService;
         $this->sessions = $sessionService;
         $this->otpService = $otpService;
+        $this->users = $userRepository;
     }
 
     public function register(RegisterRequest $registerRequest)
@@ -47,57 +54,49 @@ class AuthController extends Controller
 
     public function verifyOTP(VerifyOTPRequest $verifyOTPRequest)
     {
-        $user = User::find($verifyOTPRequest->user_id);
+        $user = $this->users->findById($verifyOTPRequest->user_id);
         if (! $user) {
-            return response()->json([
-                'message' => 'User Not Found',
-            ], 404);
+            return response()->json(['message' => 'User Not Found'], 404);
         }
 
-        if (! $this->authService->verifyOTP($user, $verifyOTPRequest->otp)) {
-            return response()->json([
-                'message' => 'Invalid OTP',
-            ], 422);
+        $result = $this->authService->verifyOTP($user, $verifyOTPRequest->otp);
+
+        if (! $result['success']) {
+            return response()->json(['message' => $result['message']], 422);
         }
 
-        // Create Session:
         $sessionId = $this->sessions->create(
             userId: $user->id,
             ip: $verifyOTPRequest->ip(),
             userAgent: $verifyOTPRequest->userAgent()
         );
-        // create jwt access token
+
         $token = $this->jwtService->generateToken($user, $sessionId);
 
         return response()->json([
             'message' => 'Verified',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'expires_in' => config('jwt.ttl') * 60,
+            'expires_in' => config('jwt.access_ttl') * 60,
             'user' => $user,
         ]);
     }
 
-    public function resendOTP(Request $request)
+    public function resendOTP(ResendOtpRequest $request)
     {
-        $user = User::find($request->user_id);
+        $user = $this->users->findById($request->user_id);
 
         if (! $user) {
-            return response()->json([
-                'message' => 'User Not Found',
-            ], 404);
+            return response()->json(['message' => 'User Not Found'], 404);
         }
 
         if ($user->is_verified) {
-            return response()->json([
-                'message' => 'Account Already Verified',
-            ], 400);
+            return response()->json(['message' => 'Account Already Verified'], 400);
         }
 
         $this->otpService->resend($user);
-        return response()->json([
-            'message' => 'OTP Resent',
-        ]);
+
+        return response()->json(['message' => 'OTP Resent']);
     }
 
     public function login(LoginRequest $loginRequest)
@@ -112,12 +111,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'Account Not Verified!'], 403);
         }
 
-        // Create Session:
         $sessionId = $this->sessions->create(
             userId: $user->id,
             ip: $loginRequest->ip(),
             userAgent: $loginRequest->userAgent()
         );
+
+        event(new UserLoggedIn($user->id));
 
         return response()->json([
             'access_token' => $this->jwtService->generateToken($user, $sessionId),
@@ -127,43 +127,18 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function refresh(Request $request, JwtService $jwtService)
+    public function refresh(RefreshTokenRequest $request)
     {
-        $refreshToken = $request->refresh_token;
+        $result = $this->authService->refreshTokens($request->refresh_token);
 
-        $decoded = $jwtService->validateToken($refreshToken);
-
-        if (! $decoded || $decoded->type !== 'refresh') {
-            return response()->json(['message' => 'Invalid refresh token'], 401);
+        if (! $result['success']) {
+            return response()->json(['message' => $result['message']], 401);
         }
-
-        $record = DB::table('refresh_tokens')
-            ->where('token_id', $decoded->jti)
-            ->where('revoked', false)
-            ->first();
-
-        if (! $record || now()->gt($record->expires_at)) {
-            return response()->json(['message' => 'Refresh token expired'], 401);
-        }
-
-        $user = User::find($decoded->sub);
-
-        if (! $user) {
-            return response()->json(['message' => 'User not found'], 401);
-        }
-
-        // إبطال الـ refresh token القديم (rotation) لمنع إعادة استخدامه
-        DB::table('refresh_tokens')
-            ->where('token_id', $decoded->jti)
-            ->update(['revoked' => true]);
-
-        $newAccessToken  = $jwtService->generateToken($user, $record->session_id);
-        $newRefreshToken = $jwtService->generateRefreshToken($user, $record->session_id);
 
         return response()->json([
-            'access_token'  => $newAccessToken,
-            'refresh_token' => $newRefreshToken,
-            'token_type'    => 'Bearer',
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'token_type' => 'Bearer',
         ]);
     }
 
@@ -176,38 +151,32 @@ class AuthController extends Controller
         }
 
         $token = substr($header, 7);
-        // نأخذ البيانات من middleware مباشرة
         $decoded = $request->attributes->get('jwt_payload');
         $this->authService->logoutService($token, $decoded);
 
-        return response()->json([
-            'message' => 'Logged out successfully',
-        ]);
+        return response()->json(['message' => 'Logged out successfully']);
     }
 
     public function changePassword(ChangePasswordRequest $request)
     {
-      \Log::info('Auth User:', ['user' => auth()->user()]);
-        $token = $request->bearerToken();
-        $decode = $this->jwtService->validateToken($token);
-        if (! $decode) {
+        $userId = $this->authUserId($request);
+
+        if (! $userId) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
-        $user = User::find($decode->sub);
+
         $data = $request->only(['current_password', 'new_password']);
-        $data['user'] = $user;
+        $data['user'] = $this->users->findById($userId);
+        $data['current_session_id'] = $this->authSessionId($request); // ✅ جديد
+
         $this->authService->changePassword($data);
 
-        return response()->json([
-            'message' => 'Password changed successfully',
-        ]);
+        return response()->json(['message' => 'Password changed successfully']);
     }
 
     public function getByIds(GetUsersByIdsRequest $request)
     {
-        $users = $this->authService->getUsersByIds(
-            $request->validated('ids')
-        );
+        $users = $this->authService->getUsersByIds($request->validated('ids'));
 
         return response()->json([
             'message' => 'Users fetched successfully.',

@@ -10,6 +10,9 @@ use App\Domains\Subscription\Requests\Subscription\RenewSubscriptionRequest;
 use App\Domains\Subscription\Requests\Subscription\SubscribeUserRequest;
 use App\Domains\Subscription\Services\SubscriptionService;
 use App\Models\Subscription;
+use App\Domains\Subscription\Requests\Subscription\ListSubscriptionsRequest;
+use App\Domains\Subscription\DTOs\Subscription\ListSubscriptionsDTO;
+
 
 class SubscriptionController extends Controller
 {
@@ -63,6 +66,40 @@ class SubscriptionController extends Controller
 
         $subscription = $this->service
             ->cancel($dto);
+
+        return response()->json([
+            'data' => $subscription,
+        ]);
+    }
+
+     // --- جديد ---
+
+    public function index(
+        ListSubscriptionsRequest $request
+    ) {
+
+        $dto = ListSubscriptionsDTO::fromRequest(
+            $request
+        );
+
+        $subscriptions = $this->service
+            ->listForUser($dto);
+
+        return response()->json([
+            'data' => $subscriptions,
+        ]);
+    }
+
+    public function show(
+        Subscription $subscription
+    ) {
+
+        $dto = ShowSubscriptionDTO::fromSubscription(
+            $subscription
+        );
+
+        $subscription = $this->service
+            ->show($dto);
 
         return response()->json([
             'data' => $subscription,

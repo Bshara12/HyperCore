@@ -59,3 +59,12 @@ Route::prefix('analytics')->group(function () {
   // Route::get('/cancellations', [BookingAnalyticsController::class, 'cancellations'])->name('booking.analytics.cancellations');
   // Route::get('/peak-times', [BookingAnalyticsController::class, 'peakTimes'])->name('booking.analytics.peak-times');
 });
+
+
+
+Route::get('/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'time' => now()
+    ]);
+});

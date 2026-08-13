@@ -14,11 +14,17 @@ return new class extends Migration
         Schema::create('refresh_tokens', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            if (! Schema::hasColumn('refresh_tokens', 'revoked')) {
+                $table->boolean('revoked')->default(false);
+            }
+            if (! Schema::hasColumn('refresh_tokens', 'revoked_at')) {
+                $table->dateTime('revoked_at')->nullable();
+            }
             $table->string('token_id')->unique(); // jti
             $table->char('session_id', 26);
             $table->timestamp('expires_at');
-            $table->boolean('revoked')->default(false);
-            $table->timestamp('revoked_at')->nullable();
+            // $table->boolean('revoked')->default(false);
+            // $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
         });
     }

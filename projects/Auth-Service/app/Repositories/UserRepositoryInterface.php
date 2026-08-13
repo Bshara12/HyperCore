@@ -15,9 +15,9 @@ interface UserRepositoryInterface
 
     public function update(User $user, array $data): bool;
 
-    public function revoke(string $sessionId, $decoded);
-
     public function updatePassword($userId, $hashedPassword);
 
     public function getUsersByIds(array $ids): Collection;
+
+    public function delete(User $user): bool;
 }
