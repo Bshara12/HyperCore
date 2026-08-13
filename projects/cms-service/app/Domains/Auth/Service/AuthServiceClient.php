@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\Auth\Service;
+namespace app\Domains\Auth\Service;
 
 use Illuminate\Support\Facades\Http;
 

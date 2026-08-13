@@ -9,6 +9,8 @@ use App\Domains\Subscription\DTOs\Subscription\CancelSubscriptionDTO;
 use App\Domains\Subscription\DTOs\Subscription\RenewSubscriptionDTO;
 use App\Domains\Subscription\DTOs\Subscription\SubscribeUserDTO;
 use App\Models\Subscription;
+use App\Domains\Subscription\DTOs\Subscription\ListSubscriptionsDTO;
+
 
 class SubscriptionService
 {
@@ -40,6 +42,25 @@ class SubscriptionService
     ): Subscription {
 
         return $this->cancelSubscriptionAction
+            ->execute($dto);
+    }
+
+
+     // --- جديد ---
+
+    public function listForUser(
+        ListSubscriptionsDTO $dto
+    ): Collection {
+
+        return $this->listUserSubscriptionsAction
+            ->execute($dto);
+    }
+
+    public function show(
+        ShowSubscriptionDTO $dto
+    ): Subscription {
+
+        return $this->showSubscriptionAction
             ->execute($dto);
     }
 }

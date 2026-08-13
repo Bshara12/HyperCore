@@ -19,4 +19,22 @@ class PlanService
         return $this->createPlanAction
             ->execute($dto);
     }
+
+
+    
+      public function listActive(
+        ListPlansDTO $dto
+    ): Collection {
+
+        return $this->listActivePlansAction
+            ->execute($dto);
+    }
+
+    public function show(
+        int $id
+    ): SubscriptionPlan {
+
+        return $this->showPlanAction
+            ->execute($id);
+    }
 }

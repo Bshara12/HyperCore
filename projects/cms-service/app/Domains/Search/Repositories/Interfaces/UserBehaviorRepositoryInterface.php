@@ -12,9 +12,6 @@ interface UserBehaviorRepositoryInterface
     public function logClick(LogClickDTO $dto): void;
 
     /**
-     * جلب إحصائيات نقرات الـ user مجمّعة حسب data_type
-     * في آخر N يوم
-     *
      * @return array<int, int> [data_type_id => click_count]
      */
     public function getClickCountsByDataType(
@@ -24,13 +21,34 @@ interface UserBehaviorRepositoryInterface
     ): array;
 
     /**
-     * نفس الشيء للـ guest عبر session
-     *
      * @return array<int, int>
      */
     public function getClickCountsByDataTypeForSession(
         int $projectId,
         string $sessionId,
         int $days = 30
+    ): array;
+
+    /**
+     * جلب النص المفهرَس (title+content من search_indices) لأحدث $limit نقرة
+     * لمستخدم مُسجَّل ضمن نافذة $days. يُستخدَم لبناء term affinity profile.
+     *
+     * @return string[]
+     */
+    public function getClickedEntryTexts(
+        int $projectId,
+        int $userId,
+        int $days = 30,
+        int $limit = 100
+    ): array;
+
+    /**
+     * @return string[]
+     */
+    public function getClickedEntryTextsForSession(
+        int $projectId,
+        string $sessionId,
+        int $days = 30,
+        int $limit = 100
     ): array;
 }
