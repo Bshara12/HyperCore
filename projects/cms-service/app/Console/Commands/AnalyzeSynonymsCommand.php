@@ -14,7 +14,7 @@ class AnalyzeSynonymsCommand extends Command
                             {--min=2     : Minimum search count per keyword}';
 
   protected $description = 'Analyze search logs to discover synonym candidates';
-// ,,,,
+
   public function __construct(
     private SynonymAnalysisService $service,
   ) {
