@@ -26,7 +26,7 @@ class ActivateOfferAction extends Action
 
       $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
       $this->repository->activateOffer($collection['id']);
-
+// jjj
       // 🟢 استخدام Cache::tags(['offers']) للوصول للـ Keyspace الصحيح
       $cache = Cache::tags(['offers']);
 
