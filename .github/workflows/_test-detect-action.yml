@@ -1,0 +1,21 @@
+name: TEST - detect-service-changes
+on:
+  push:
+    branches:
+      - test/ci-detect-action
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        uses: ./.github/actions/detect-service-changes
+        with:
+          base-ref: "HEAD~1"
+          head-ref: "HEAD"
+      - run: |
+          echo "Services: ${{ steps.detect.outputs.services }}"
+          echo "Count: ${{ steps.detect.outputs.services-count }}"
+          echo "Any changed: ${{ steps.detect.outputs.any-changed }}"

@@ -1,0 +1,7 @@
+{
+  "services": [
+    { "name": "cms-service", "paths": ["projects/cms-service/"] },
+    { "name": "ecommerce-service", "paths": ["projects/E-Commerce_Service/"] }
+  ],
+  "global_paths": [".github/actions/", ".github/services.json"]
+}

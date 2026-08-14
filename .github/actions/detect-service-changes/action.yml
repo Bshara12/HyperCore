@@ -1,0 +1,114 @@
+name: "Detect Service Changes"
+description: "It discovers which services in the monorepo are affected by the current changes and outputs a JSON list that is used to build a dynamic matrix."
+
+inputs:
+  services-config:
+    description: >
+      Absolute path (relative to the repository root) for a JSON file that specifies service names and their associated folders,
+      for example: .github/services.json
+    required: false
+    default: ".github/services.json"
+  base-ref:
+    description: "The reference (commit/branch) against which to compare and identify changed files"
+    required: false
+    default: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+  head-ref:
+    description: "The current reference (latest commit) against which to compare"
+    required: false
+    default: ${{ github.sha }}
+  force-all:
+    description: "If true, all services are considered affected regardless of changed files (used for manual full runs)"
+    required: false
+    default: "false"
+
+outputs:
+  services:
+    description: 'List of JSON service names affected, for example: ["cms-service","booking-service"]'
+    value: ${{ steps.detect.outputs.services }}
+  services-count:
+    description: "Number of affected services"
+    value: ${{ steps.detect.outputs.services-count }}
+  any-changed:
+    description: "Whether any services are affected (true/false)"
+    value: ${{ steps.detect.outputs.any-changed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Ensure full git history is available
+      shell: bash
+      run: |
+        if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+          echo "::error::This checkout is shallow. You must use fetch-depth: 0 in actions/checkout before calling this action."
+          exit 1
+        fi
+
+    - name: Detect changed services
+      id: detect
+      shell: bash
+      env:
+        SERVICES_CONFIG: ${{ inputs.services-config }}
+        BASE_REF: ${{ inputs.base-ref }}
+        HEAD_REF: ${{ inputs.head-ref }}
+        FORCE_ALL: ${{ inputs.force-all }}
+      run: |
+        set -euo pipefail
+
+        if [ ! -f "$SERVICES_CONFIG" ]; then
+          echo "::error::Services configuration file not found at path: $SERVICES_CONFIG"
+          exit 1
+        fi
+
+        # Read all service names and their paths from the configuration file
+        ALL_SERVICES=$(jq -c '[.services[].name]' "$SERVICES_CONFIG")
+
+        if [ "$FORCE_ALL" = "true" ]; then
+          echo "FORCE_ALL is enabled: All services will be considered affected."
+          SERVICES_JSON="$ALL_SERVICES"
+        else
+          echo "Comparing $BASE_REF and $HEAD_REF"
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF" "$HEAD_REF" || echo "")
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No changed files found."
+            SERVICES_JSON="[]"
+          else
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+
+            # For each service defined in services.json, check if any of its monitored paths have changed
+            SERVICES_JSON=$(jq -c --arg changed "$CHANGED_FILES" '
+              ($changed | split("\n")) as $files |
+              [
+                .services[] |
+                select(
+                  .paths as $watchedPaths |
+                  any($files[]; . as $f | any($watchedPaths[]; $f | startswith(.)))
+                ) | .name
+              ]
+            ' "$SERVICES_CONFIG")
+
+            # If any shared (global) files have changed, consider all services affected
+            SHARED_CHANGED=$(jq -c --arg changed "$CHANGED_FILES" '
+              ($changed | split("\n")) as $files |
+              (.global_paths // []) as $globalPaths |
+              any($files[]; . as $f | any($globalPaths[]; $f | startswith(.)))
+            ' "$SERVICES_CONFIG")
+
+            if [ "$SHARED_CHANGED" = "true" ]; then
+              echo "Shared files have changed. All services will be considered affected."
+              SERVICES_JSON="$ALL_SERVICES"
+            fi
+          fi
+        fi
+
+        SERVICES_COUNT=$(echo "$SERVICES_JSON" | jq 'length')
+        ANY_CHANGED=$([ "$SERVICES_COUNT" -gt 0 ] && echo "true" || echo "false")
+
+        echo "Affected services: $SERVICES_JSON"
+
+        {
+          echo "services=$SERVICES_JSON"
+          echo "services-count=$SERVICES_COUNT"
+          echo "any-changed=$ANY_CHANGED"
+        } >> "$GITHUB_OUTPUT"
