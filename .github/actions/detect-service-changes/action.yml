@@ -92,7 +92,7 @@ runs:
             SHARED_CHANGED=$(jq -c --arg changed "$CHANGED_FILES" '
               ($changed | split("\n")) as $files |
               (.global_paths // []) as $globalPaths |
-              any($files[]; . as $f | any($globalPaths[]; $f | startswith(.)))
+              any($files[]; . as $f | any($globalPaths[]; . != "" and ($f | startswith(.))))
             ' "$SERVICES_CONFIG")
 
             if [ "$SHARED_CHANGED" = "true" ]; then
