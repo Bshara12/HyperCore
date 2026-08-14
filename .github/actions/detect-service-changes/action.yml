@@ -83,7 +83,7 @@ runs:
                 .services[] |
                 select(
                   .paths as $watchedPaths |
-                  any($files[]; . as $f | any($watchedPaths[]; $f | startswith(.)))
+                  any($files[]; . as $f | any($watchedPaths[]; . != "" and ($f | startswith(.))))
                 ) | .name
               ]
             ' "$SERVICES_CONFIG")
