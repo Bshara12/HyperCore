@@ -23,7 +23,7 @@ class ActivateOfferAction extends Action
   public function execute($dto)
   {
     return $this->run(function () use ($dto) {
-// sdsdsd
+
       $collection = $this->cms->getCollectionBySlug($dto->collectionSlug);
       $this->repository->activateOffer($collection['id']);
 
