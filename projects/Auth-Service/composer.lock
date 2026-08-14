@@ -709,18 +709,7 @@
         },
         {
             "name": "guzzlehttp/guzzle",
-<<<<<<< HEAD
-            "version": "7.12.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "d34627490fbc03bf5c5d7cfed81f2faa19519425"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/d34627490fbc03bf5c5d7cfed81f2faa19519425",
-                "reference": "d34627490fbc03bf5c5d7cfed81f2faa19519425",
-=======
+
             "version": "7.11.0",
             "source": {
                 "type": "git",
@@ -731,17 +720,13 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/guzzle/guzzle/zipball/c987f8ce84b8434fa430795eca0f3430663da72b",
                 "reference": "c987f8ce84b8434fa430795eca0f3430663da72b",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "guzzlehttp/promises": "^2.5",
-<<<<<<< HEAD
-                "guzzlehttp/psr7": "^2.12.1",
-=======
+
                 "guzzlehttp/psr7": "^2.11",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "php": "^7.2.5 || ^8.0",
                 "psr/http-client": "^1.0",
                 "symfony/deprecation-contracts": "^2.5 || ^3.0",
@@ -754,11 +739,8 @@
                 "bamarni/composer-bin-plugin": "^1.8.2",
                 "ext-curl": "*",
                 "guzzle/client-integration-tests": "3.0.2",
-<<<<<<< HEAD
-                "guzzlehttp/test-server": "^0.5.1",
-=======
+
                 "guzzlehttp/test-server": "^0.4",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "php-http/message-factory": "^1.1",
                 "phpunit/phpunit": "^8.5.52 || ^9.6.34",
                 "psr/log": "^1.1 || ^2.0 || ^3.0"
@@ -838,11 +820,8 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/guzzle/issues",
-<<<<<<< HEAD
-                "source": "https://github.com/guzzle/guzzle/tree/7.12.1"
-=======
+
                 "source": "https://github.com/guzzle/guzzle/tree/7.11.0"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
             },
             "funding": [
                 {
@@ -858,11 +837,8 @@
                     "type": "tidelift"
                 }
             ],
-<<<<<<< HEAD
-            "time": "2026-06-18T14:12:49+00:00"
-=======
+
             "time": "2026-06-02T12:40:51+00:00"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
         },
         {
             "name": "guzzlehttp/promises",
@@ -950,18 +926,7 @@
         },
         {
             "name": "guzzlehttp/psr7",
-<<<<<<< HEAD
-            "version": "2.12.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/guzzle/psr7.git",
-                "reference": "172ef2f4e9824c1e058b7f30be8ae25a02c0f2b7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/172ef2f4e9824c1e058b7f30be8ae25a02c0f2b7",
-                "reference": "172ef2f4e9824c1e058b7f30be8ae25a02c0f2b7",
-=======
+
             "version": "2.11.0",
             "source": {
                 "type": "git",
@@ -972,7 +937,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/guzzle/psr7/zipball/bbb5e61349fa5cb822b3e87842b951088b76b81f",
                 "reference": "bbb5e61349fa5cb822b3e87842b951088b76b81f",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "shasum": ""
             },
             "require": {
@@ -1062,11 +1026,8 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/psr7/issues",
-<<<<<<< HEAD
-                "source": "https://github.com/guzzle/psr7/tree/2.12.1"
-=======
+
                 "source": "https://github.com/guzzle/psr7/tree/2.11.0"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
             },
             "funding": [
                 {
@@ -1082,22 +1043,7 @@
                     "type": "tidelift"
                 }
             ],
-<<<<<<< HEAD
-            "time": "2026-06-18T09:49:37+00:00"
-        },
-        {
-            "name": "guzzlehttp/uri-template",
-            "version": "v1.0.7",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/guzzle/uri-template.git",
-                "reference": "7fe811c23a9e3cd712b4389eaeb50b5456d8c529"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/uri-template/zipball/7fe811c23a9e3cd712b4389eaeb50b5456d8c529",
-                "reference": "7fe811c23a9e3cd712b4389eaeb50b5456d8c529",
-=======
+
             "time": "2026-06-02T12:30:48+00:00"
         },
         {
@@ -1112,7 +1058,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/guzzle/uri-template/zipball/eef7f87bab6f204eba3c39224d8075c70c637946",
                 "reference": "eef7f87bab6f204eba3c39224d8075c70c637946",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "shasum": ""
             },
             "require": {
@@ -1169,11 +1114,8 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/uri-template/issues",
-<<<<<<< HEAD
-                "source": "https://github.com/guzzle/uri-template/tree/v1.0.7"
-=======
+
                 "source": "https://github.com/guzzle/uri-template/tree/v1.0.6"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
             },
             "funding": [
                 {
@@ -1189,22 +1131,7 @@
                     "type": "tidelift"
                 }
             ],
-<<<<<<< HEAD
-            "time": "2026-06-12T21:33:43+00:00"
-        },
-        {
-            "name": "laravel/framework",
-            "version": "v12.62.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/laravel/framework.git",
-                "reference": "f7e61eb1e0e06a38996802b769bce9127aec227c"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/f7e61eb1e0e06a38996802b769bce9127aec227c",
-                "reference": "f7e61eb1e0e06a38996802b769bce9127aec227c",
-=======
+
             "time": "2026-05-23T22:00:21+00:00"
         },
         {
@@ -1219,7 +1146,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/laravel/framework/zipball/e8472ca9774452fe50841d9bdced060679f4d58d",
                 "reference": "e8472ca9774452fe50841d9bdced060679f4d58d",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "shasum": ""
             },
             "require": {
@@ -1428,11 +1354,8 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-<<<<<<< HEAD
-            "time": "2026-06-09T13:50:13+00:00"
-=======
+
             "time": "2026-06-04T14:22:52+00:00"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
         },
         {
             "name": "laravel/prompts",
@@ -5442,18 +5365,7 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-<<<<<<< HEAD
-            "version": "v1.38.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
-                "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
-=======
+
             "version": "v1.38.1",
             "source": {
                 "type": "git",
@@ -5464,7 +5376,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/14c5439eec4ccff081ac14eca2dc57feb2a66d92",
                 "reference": "14c5439eec4ccff081ac14eca2dc57feb2a66d92",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "shasum": ""
             },
             "require": {
@@ -5516,11 +5427,8 @@
                 "shim"
             ],
             "support": {
-<<<<<<< HEAD
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.38.2"
-=======
+
                 "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.38.1"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
             },
             "funding": [
                 {
@@ -5540,11 +5448,8 @@
                     "type": "tidelift"
                 }
             ],
-<<<<<<< HEAD
-            "time": "2026-05-27T06:59:30+00:00"
-=======
+
             "time": "2026-05-26T12:51:13+00:00"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
         },
         {
             "name": "symfony/polyfill-php80",
@@ -5632,18 +5537,7 @@
         },
         {
             "name": "symfony/polyfill-php83",
-<<<<<<< HEAD
-            "version": "v1.38.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/polyfill-php83.git",
-                "reference": "796a26abb75ce49f3a84433cd81bf1009d73d5f8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-php83/zipball/796a26abb75ce49f3a84433cd81bf1009d73d5f8",
-                "reference": "796a26abb75ce49f3a84433cd81bf1009d73d5f8",
-=======
+
             "version": "v1.38.1",
             "source": {
                 "type": "git",
@@ -5654,7 +5548,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/polyfill-php83/zipball/8339098cae28673c15cce00d80734af0453054e2",
                 "reference": "8339098cae28673c15cce00d80734af0453054e2",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "shasum": ""
             },
             "require": {
@@ -5701,11 +5594,8 @@
                 "shim"
             ],
             "support": {
-<<<<<<< HEAD
-                "source": "https://github.com/symfony/polyfill-php83/tree/v1.38.2"
-=======
+
                 "source": "https://github.com/symfony/polyfill-php83/tree/v1.38.1"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
             },
             "funding": [
                 {
@@ -5725,11 +5615,8 @@
                     "type": "tidelift"
                 }
             ],
-<<<<<<< HEAD
-            "time": "2026-05-27T06:51:48+00:00"
-=======
+
             "time": "2026-05-26T12:51:13+00:00"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
         },
         {
             "name": "symfony/polyfill-php84",
@@ -10655,18 +10542,7 @@
         },
         {
             "name": "webmozart/assert",
-<<<<<<< HEAD
-            "version": "2.4.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/webmozarts/assert.git",
-                "reference": "2ccb7c2e821038c03a3e6e1700c570c158c55f70"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/webmozarts/assert/zipball/2ccb7c2e821038c03a3e6e1700c570c158c55f70",
-                "reference": "2ccb7c2e821038c03a3e6e1700c570c158c55f70",
-=======
+
             "version": "2.4.0",
             "source": {
                 "type": "git",
@@ -10677,7 +10553,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/webmozarts/assert/zipball/9007ea6f45ecf352a9422b36644e4bfc039b9155",
                 "reference": "9007ea6f45ecf352a9422b36644e4bfc039b9155",
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
                 "shasum": ""
             },
             "require": {
@@ -10728,15 +10603,10 @@
             ],
             "support": {
                 "issues": "https://github.com/webmozarts/assert/issues",
-<<<<<<< HEAD
-                "source": "https://github.com/webmozarts/assert/tree/2.4.1"
-            },
-            "time": "2026-06-15T15:31:57+00:00"
-=======
+
                 "source": "https://github.com/webmozarts/assert/tree/2.4.0"
             },
             "time": "2026-05-20T13:07:01+00:00"
->>>>>>> 0d484168b303109dc2ec31cf2fd989ee25a11e99
         }
     ],
     "aliases": [],
