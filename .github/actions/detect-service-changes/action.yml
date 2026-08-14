@@ -59,7 +59,7 @@ runs:
           exit 1
         fi
 
-        # Read all service names and their paths from the configuration file
+        # قراءة أسماء جميع الخدمات
         ALL_SERVICES=$(jq -c '[.services[].name]' "$SERVICES_CONFIG")
 
         if [ "$FORCE_ALL" = "true" ]; then
@@ -76,28 +76,53 @@ runs:
             echo "Changed files:"
             echo "$CHANGED_FILES"
 
-            # For each service defined in services.json, check if any of its monitored paths have changed
-            SERVICES_JSON=$(jq -c --arg changed "$CHANGED_FILES" '
-              ($changed | split("\n")) as $files |
-              [
-                .services[] |
-                select(
-                  .paths as $watchedPaths |
-                  any($files[]; . as $f | any($watchedPaths[]; . != "" and ($f | startswith(.))))
-                ) | .name
-              ]
-            ' "$SERVICES_CONFIG")
+            # 1. تجهيز الملفات والمسارات وتنظيفها من أحرف Windows المخفية والفراغات
+            SHARED_CHANGED="false"
+            mapfile -t GLOBAL_PATHS < <(jq -r '.global_paths[]?' "$SERVICES_CONFIG" | grep -v '^$')
+            mapfile -t FILES < <(echo "$CHANGED_FILES" | tr -d '\r' | grep -v '^$')
 
-            # If any shared (global) files have changed, consider all services affected
-            SHARED_CHANGED=$(jq -c --arg changed "$CHANGED_FILES" '
-              ($changed | split("\n")) as $files |
-              (.global_paths // []) as $globalPaths |
-              any($files[]; . as $f | any($globalPaths[]; . != "" and ($f | startswith(.))))
-            ' "$SERVICES_CONFIG")
+            # 2. فحص المسارات المشتركة (Global Paths)
+            for f in "${FILES[@]}"; do
+              for gp in "${GLOBAL_PATHS[@]}"; do
+                # مطابقة البادئة بلغة الباش مباشرة
+                if [[ "$f" == "$gp"* ]]; then
+                  echo "⚠️ Shared file changed! '$f' matched global rule '$gp'"
+                  SHARED_CHANGED="true"
+                  break 2
+                fi
+              done
+            done
 
+            # 3. فحص الخدمات الفردية إذا لم تتأثر المسارات المشتركة
             if [ "$SHARED_CHANGED" = "true" ]; then
-              echo "Shared files have changed. All services will be considered affected."
+              echo "All services will be considered affected."
               SERVICES_JSON="$ALL_SERVICES"
+            else
+              AFFECTED_SERVICES=()
+              
+              # المرور على كل خدمة
+              while read -r svc; do
+                mapfile -t SVC_PATHS < <(jq -r ".services[] | select(.name == \"$svc\") | .paths[]?" "$SERVICES_CONFIG" | grep -v '^$')
+                
+                matched="false"
+                for f in "${FILES[@]}"; do
+                  for sp in "${SVC_PATHS[@]}"; do
+                    if [[ "$f" == "$sp"* ]]; then
+                      echo "✅ Match: File '$f' belongs to service '$svc' (rule '$sp')"
+                      AFFECTED_SERVICES+=("\"$svc\"")
+                      matched="true"
+                      break 2 # التخطي للخدمة التالية فور العثور على تطابق
+                    fi
+                  done
+                done
+              done < <(jq -r '.services[].name' "$SERVICES_CONFIG")
+
+              # تحويل مصفوفة الباش إلى صيغة JSON صحيحة
+              if [ ${#AFFECTED_SERVICES[@]} -gt 0 ]; then
+                 SERVICES_JSON=$(IFS=,; echo "[${AFFECTED_SERVICES[*]}]")
+              else
+                 SERVICES_JSON="[]"
+              fi
             fi
           fi
         fi
