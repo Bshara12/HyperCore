@@ -119,6 +119,6 @@ jobs:
       # ⚠️ التعديل 2: خطوة الدمج الآلي (تعمل فقط إذا نجحت الخطوات السابقة ولم يكن هناك exit 1)
       - name: Enable Auto-merge
         if: success() && github.event_name == 'pull_request'
-        run: gh pr merge ${{ github.event.pull_request.number }} --auto --merge
+        run: gh pr merge ${{ github.event.pull_request.number }} --auto --merge --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
