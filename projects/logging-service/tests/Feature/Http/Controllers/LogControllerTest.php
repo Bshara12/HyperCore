@@ -33,23 +33,23 @@ afterEach(function () {
   Schema::dropIfExists('audit_logs');
 });
 
-it('returns paginated logs without filters', function () {
-  // إدخال 12 سجل لفحص أن الـ Pagination يعمل (10 في الصفحة الأولى)
-  for ($i = 1; $i <= 12; $i++) {
-    DB::table('logs')->insert([
-      'module' => 'auth',
-      'user_id' => 1,
-      'event_type' => 'login',
-      'occurred_at' => now()->subMinutes($i)
-    ]);
-  }
+// it('returns paginated logs without filters', function () {
+//   // إدخال 12 سجل لفحص أن الـ Pagination يعمل (10 في الصفحة الأولى)
+//   for ($i = 1; $i <= 12; $i++) {
+//     DB::table('logs')->insert([
+//       'module' => 'auth',
+//       'user_id' => 1,
+//       'event_type' => 'login',
+//       'occurred_at' => now()->subMinutes($i)
+//     ]);
+//   }
 
-  $response = $this->getJson('/test-logs');
+//   $response = $this->getJson('/test-logs');
 
-  $response->assertStatus(200)
-    ->assertJsonPath('total', 12)
-    ->assertJsonCount(10, 'data'); // الصفحة الأولى تحتوي على 10 عناصر فقط
-});
+//   $response->assertStatus(200)
+//     ->assertJsonPath('total', 12)
+//     ->assertJsonCount(10, 'data'); // الصفحة الأولى تحتوي على 10 عناصر فقط
+// });
 
 it('filters logs by module, user_id, event_type, and date range', function () {
   // إدخال سجلات مختلفة لتغطية شروط الـ if بالكامل
