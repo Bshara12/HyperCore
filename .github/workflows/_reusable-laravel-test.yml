@@ -1,0 +1,152 @@
+  name: "Reusable - Laravel Service Tests"
+
+  on:
+    workflow_call:
+      inputs:
+        service-name:
+          description: "The clean name of the service as it is in services.json (example: cms-service)"
+          required: true
+          type: string
+        service-path:
+          description: "The actual path of the service folder on the disk (first element from paths in services.json)"
+          required: true
+          type: string
+        php-version:
+          description: "The PHP version for this service (from the php_version field in services.json)"
+          required: true
+          type: string
+      outputs:
+        tests-result:
+          description: "The final test results for this service: success or failure"
+          value: ${{ jobs.test.outputs.result }}
+
+  jobs:
+    test:
+      name: Test ${{ inputs.service-name }}
+      runs-on: ubuntu-latest
+      timeout-minutes: 15
+
+      outputs:
+        result: ${{ steps.final-status.outputs.result }}
+
+      services:
+        mysql:
+          image: mysql:8
+          env:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+            MYSQL_DATABASE: testing
+          ports:
+            - 3306:3306
+          options: >-
+            --health-cmd="mysqladmin ping"
+            --health-interval=5s
+            --health-timeout=5s
+            --health-retries=10
+
+        redis:
+          image: redis:alpine
+          ports:
+            - 6379:6379
+          options: >-
+            --health-cmd="redis-cli ping"
+            --health-interval=5s
+            --health-timeout=5s
+            --health-retries=10
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Setup PHP application (${{ inputs.service-name }})
+          uses: ./.github/actions/setup-php-app
+          with:
+            php-version: ${{ inputs.php-version }}
+            working-directory: ${{ inputs.service-path }}
+
+        - name: Prepare testing environment file
+          working-directory: ${{ inputs.service-path }}
+          run: |
+            set -euo pipefail
+            if [ -f ".env.testing" ]; then
+              cp .env.testing .env
+            elif [ -f ".env.example" ]; then
+              cp .env.example .env
+            else
+              echo "::error::There is no .env.testing or .env.example in ${{ inputs.service-path }}"
+              exit 1
+            fi
+
+        - name: Generate application key
+          working-directory: ${{ inputs.service-path }}
+          run: php artisan key:generate --force
+
+        - name: Wait for MySQL to be ready
+          run: |
+            for i in {1..15}; do
+              if mysqladmin ping -h 127.0.0.1 -P 3306 --silent; then
+                echo "MySQL is ready ✅"
+                exit 0
+              fi
+              echo "Waiting for MySQL... Attempt $i"
+              sleep 2
+            done
+            echo "::error::MySQL is not ready within the specified time"
+            exit 1
+
+        - name: Run database migrations
+          working-directory: ${{ inputs.service-path }}
+          env:
+            DB_CONNECTION: mysql
+            DB_HOST: 127.0.0.1
+            DB_PORT: 3306
+            DB_DATABASE: testing
+            DB_USERNAME: root
+            DB_PASSWORD: ""
+          run: php artisan migrate --force
+
+        - name: Run Unit Tests
+          id: unit-tests
+          working-directory: ${{ inputs.service-path }}
+          env:
+            DB_CONNECTION: mysql
+            DB_HOST: 127.0.0.1
+            DB_PORT: 3306
+            DB_DATABASE: testing
+            DB_USERNAME: root
+            DB_PASSWORD: ""
+            REDIS_HOST: 127.0.0.1
+            REDIS_PORT: 6379
+          run: php artisan test --testsuite=Unit --colors=always
+
+        - name: Run Feature Tests
+          id: feature-tests
+          working-directory: ${{ inputs.service-path }}
+          env:
+            DB_CONNECTION: mysql
+            DB_HOST: 127.0.0.1
+            DB_PORT: 3306
+            DB_DATABASE: testing
+            DB_USERNAME: root
+            DB_PASSWORD: ""
+            REDIS_HOST: 127.0.0.1
+            REDIS_PORT: 6379
+          run: php artisan test --testsuite=Feature --colors=always
+
+        - name: Set final status (success)
+          id: final-status
+          if: success()
+          run: echo "result=success" >> "$GITHUB_OUTPUT"
+
+        - name: Set final status (failure)
+          if: failure()
+          run: echo "result=failure" >> "$GITHUB_OUTPUT"
+
+        - name: Print job summary
+          if: always()
+          run: |
+            {
+              echo "### 🧪 Test Results ${{ inputs.service-name }}"
+              echo "- **PHP Version:** ${{ inputs.php-version }}"
+              echo "- **Path:** \`${{ inputs.service-path }}\`"
+              echo "- **Result:** ${{ steps.final-status.outputs.result || 'failure' }}"
+            } >> "$GITHUB_STEP_SUMMARY"

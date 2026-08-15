@@ -1,0 +1,114 @@
+name: "PR - Continuous Integration"
+
+on:
+  pull_request:
+    branches: [test/ci-detect-action]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # المرحلة 1: اكتشاف الخدمات المتأثرة بهذا الـ PR
+  # ─────────────────────────────────────────────────────────────
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      any-changed: ${{ steps.detect.outputs.any-changed }}
+      services-count: ${{ steps.detect.outputs.services-count }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: detect
+        uses: ./.github/actions/detect-service-changes
+        with:
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          head-ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Print detection summary
+        run: |
+          {
+            echo "### 🔍 Result of finding the changes"
+            echo "- **Number of affected services:** ${{ steps.detect.outputs.services-count }}"
+            echo "- **Services:** \`${{ steps.detect.outputs.services }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────
+  # المرحلة 2: قراءة معلومات كل خدمة متأثرة من services.json
+  # وتحويلها إلى matrix قابل للاستهلاك (name + path + php-version)
+  # ─────────────────────────────────────────────────────────────
+  build-matrix:
+    name: Build test matrix
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any-changed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build matrix from services.json
+        id: build
+        run: |
+          set -euo pipefail
+          MATRIX=$(jq -c --argjson changed '${{ needs.detect-changes.outputs.services }}' '
+            [.services[] | select(.name as $n | $changed | index($n) != null) |
+              {
+                "service-name": .name,
+                "service-path": .paths[0],
+                "php-version": .php_version
+              }
+            ]
+          ' .github/services.json)
+          echo "matrix={\"include\":${MATRIX}}" >> "$GITHUB_OUTPUT"
+          echo "Matrix generator: $MATRIX"
+
+  # ─────────────────────────────────────────────────────────────
+  # المرحلة 3: تشغيل الاختبارات فعليًا لكل خدمة متأثرة، بالتوازي
+  # ─────────────────────────────────────────────────────────────
+  test-services:
+    name: ${{ matrix.service-name }}
+    needs: [detect-changes, build-matrix]
+    if: needs.detect-changes.outputs.any-changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/_reusable-laravel-test.yml
+    with:
+      service-name: ${{ matrix.service-name }}
+      service-path: ${{ matrix.service-path }}
+      php-version: ${{ matrix.php-version }}
+
+  # ─────────────────────────────────────────────────────────────
+  # المرحلة 4: بوابة نهائية واحدة يعتمد عليها فرع الحماية (branch protection)
+  # ─────────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI Gate
+    needs: [detect-changes, test-services]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: No services changed — passing automatically
+        if: needs.detect-changes.outputs.any-changed == 'false'
+        run: echo "No services are affected by this PR. The gate passes automatically."
+
+      - name: Check test-services result
+        if: needs.detect-changes.outputs.any-changed == 'true'
+        run: |
+          if [ "${{ needs.test-services.result }}" != "success" ]; then
+            echo "::error::Failed tests for one or more services. This PR cannot be merged."
+            exit 1
+          fi
+          echo "All tests for affected services passed ✅"
