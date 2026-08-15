@@ -52,8 +52,8 @@ test('it ensures unique slug, creates datatype, clears cache, and dispatches log
   Event::fake();
 
   // 5. التنفيذ
-  // $action = new CreateDataTypeAction($repoMock);
-  // $result = $action->execute($dto);
+  $action = new CreateDataTypeAction($repoMock);
+  $result = $action->execute($dto);
 
   // 6. التأكيدات
   // التأكد من مسح الكاش الخاص بالـ project
@@ -64,8 +64,7 @@ test('it ensures unique slug, creates datatype, clears cache, and dispatches log
     return $event->module === 'cms'
       && $event->eventType === 'create_datatype';
   });
-// e3e3e3
-// سيصيصي
+
   // التأكد من النتيجة
-  // expect($result)->toBe($dataType);
+  expect($result)->toBe($dataType);
 });
