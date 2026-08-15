@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use stdClass;
 class LogController extends Controller
 {
+  // swswws
     // public function index(Request $request)
     // {
     //     $query = DB::table('logs');
