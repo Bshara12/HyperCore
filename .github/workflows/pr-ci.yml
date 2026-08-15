@@ -46,7 +46,6 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────
   # المرحلة 2: قراءة معلومات كل خدمة متأثرة من services.json
-  # وتحويلها إلى matrix قابل للاستهلاك (name + path + php-version)
   # ─────────────────────────────────────────────────────────────
   build-matrix:
     name: Build test matrix
@@ -76,7 +75,7 @@ jobs:
           echo "Matrix generator: $MATRIX"
 
   # ─────────────────────────────────────────────────────────────
-  # المرحلة 3: تشغيل الاختبارات فعليًا لكل خدمة متأثرة، بالتوازي
+  # المرحلة 3: تشغيل الاختبارات فعليًا لكل خدمة متأثرة
   # ─────────────────────────────────────────────────────────────
   test-services:
     name: ${{ matrix.service-name }}
@@ -92,13 +91,17 @@ jobs:
       php-version: ${{ matrix.php-version }}
 
   # ─────────────────────────────────────────────────────────────
-  # المرحلة 4: بوابة نهائية واحدة يعتمد عليها فرع الحماية (branch protection)
+  # المرحلة 4: بوابة نهائية يعتمد عليها فرع الحماية مع الدمج الآلي
   # ─────────────────────────────────────────────────────────────
   ci-gate:
     name: CI Gate
     needs: [detect-changes, test-services]
     if: always()
     runs-on: ubuntu-latest
+    # ⚠️ التعديل 1: إضافة الصلاحيات للسماح لـ GitHub Actions بدمج الكود
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: No services changed — passing automatically
         if: needs.detect-changes.outputs.any-changed == 'false'
@@ -112,3 +115,10 @@ jobs:
             exit 1
           fi
           echo "All tests for affected services passed ✅"
+
+      # ⚠️ التعديل 2: خطوة الدمج الآلي (تعمل فقط إذا نجحت الخطوات السابقة ولم يكن هناك exit 1)
+      - name: Enable Auto-merge
+        if: success() && github.event_name == 'pull_request'
+        run: gh pr merge ${{ github.event.pull_request.number }} --auto --merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
