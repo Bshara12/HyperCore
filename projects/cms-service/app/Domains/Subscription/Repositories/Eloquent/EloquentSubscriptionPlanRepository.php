@@ -7,6 +7,7 @@ use App\Domains\Subscription\Repositories\Interface\SubscriptionPlanRepositoryIn
 use App\Models\SubscriptionFeature;
 use App\Models\SubscriptionPlan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Collection;
 
 class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
 {

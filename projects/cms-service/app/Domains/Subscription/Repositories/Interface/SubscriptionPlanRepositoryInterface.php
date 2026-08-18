@@ -4,6 +4,7 @@ namespace App\Domains\Subscription\Repositories\Interface;
 
 use App\Domains\Subscription\DTOs\Plan\CreatePlanDTO;
 use App\Models\SubscriptionPlan;
+use Illuminate\Database\Eloquent\Collection;
 
 interface SubscriptionPlanRepositoryInterface
 {

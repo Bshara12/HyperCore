@@ -200,7 +200,7 @@ Route::middleware(['resolve.project', 'auth.user', 'throttle:api.standard'])->gr
 });
 
 Route::get(
-  '/projects/{projectid}/data-types/{slug}/entries',
+  '/projects/{project}/data-types/{slug}/entries',
   [DataTypeEntriesController::class, 'index']
 )->middleware(['auth.user', 'resolve.project', 'throttle:api.standard']);
 
