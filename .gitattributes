@@ -1,0 +1,5 @@
+# The workflow, action, and hook files carry bash scripts that run on Linux runners and on
+# other contributors' machines. If any of them is ever committed with CRLF, it breaks there
+# with "$'\r': command not found", so pin them to LF regardless of the author's platform.
+/.github/** text eol=lf
+/.githooks/** text eol=lf

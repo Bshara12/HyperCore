@@ -1,0 +1,89 @@
+name: "Reusable - Laravel Service Tests"
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        description: "The clean name of the service as it is in services.json (example: cms-service)"
+        required: true
+        type: string
+      service-path:
+        description: "The actual path of the service folder on the disk (first element from paths in services.json)"
+        required: true
+        type: string
+      php-version:
+        description: "The PHP version for this service (from the php_version field in services.json)"
+        required: true
+        type: string
+    outputs:
+      tests-result:
+        description: "The final test results for this service: success or failure"
+        value: ${{ jobs.test.outputs.result }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test ${{ inputs.service-name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      result: ${{ steps.run-tests.outcome }}
+
+    # No MySQL/Redis service containers on purpose: every service's phpunit.xml pins
+    # DB_CONNECTION=sqlite, DB_DATABASE=:memory:, CACHE_STORE=array, QUEUE_CONNECTION=sync,
+    # SESSION_DRIVER=array and MAIL_MAILER=array. Spinning up real servers would be dead
+    # weight, and exporting DB_HOST/DB_CONNECTION would override phpunit.xml and make CI
+    # test a different database than developers do locally.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP application (${{ inputs.service-name }})
+        uses: ./.github/actions/setup-php-app
+        with:
+          php-version: ${{ inputs.php-version }}
+          working-directory: ${{ inputs.service-path }}
+
+      - name: Prepare environment file
+        working-directory: ${{ inputs.service-path }}
+        run: |
+          set -euo pipefail
+          if [ -f ".env.example" ]; then
+            cp .env.example .env
+          else
+            echo "::error::No .env.example found in ${{ inputs.service-path }}"
+            exit 1
+          fi
+
+      - name: Generate application key
+        working-directory: ${{ inputs.service-path }}
+        run: php artisan key:generate --force
+
+      - name: Clear cached config
+        working-directory: ${{ inputs.service-path }}
+        run: php artisan config:clear
+
+      # Runs every testsuite declared in phpunit.xml. Booking_Service has a third
+      # suite (Integration) that a hardcoded Unit+Feature pair would silently skip.
+      - name: Run tests
+        id: run-tests
+        working-directory: ${{ inputs.service-path }}
+        run: php artisan test --colors=always
+
+      - name: Print job summary
+        if: always()
+        run: |
+          {
+            echo "### Test Results - ${{ inputs.service-name }}"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| Service | \`${{ inputs.service-name }}\` |"
+            echo "| Path | \`${{ inputs.service-path }}\` |"
+            echo "| PHP Version | ${{ inputs.php-version }} |"
+            echo "| Result | ${{ steps.run-tests.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

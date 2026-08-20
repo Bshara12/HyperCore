@@ -1,0 +1,130 @@
+name: "Detect Service Changes"
+description: "It discovers which services in the monorepo are affected by the current changes and outputs a JSON list that is used to build a dynamic matrix."
+
+inputs:
+  services-config:
+    description: >
+      Path (relative to the repository root) of a JSON file that specifies service names and their
+      associated folders, for example: .github/services.json
+    required: false
+    default: ".github/services.json"
+  base-ref:
+    description: >
+      The reference (commit SHA / branch) to compare against. On a push event pass
+      github.event.before. If it is empty, all zeros, or unreachable, the action falls back
+      automatically (HEAD~1, then force-all).
+    required: false
+    default: ""
+  head-ref:
+    description: "The current reference (latest commit) to compare with"
+    required: false
+    default: ${{ github.sha }}
+  force-all:
+    description: "If true, all services are considered affected regardless of changed files (used for manual full runs)"
+    required: false
+    default: "false"
+
+outputs:
+  services:
+    description: 'List of JSON service names affected, for example: ["cms-service","booking-service"]'
+    value: ${{ steps.detect.outputs.services }}
+  services-count:
+    description: "Number of affected services"
+    value: ${{ steps.detect.outputs.services-count }}
+  any-changed:
+    description: "Whether any services are affected (true/false)"
+    value: ${{ steps.detect.outputs.any-changed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Ensure full git history is available
+      shell: bash
+      run: |
+        if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+          echo "::error::This checkout is shallow. You must use fetch-depth: 0 in actions/checkout before calling this action."
+          exit 1
+        fi
+
+    - name: Detect changed services
+      id: detect
+      shell: bash
+      env:
+        SERVICES_CONFIG: ${{ inputs.services-config }}
+        BASE_REF: ${{ inputs.base-ref }}
+        HEAD_REF: ${{ inputs.head-ref }}
+        FORCE_ALL: ${{ inputs.force-all }}
+      run: |
+        set -euo pipefail
+
+        MATCHER="$GITHUB_ACTION_PATH/../../scripts/detect-services.sh"
+        if [ ! -f "$MATCHER" ]; then
+          echo "::error::Matcher script not found at $MATCHER"
+          exit 1
+        fi
+
+        ALL_SERVICES=$(jq -c '[.services[].name]' "$SERVICES_CONFIG")
+
+        # ─────────────────────────────────────────────────────────
+        # 1. Resolve the base reference.
+        #    On a push event github.event.before is all zeros for a brand new branch and
+        #    points at a lost commit after a force push. Neither case may silently produce
+        #    an empty diff, because that would skip every test and let the push through.
+        # ─────────────────────────────────────────────────────────
+        RESOLVED_BASE=""
+        if [ "$FORCE_ALL" != "true" ]; then
+          if [ -n "$BASE_REF" ] \
+             && [ "$BASE_REF" != "0000000000000000000000000000000000000000" ] \
+             && git cat-file -e "${BASE_REF}^{commit}" 2>/dev/null; then
+            RESOLVED_BASE="$BASE_REF"
+            echo "Base reference: $RESOLVED_BASE (from input)"
+          elif git rev-parse --verify --quiet "${HEAD_REF}~1" >/dev/null; then
+            RESOLVED_BASE="${HEAD_REF}~1"
+            echo "::notice::Base reference '${BASE_REF}' is unusable (new branch or force push). Falling back to ${HEAD_REF}~1"
+          else
+            echo "::notice::No usable base reference (first commit in history). All services will be tested."
+            FORCE_ALL="true"
+          fi
+        fi
+
+        # ─────────────────────────────────────────────────────────
+        # 2. Collect the changed files and match them against services.json.
+        #    The matching itself lives in .github/scripts/detect-services.sh, which the
+        #    local pre-push hook runs too, so both can never disagree.
+        # ─────────────────────────────────────────────────────────
+        if [ "$FORCE_ALL" = "true" ]; then
+          echo "FORCE_ALL is enabled: all services are considered affected."
+          SERVICES_JSON="$ALL_SERVICES"
+        else
+          echo "Comparing $RESOLVED_BASE and $HEAD_REF"
+          CHANGED_FILES=$(git diff --name-only "$RESOLVED_BASE" "$HEAD_REF" || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No changed files found between the two references."
+          else
+            echo "Changed files:"
+            echo "$CHANGED_FILES" | sed 's/^/  /'
+          fi
+
+          REPORT=$(printf '%s\n' "$CHANGED_FILES" | bash "$MATCHER" "$SERVICES_CONFIG")
+
+          if [ "$(echo "$REPORT" | jq -r '.shared')" = "true" ]; then
+            echo "$REPORT" | jq -r '.hits[] | "  Shared file changed: \(.file) matched global rule \(.rule)"'
+            echo "All services are considered affected."
+          else
+            echo "$REPORT" | jq -r '.hits[] | "  Match: \(.file) belongs to \(.service) (rule \(.rule))"'
+          fi
+
+          SERVICES_JSON=$(echo "$REPORT" | jq -c '.services')
+        fi
+
+        SERVICES_COUNT=$(echo "$SERVICES_JSON" | jq 'length')
+        ANY_CHANGED=$([ "$SERVICES_COUNT" -gt 0 ] && echo "true" || echo "false")
+
+        echo "Affected services ($SERVICES_COUNT): $SERVICES_JSON"
+
+        {
+          echo "services=$SERVICES_JSON"
+          echo "services-count=$SERVICES_COUNT"
+          echo "any-changed=$ANY_CHANGED"
+        } >> "$GITHUB_OUTPUT"

@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+#
+# pre-push — runs the test suite of every affected service BEFORE the push leaves this
+# machine. If any test fails the push is aborted, so nothing broken ever reaches GitHub.
+#
+# Install:  bash .githooks/install.sh      (or: git config core.hooksPath .githooks)
+#
+# Escape hatches:
+#   git push --no-verify        skip the hook entirely
+#   SKIP_TESTS=1 git push       same, without typing the flag
+#
+# git feeds us one line per pushed ref on stdin:
+#   <local ref> <local sha> <remote ref> <remote sha>
+set -uo pipefail
+
+ZERO="0000000000000000000000000000000000000000"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CONFIG="$REPO_ROOT/.github/services.json"
+MATCHER="$REPO_ROOT/.github/scripts/detect-services.sh"
+
+if [ "${SKIP_TESTS:-0}" = "1" ]; then
+  echo "pre-push: SKIP_TESTS=1 — skipping tests. The GitHub pipeline will still check this push."
+  exit 0
+fi
+
+for tool in jq php; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "pre-push: '$tool' not found in PATH — cannot run the tests locally."
+    echo "pre-push: allowing the push; the GitHub pipeline remains the gate."
+    exit 0
+  fi
+done
+
+if [ ! -f "$CONFIG" ] || [ ! -f "$MATCHER" ]; then
+  echo "pre-push: $CONFIG or $MATCHER is missing — allowing the push."
+  exit 0
+fi
+
+# ── 1. Collect every file this push would publish ──────────────────────────────
+CHANGED=""
+WHILE_READ_RAN=0
+while read -r LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
+  WHILE_READ_RAN=1
+
+  # Branch deletion — nothing to test.
+  [ "$LOCAL_SHA" = "$ZERO" ] && continue
+
+  if [ "$REMOTE_SHA" = "$ZERO" ]; then
+    # New branch on the remote: diff against the default branch so we test what this
+    # branch actually introduces instead of its entire history.
+    BASE="$(git merge-base "$LOCAL_SHA" refs/remotes/origin/HEAD 2>/dev/null \
+            || git merge-base "$LOCAL_SHA" origin/main 2>/dev/null \
+            || echo "")"
+    if [ -z "$BASE" ]; then
+      echo "pre-push: new branch with no common ancestor found — testing every service."
+      CHANGED="$(jq -r '.global_paths[0]' "$CONFIG")"
+      break
+    fi
+  else
+    BASE="$REMOTE_SHA"
+  fi
+
+  RANGE_FILES="$(git diff --name-only "$BASE" "$LOCAL_SHA" 2>/dev/null || echo "")"
+  CHANGED="$(printf '%s\n%s' "$CHANGED" "$RANGE_FILES")"
+done
+
+# Nothing on stdin (some git invocations), or only deletions: fall back to the diff
+# between the current branch and its upstream.
+if [ "$WHILE_READ_RAN" = "0" ]; then
+  UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo "")"
+  if [ -n "$UPSTREAM" ]; then
+    CHANGED="$(git diff --name-only "$UPSTREAM" HEAD 2>/dev/null || echo "")"
+  fi
+fi
+
+CHANGED="$(printf '%s' "$CHANGED" | grep -v '^$' || true)"
+
+if [ -z "$CHANGED" ]; then
+  echo "pre-push: no changed files detected — nothing to test."
+  exit 0
+fi
+
+# ── 2. Map the files onto services (same matcher the CI pipeline uses) ─────────
+REPORT="$(printf '%s\n' "$CHANGED" | bash "$MATCHER" "$CONFIG")" || {
+  echo "pre-push: the matcher failed — allowing the push; the GitHub pipeline remains the gate."
+  exit 0
+}
+
+# jq on a Windows build emits CRLF; a trailing \r would make every lookup below fail.
+mapfile -t SERVICES < <(printf '%s' "$REPORT" | jq -r '.services[]' | tr -d '\r')
+
+if [ "${#SERVICES[@]}" -eq 0 ]; then
+  echo "pre-push: this push touches no service code — nothing to test."
+  exit 0
+fi
+
+echo ""
+echo "──────────────────────────────────────────────────────────────"
+echo " pre-push: testing ${#SERVICES[@]} affected service(s) before pushing"
+echo "──────────────────────────────────────────────────────────────"
+
+# ── 3. Run each affected service's suite ──────────────────────────────────────
+FAILED=()
+for SVC in "${SERVICES[@]}"; do
+  SVC_PATH="$(jq -r --arg s "$SVC" '.services[] | select(.name == $s) | .paths[0]' "$CONFIG" | tr -d '\r')"
+  DIR="$REPO_ROOT/$SVC_PATH"
+
+  if [ ! -f "$DIR/artisan" ]; then
+    echo "  [skip] $SVC — no artisan at $SVC_PATH"
+    continue
+  fi
+  if [ ! -d "$DIR/vendor" ]; then
+    echo "  [skip] $SVC — vendor/ missing, run 'composer install' in $SVC_PATH"
+    continue
+  fi
+
+  echo ""
+  echo "  ▶ $SVC ($SVC_PATH)"
+  if (cd "$DIR" && php artisan test --colors=never) then
+    echo "  ✔ $SVC passed"
+  else
+    echo "  ✘ $SVC FAILED"
+    FAILED+=("$SVC")
+  fi
+done
+
+# ── 4. Verdict ────────────────────────────────────────────────────────────────
+echo ""
+echo "──────────────────────────────────────────────────────────────"
+if [ "${#FAILED[@]}" -gt 0 ]; then
+  echo " PUSH CANCELLED — tests failed in: ${FAILED[*]}"
+  echo ""
+  echo " Fix the failing tests and push again."
+  echo " To push anyway (not recommended): git push --no-verify"
+  echo "──────────────────────────────────────────────────────────────"
+  exit 1
+fi
+
+echo " ALL TESTS PASSED — proceeding with the push"
+echo "──────────────────────────────────────────────────────────────"
+exit 0

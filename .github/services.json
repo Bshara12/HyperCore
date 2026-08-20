@@ -1,0 +1,56 @@
+{
+  "services": [
+    {
+      "name": "cms-service",
+      "paths": [
+        "projects/cms-service/"
+      ],
+      "php_version": "8.3",
+      "docker_context": "cms-service",
+      "healthcheck_path": "/health"
+    },
+    {
+      "name": "ecommerce-service",
+      "paths": [
+        "projects/E-Commerce_Service/"
+      ],
+      "php_version": "8.3",
+      "docker_context": "E-Commerce_Service",
+      "healthcheck_path": "/health"
+    },
+    {
+      "name": "booking-service",
+      "paths": [
+        "projects/Booking_Service/"
+      ],
+      "php_version": "8.3",
+      "docker_context": "Booking_Service",
+      "healthcheck_path": "/health"
+    },
+    {
+      "name": "notification-service",
+      "paths": [
+        "projects/notification-service/"
+      ],
+      "php_version": "8.3",
+      "docker_context": "notification-service",
+      "healthcheck_path": "/health"
+    },
+    {
+      "name": "log-service",
+      "paths": [
+        "projects/logging-service/"
+      ],
+      "php_version": "8.3",
+      "docker_context": "logging-service",
+      "healthcheck_path": "/health"
+    }
+  ],
+  "global_paths": [
+    ".github/actions/",
+    ".github/workflows/_reusable-",
+    ".github/services.json",
+    "mysql/",
+    "docker-compose.core.yml"
+  ]
+}

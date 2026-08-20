@@ -1,0 +1,371 @@
+name: "CI - Tests on Push"
+
+# The single trigger of this pipeline: any push to any branch.
+# Combined with a repository ruleset that marks "CI Gate" as a required status check,
+# a push whose tests fail is rejected and never lands on the protected branch.
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+    inputs:
+      force-all:
+        description: "Test every service instead of only the changed ones"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+concurrency:
+  group: ci-push-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Stage 1: figure out which services this push touched
+  # ─────────────────────────────────────────────────────────────
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      any-changed: ${{ steps.detect.outputs.any-changed }}
+      services-count: ${{ steps.detect.outputs.services-count }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: detect
+        uses: ./.github/actions/detect-service-changes
+        with:
+          base-ref: ${{ github.event.before }}
+          head-ref: ${{ github.sha }}
+          force-all: ${{ github.event_name == 'workflow_dispatch' && inputs.force-all || 'false' }}
+
+      - name: Print detection summary
+        run: |
+          {
+            echo "### Change detection"
+            echo ""
+            echo "- **Affected services:** ${{ steps.detect.outputs.services-count }}"
+            echo "- **Services:** \`${{ steps.detect.outputs.services }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────
+  # Stage 2: turn the detected names into a test matrix
+  # ─────────────────────────────────────────────────────────────
+  build-matrix:
+    name: Build test matrix
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any-changed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build matrix from services.json
+        id: build
+        env:
+          CHANGED: ${{ needs.detect-changes.outputs.services }}
+        run: |
+          set -euo pipefail
+          MATRIX=$(jq -c --argjson changed "$CHANGED" '
+            [.services[] | select(.name as $n | $changed | index($n) != null) |
+              {
+                "service-name": .name,
+                "service-path": .paths[0],
+                "php-version": .php_version
+              }
+            ]
+          ' .github/services.json)
+          echo "matrix={\"include\":${MATRIX}}" >> "$GITHUB_OUTPUT"
+          echo "Generated matrix: $MATRIX"
+
+  # ─────────────────────────────────────────────────────────────
+  # Stage 3: run the test suite of every affected service
+  # ─────────────────────────────────────────────────────────────
+  test-services:
+    name: ${{ matrix.service-name }}
+    needs: [detect-changes, build-matrix]
+    if: needs.detect-changes.outputs.any-changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/_reusable-laravel-test.yml
+    with:
+      service-name: ${{ matrix.service-name }}
+      service-path: ${{ matrix.service-path }}
+      php-version: ${{ matrix.php-version }}
+
+  # ─────────────────────────────────────────────────────────────
+  # Stage 4: the gate. This is the job name to require in the ruleset;
+  #          it is the only thing that decides accept vs. reject.
+  # ─────────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI Gate
+    needs: [detect-changes, build-matrix, test-services]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate pipeline result
+        env:
+          ANY_CHANGED: ${{ needs.detect-changes.outputs.any-changed }}
+          DETECT_RESULT: ${{ needs.detect-changes.result }}
+          MATRIX_RESULT: ${{ needs.build-matrix.result }}
+          TESTS_RESULT: ${{ needs.test-services.result }}
+        run: |
+          set -euo pipefail
+
+          if [ "$DETECT_RESULT" != "success" ]; then
+            echo "::error::Change detection failed ($DETECT_RESULT). Push rejected."
+            exit 1
+          fi
+
+          if [ "$ANY_CHANGED" = "false" ]; then
+            echo "No service code was touched by this push. Nothing to test."
+            exit 0
+          fi
+
+          if [ "$MATRIX_RESULT" != "success" ]; then
+            echo "::error::Building the test matrix failed ($MATRIX_RESULT). Push rejected."
+            exit 1
+          fi
+
+          if [ "$TESTS_RESULT" != "success" ]; then
+            echo "::error::Tests failed for one or more services (result: $TESTS_RESULT). Push rejected."
+            exit 1
+          fi
+
+          echo "Every affected service passed its test suite."
+
+      - name: Print gate summary
+        if: always()
+        run: |
+          {
+            echo "### CI Gate"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| Services tested | ${{ needs.detect-changes.outputs.services-count }} |"
+            echo "| Services | \`${{ needs.detect-changes.outputs.services }}\` |"
+            echo "| Tests result | ${{ needs.test-services.result || 'skipped (no service changed)' }} |"
+            echo "| Gate | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────
+  # Stage 5 (CD): only reached when the gate is green.
+  #               Announces that the whole suite passed.
+  # ─────────────────────────────────────────────────────────────
+  cd-announce:
+    name: CD - Announce success
+    needs: [detect-changes, ci-gate]
+    # Only announce when tests actually ran; a docs-only push has nothing to report.
+    if: success() && needs.detect-changes.outputs.any-changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: All tests passed
+        env:
+          SERVICES: ${{ needs.detect-changes.outputs.services }}
+          COUNT: ${{ needs.detect-changes.outputs.services-count }}
+        run: |
+          echo "============================================================"
+          echo "   ALL TESTS PASSED SUCCESSFULLY - PUSH ACCEPTED"
+          echo "============================================================"
+          echo "   Commit  : ${GITHUB_SHA}"
+          echo "   Branch  : ${GITHUB_REF_NAME}"
+          echo "   Author  : ${GITHUB_ACTOR}"
+          echo "   Services: ${COUNT} -> ${SERVICES}"
+          echo "============================================================"
+          echo "   Deployment stage is clear to proceed."
+          echo "============================================================"
+
+      - name: Publish announcement to the run summary
+        run: |
+          {
+            echo "## ALL TESTS PASSED SUCCESSFULLY - PUSH ACCEPTED"
+            echo ""
+            echo "Every test of every affected service passed on commit \`${GITHUB_SHA}\`."
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| Branch | \`${GITHUB_REF_NAME}\` |"
+            echo "| Author | \`${GITHUB_ACTOR}\` |"
+            echo "| Services | \`${{ needs.detect-changes.outputs.services }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────
+  # Stage 6 (the bot): the gate went red, so undo the push.
+  #   Rewinds the branch to the last commit that passed and reports why.
+  #   Never touches `main` — that branch is defended by the ruleset instead, so a bug
+  #   in this job can never rewrite the history of the trunk.
+  # ─────────────────────────────────────────────────────────────
+  revert-failed-push:
+    name: Bot - Cancel failed push
+    needs: [detect-changes, ci-gate]
+    if: >-
+      always()
+      && github.event_name == 'push'
+      && needs.ci-gate.result == 'failure'
+      && github.ref_type == 'branch'
+      && github.ref_name != 'main'
+      && github.event.deleted == false
+      && github.event.before != '0000000000000000000000000000000000000000'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Roll the branch back to the last commit that passed
+        id: rollback
+        env:
+          BRANCH: ${{ github.ref_name }}
+          FAILED_SHA: ${{ github.sha }}
+          GOOD_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "hypercore-ci[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # The commit we want to return to has to be reachable locally first.
+          if ! git cat-file -e "${GOOD_SHA}^{commit}" 2>/dev/null; then
+            git fetch --no-tags --depth=1 origin "$GOOD_SHA" 2>/dev/null || true
+          fi
+          if ! git cat-file -e "${GOOD_SHA}^{commit}" 2>/dev/null; then
+            echo "::warning::Commit ${GOOD_SHA} is not available, so the branch was left untouched."
+            {
+              echo "rolled-back=false"
+              echo "backup=false"
+              echo "reason=the previous commit ${GOOD_SHA} is no longer available on the remote"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Park the rejected commit under refs/rejected-pushes/** first. The work is
+          # removed from the branch, never from the repository.
+          if git push origin "${FAILED_SHA}:refs/rejected-pushes/${BRANCH}/${FAILED_SHA}" 2>/dev/null; then
+            echo "Rejected commit preserved at refs/rejected-pushes/${BRANCH}/${FAILED_SHA}"
+            echo "backup=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Could not create the backup ref; continuing without it."
+            echo "backup=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # --force-with-lease is the safety belt: the rewind only lands if the branch tip is
+          # STILL the failing commit. If a teammate pushed meanwhile, this fails loudly
+          # instead of destroying their work.
+          # A leading '+' in the refspec means --force and would OVERRIDE the lease, so the
+          # refspec below deliberately has none: the lease must stay the deciding factor.
+          if git push --force-with-lease="refs/heads/${BRANCH}:${FAILED_SHA}" \
+                      origin "${GOOD_SHA}:refs/heads/${BRANCH}"; then
+            echo "Branch '${BRANCH}' was rolled back to ${GOOD_SHA}"
+            {
+              echo "rolled-back=true"
+              echo "reason=tests failed"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Rollback refused — the branch tip moved after this run started."
+            {
+              echo "rolled-back=false"
+              echo "reason=the branch tip moved after this run started, so the rewind was refused"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report the rejection
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          FAILED_SHA: ${{ github.sha }}
+          GOOD_SHA: ${{ github.event.before }}
+          PUSHER: ${{ github.event.pusher.name }}
+          SERVICES: ${{ needs.detect-changes.outputs.services }}
+          ROLLED_BACK: ${{ steps.rollback.outputs.rolled-back }}
+          BACKUP: ${{ steps.rollback.outputs.backup }}
+          REASON: ${{ steps.rollback.outputs.reason }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          if [ "$ROLLED_BACK" = "true" ]; then
+            HEADLINE="The push to \`$BRANCH\` was cancelled because the tests failed."
+            STATE="The branch was rolled back to \`$GOOD_SHA\`."
+          else
+            HEADLINE="The tests failed for the push to \`$BRANCH\`, but the branch could not be rolled back."
+            STATE="The branch still points at \`$FAILED_SHA\` because ${REASON}."
+          fi
+
+          BODY=$(cat <<EOF
+          $HEADLINE
+
+          $STATE
+
+          | Item | Value |
+          | --- | --- |
+          | Branch | \`$BRANCH\` |
+          | Rejected commit | \`$FAILED_SHA\` |
+          | Last commit that passed | \`$GOOD_SHA\` |
+          | Pushed by | @$PUSHER |
+          | Services tested | \`$SERVICES\` |
+          | Pipeline run | [open the logs]($RUN_URL) |
+
+          ## Getting the work back
+
+          $(if [ "$BACKUP" = "true" ]; then cat <<INNER
+          The rejected commit is still in the repository:
+
+          \`\`\`bash
+          git fetch origin refs/rejected-pushes/$BRANCH/$FAILED_SHA
+          git checkout -b fix/$BRANCH FETCH_HEAD
+          \`\`\`
+
+          It is also still in your local clone, so \`git log $BRANCH\` on your machine shows it.
+          INNER
+          else
+            echo "The commit is still in your local clone — nothing was lost there. Fix the failing tests and push again."
+          fi)
+
+          ## Next steps
+
+          1. Open the run above and read which service failed.
+          2. Fix the tests, then push again.
+          3. Installing the local hook once (\`bash .githooks/install.sh\`) catches this on your
+             machine before the push leaves it.
+          EOF
+          )
+
+          # The heredoc above is indented for readability; strip that indent before sending.
+          printf '%s\n' "$BODY" | sed 's/^          //' > /tmp/issue-body.md
+
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Push to $BRANCH cancelled - tests failed ($(echo "$FAILED_SHA" | cut -c1-7))" \
+            --body-file /tmp/issue-body.md
+
+      - name: Write the outcome to the run summary
+        if: always()
+        run: |
+          {
+            echo "## Push cancelled - tests failed"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| Branch | \`${{ github.ref_name }}\` |"
+            echo "| Rejected commit | \`${{ github.sha }}\` |"
+            echo "| Rolled back to | \`${{ github.event.before }}\` |"
+            echo "| Rollback performed | ${{ steps.rollback.outputs.rolled-back }} |"
+            echo "| Backup ref created | ${{ steps.rollback.outputs.backup }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
