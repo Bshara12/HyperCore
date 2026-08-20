@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\Http\Controllers\ProjectEntriesController;
 use App\Domains\CMS\Read\Services\EntryReadService;
 use App\Domains\CMS\Requests\ProjectEntriesRequest;
+use App\Models\Project;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -40,7 +41,9 @@ class ProjectEntriesControllerTest extends TestCase
     $request->shouldReceive('getFilters')->once()->andReturn($expectedFilters);
 
     // 2. توقع استدعاء الخدمة بالمعاملات الصحيحة
+    // index() يستقبل الآن موديل Project (Route Binding) بدلاً من int
     $projectId = 123;
+    $project = (new Project())->forceFill(['id' => $projectId]);
     $this->entryReadServiceMock->shouldReceive('getProjectEntriesTree')
       ->once()
       ->with($projectId, $expectedFilters)
@@ -50,7 +53,7 @@ class ProjectEntriesControllerTest extends TestCase
     $controller = new ProjectEntriesController($this->entryReadServiceMock);
 
     // 4. تنفيذ الطلب
-    $response = $controller->index($request, $projectId);
+    $response = $controller->index($request, $project);
 
     // 5. التأكيد
     $this->assertEquals(200, $response->getStatusCode());

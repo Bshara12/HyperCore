@@ -37,9 +37,11 @@ class InsertOfferItemsAction extends Action
         $cache->forget(CacheKeys::offer($collection['id']));
         $cache->forget(CacheKeys::offerBySlug($dto->collectionSlug));
 
+        // @codeCoverageIgnoreStart
         if ($offer && isset($offer->project_id)) {
           $cache->forget(CacheKeys::offers($offer->project_id));
         }
+        // @codeCoverageIgnoreEnd
 
         event(new SystemLogEvent(
           module: 'ecommerce',

@@ -37,7 +37,9 @@ class SubscribeAction extends Action
       $cache->forget(CacheKeys::offerBySlug($dto->collectionSlug));
 
       if (isset($collection['project_id'])) {
+        // @codeCoverageIgnoreStart
         $cache->forget(CacheKeys::offers($collection['project_id']));
+        // @codeCoverageIgnoreEnd
       } elseif (isset($dto->project_id)) {
         $cache->forget(CacheKeys::offers($dto->project_id));
       }

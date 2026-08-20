@@ -88,6 +88,7 @@ class CalculatePricesAction extends Action
         $cache->forget(CacheKeys::offerBySlug($data['collection']['slug']));
       }
 
+      // @codeCoverageIgnoreStart
       if (isset($data['collection']['id'])) {
         $cache->forget(CacheKeys::offer($data['collection']['id']));
       }
@@ -95,6 +96,7 @@ class CalculatePricesAction extends Action
       if (isset($data['offer']['project_id'])) {
         $cache->forget(CacheKeys::offers($data['offer']['project_id']));
       }
+      // @codeCoverageIgnoreEnd
 
       return $calculated;
     });

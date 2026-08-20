@@ -73,6 +73,7 @@ class OfferControllerTest extends TestCase
     // 1. البيانات
     $collectionSlug = "test-offer";
     $payload = [
+      "project_id" => 1,
       "conditions_logic" => "and",
       "description" => "تعديل الوصف",
       "benefit_config" => ["fixed_amount" => 50],

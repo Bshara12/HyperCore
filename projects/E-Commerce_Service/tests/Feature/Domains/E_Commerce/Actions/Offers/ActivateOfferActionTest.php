@@ -53,8 +53,14 @@ it('activates an offer and clears relevant cache keys', function () {
     ->once()
     ->with($collectionId);
 
-  // توقعات الكاش (يجب مسح مفتاحين)
-  Cache::shouldReceive('forget')->twice();
+  // توقعات الكاش: الكود يمسح المفاتيح عبر Cache::tags(['offers'])->forget()
+  // لذا نحاكي الـ tagged store ونتوقع مسح مفتاحي الـ ID والـ Slug.
+  // لا يوجد project_id في الـ collection ولا projectId في الـ DTO هنا،
+  // لذلك لا يتم مسح مفتاح قائمة عروض المشروع.
+  $tagged = Mockery::mock();
+  $tagged->shouldReceive('forget')->twice();
+
+  Cache::shouldReceive('tags')->with(['offers'])->andReturn($tagged);
 
   $action = new ActivateOfferAction($repository, $cmsClient);
 

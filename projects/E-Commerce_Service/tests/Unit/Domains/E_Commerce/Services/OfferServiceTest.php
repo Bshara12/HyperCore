@@ -97,7 +97,7 @@ it('creates a static offer without calculating prices', function () {
 // --- اختبار دالة Update (المسار المعقد) ---
 
 it('updates offer and recalculates if conditions changed', function () {
-  $dto = new UpdateOfferDTO('slug', ['conditions' => [1]], ['benefit_type' => 'percentage']);
+  $dto = new UpdateOfferDTO('slug', ['conditions' => [1]], ['benefit_type' => 'percentage'], 1);
 
   $collection = ['id' => 10, 'type' => 'dynamic'];
   $offer = ['id' => 20, 'benefit_type' => 'percentage'];
@@ -182,7 +182,7 @@ it('subscribes a user to an offer', function () {
 
 it('deletes offer prices when benefit type is quantity or total_price during update', function () {
   // 1. إعداد البيانات بحيث تحتوي على offerData لتشغيل سطر التحديث
-  $dto = new UpdateOfferDTO('slug', [], ['benefit_type' => 'quantity']);
+  $dto = new UpdateOfferDTO('slug', [], ['benefit_type' => 'quantity'], 1);
 
   $collection = ['id' => 10, 'type' => 'static'];
   $offer = ['id' => 20, 'benefit_type' => 'quantity'];

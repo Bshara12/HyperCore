@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Fluent;
+use App\Domains\E_Commerce\DTOs\Offers\UpdateOfferDTO;
 
 beforeEach(function () {
   if (!Schema::hasTable('circuit_breakers')) {
@@ -28,14 +28,17 @@ beforeEach(function () {
 it('updates an offer, clears cache and dispatches system log event', function () {
   // 1. إعداد البيانات والـ Mocks
   Event::fake();
-  Cache::shouldReceive('forget')->twice();
-
-  $collectionId = "500";
+  $collectionId = 500;
   $offerData = ['name' => 'Updated Offer Name', 'discount' => 20];
 
-  $dto = new Fluent([
-    'offerData' => $offerData
-  ]);
+  // execute() يفرض النوع UpdateOfferDTO لذا نبني الـ DTO الحقيقي
+  $dto = new UpdateOfferDTO('summer-sale', [], $offerData, 10);
+
+  // الكود يمسح 3 مفاتيح عبر Cache::tags(['offers'])->forget():
+  // مفتاح الـ collection، ومفتاح قائمة عروض المشروع، ومفتاح الـ slug
+  $tagged = Mockery::mock();
+  $tagged->shouldReceive('forget')->times(3);
+  Cache::shouldReceive('tags')->with(['offers'])->andReturn($tagged);
 
   $mockOffer = new Offer([
     'id' => 1,

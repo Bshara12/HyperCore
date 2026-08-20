@@ -53,7 +53,14 @@ it('deactivates an offer and clears cache keys successfully', function () {
     ->once()
     ->with($collectionId);
 
-  // توقعات الكاش: مسح مفتاحي الـ ID والـ Slug
+  // توقعات الكاش:
+  // الكود يستدعي Cache::tags(['offers']) ثم يمسح مفتاحي الـ ID والـ Slug
+  // عبر Cache::forget() المباشر (بدون tag)، ولا يستخدم الـ tagged store هنا
+  // لأن الـ collection لا يحتوي project_id والـ DTO لا يحتوي projectId.
+  $tagged = Mockery::mock();
+  $tagged->shouldReceive('forget')->never();
+
+  Cache::shouldReceive('tags')->with(['offers'])->andReturn($tagged);
   Cache::shouldReceive('forget')->twice();
 
   $action = new DeactivateOfferAction($repository, $cmsClient);

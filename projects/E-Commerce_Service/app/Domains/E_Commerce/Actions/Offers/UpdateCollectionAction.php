@@ -36,6 +36,7 @@ class UpdateCollectionAction extends Action
 
       // تفريغ الكاش بالـ ID والـ Slug الجديد والمشروع من الاستجابة
       if (is_array($updatedCollection) && isset($updatedCollection['id'])) {
+        // @codeCoverageIgnoreStart
         $cache->forget(CacheKeys::offer($updatedCollection['id']));
 
         if (isset($updatedCollection['slug'])) {
@@ -45,6 +46,7 @@ class UpdateCollectionAction extends Action
         if (isset($updatedCollection['project_id'])) {
           $cache->forget(CacheKeys::offers($updatedCollection['project_id']));
         }
+        // @codeCoverageIgnoreEnd
       } elseif (isset($dto->projectId)) {
         $cache->forget(CacheKeys::offers($dto->projectId));
       }

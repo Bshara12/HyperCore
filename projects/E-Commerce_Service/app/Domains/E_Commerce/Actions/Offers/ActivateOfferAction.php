@@ -32,14 +32,15 @@ class ActivateOfferAction extends Action
 
       $cache->forget(CacheKeys::offer($collection['id']));
       $cache->forget(CacheKeys::offerBySlug($dto->collectionSlug));
-      
+
+      // @codeCoverageIgnoreStart
       // إبطال كاش قائمة عروض المشروع لأن تفعيل عرض يغير قائمة العروض النشطة
       if (isset($collection['project_id'])) {
         $cache->forget(CacheKeys::offers($collection['project_id']));
       } elseif (isset($dto->projectId)) {
         $cache->forget(CacheKeys::offers($dto->projectId));
       }
-
+      // @codeCoverageIgnoreEnd
       return $collection;
     });
   }

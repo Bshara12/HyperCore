@@ -26,7 +26,11 @@ beforeEach(function () {
 });
 
 it('removes items from CMS and local repository, then clears cache', function () {
-  Cache::shouldReceive('forget')->twice();
+  // الكود يمسح مفتاحي الـ ID والـ Slug عبر Cache::tags(['offers'])->forget()
+  // (الـ Offer الوهمي بلا project_id لذا لا يُمسح مفتاح قائمة عروض المشروع)
+  $tagged = Mockery::mock();
+  $tagged->shouldReceive('forget')->twice();
+  Cache::shouldReceive('tags')->with(['offers'])->andReturn($tagged);
 
   // 1. إعداد البيانات والـ DTO
   $dto = new Fluent([

@@ -7,6 +7,7 @@ use App\Models\OfferPrice;
 use App\Models\UserOffer;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 uses(RefreshDatabase::class);
 
@@ -178,4 +179,23 @@ it('successfully subscribes user to offer', function () use (&$repository) {
     'offer_id' => $offer->id,
     'user_id' => 5
   ]);
+});
+
+/**
+ * 9. Test: find (both findOrFail paths)
+ */
+it('finds an offer by its id', function () use (&$repository) {
+  $offer = Offer::factory()->create(['collection_id' => 909, 'project_id' => 3]);
+
+  $found = $repository->find($offer->id);
+
+  expect($found)->toBeInstanceOf(Offer::class)
+    ->and($found->id)->toBe($offer->id)
+    ->and($found->collection_id)->toBe(909);
+});
+
+it('throws a model not found exception when the offer id does not exist', function () use (&$repository) {
+  // findOrFail يرمي الاستثناء عند غياب السجل
+  expect(fn() => $repository->find(999999))
+    ->toThrow(ModelNotFoundException::class);
 });

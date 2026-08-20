@@ -4,7 +4,8 @@ use App\Domains\E_Commerce\Actions\Offers\UpdateCollectionAction;
 use App\Services\CMS\CMSApiClient;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Fluent;
+use App\Domains\E_Commerce\DTOs\Offers\UpdateOfferDTO;
+use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
 
 beforeEach(function () {
   if (!Schema::hasTable('circuit_breakers')) {
@@ -26,20 +27,19 @@ it('updates a collection in CMS using data from DTO', function () {
   $updateData = ['title' => 'Updated Summer Sale', 'active' => true];
 
   // 1. إعداد الـ DTO والبيانات الوهمية
-  $dto = new Fluent([
-    'collectionSlug' => $slug,
-    'collectionData' => $updateData
-  ]);
+  // execute() يفرض النوع UpdateOfferDTO لذا نبني الـ DTO الحقيقي
+  $dto = new UpdateOfferDTO($slug, $updateData, [], 1);
 
-  // 2. بناء الـ Mock للـ CMS Client
+  // 2. بناء الـ Mocks للـ CMS Client والـ Repository
   $cmsClient = Mockery::mock(CMSApiClient::class);
+  $repository = Mockery::mock(OfferRepositoryInterface::class);
 
   $cmsClient->shouldReceive('updateCollection')
     ->once()
     ->with($slug, $updateData)
     ->andReturn(['status' => 'success']);
 
-  $action = new UpdateCollectionAction($cmsClient);
+  $action = new UpdateCollectionAction($cmsClient, $repository);
 
   // 3. التنفيذ
   $result = $action->execute($dto);
@@ -51,8 +51,9 @@ it('updates a collection in CMS using data from DTO', function () {
 
 it('defines the correct circuit breaker service name for updating collections', function () {
   $cmsClient = Mockery::mock(CMSApiClient::class);
+  $repository = Mockery::mock(OfferRepositoryInterface::class);
 
-  $action = new class($cmsClient) extends UpdateCollectionAction {
+  $action = new class($cmsClient, $repository) extends UpdateCollectionAction {
     public function getServiceName(): string
     {
       return $this->circuitServiceName();

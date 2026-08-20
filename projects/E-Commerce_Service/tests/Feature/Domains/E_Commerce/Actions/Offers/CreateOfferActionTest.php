@@ -24,7 +24,10 @@ beforeEach(function () {
 });
 
 it('creates an offer successfully and forgets cache', function () {
-  Cache::shouldReceive('forget')->once();
+  // الكود يمسح كاش قائمة عروض المشروع عبر Cache::tags(['offers'])->forget()
+  $tagged = Mockery::mock();
+  $tagged->shouldReceive('forget')->once();
+  Cache::shouldReceive('tags')->with(['offers'])->andReturn($tagged);
 
   $dto = Mockery::mock();
   $dto->project_id = 1;

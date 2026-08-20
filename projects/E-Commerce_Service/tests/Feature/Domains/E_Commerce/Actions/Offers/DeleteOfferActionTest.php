@@ -62,8 +62,14 @@ it('deletes an offer and clears all related cache keys including project offers'
     ->once()
     ->with($collectionId);
 
-  // توقعات الكاش: يجب استدعاء forget 3 مرات
-  Cache::shouldReceive('forget')->times(3);
+  // توقعات الكاش:
+  // مفتاحا الـ ID والـ Slug يُمسحان عبر Cache::forget المباشر،
+  // ومفتاح قائمة عروض المشروع يُمسح عبر Cache::tags(['offers'])->forget()
+  $tagged = Mockery::mock();
+  $tagged->shouldReceive('forget')->once();
+
+  Cache::shouldReceive('tags')->with(['offers'])->andReturn($tagged);
+  Cache::shouldReceive('forget')->twice();
 
   $action = new DeleteOfferAction($repository, $cmsClient);
 

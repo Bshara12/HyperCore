@@ -28,7 +28,11 @@ beforeEach(function () {
 
 it('inserts items successfully and clears cache', function () {
   Event::fake();
-  Cache::shouldReceive('forget')->twice();
+  // الكود يمسح مفتاحي الـ ID والـ Slug عبر Cache::tags(['offers'])->forget()
+  // (الـ Offer الوهمي بلا project_id لذا لا يُمسح مفتاح قائمة عروض المشروع)
+  $tagged = Mockery::mock();
+  $tagged->shouldReceive('forget')->twice();
+  Cache::shouldReceive('tags')->with(['offers'])->andReturn($tagged);
 
   $dto = new Fluent([
     'collectionSlug' => 'summer-sale',
@@ -66,7 +70,7 @@ it('inserts items successfully and clears cache', function () {
   expect($result['collection']['id'])->toBe(500);
 
   Event::assertDispatched(SystemLogEvent::class, function ($event) {
-    return $event->eventType === 'isert_offer_item' && $event->entityId === 500;
+    return $event->eventType === 'insert_offer_item' && $event->entityId === 500;
   });
 });
 

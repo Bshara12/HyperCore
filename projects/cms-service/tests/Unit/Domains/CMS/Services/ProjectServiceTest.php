@@ -2,11 +2,14 @@
 
 use App\Domains\CMS\Actions\Project\CreateProjectAction;
 use App\Domains\CMS\Actions\Project\DeleteProjectAction;
+use App\Domains\CMS\Actions\Project\JoinProjectAction;
+use App\Domains\CMS\Actions\Project\LeaveProjectAction;
+use App\Domains\CMS\Actions\Project\ListProjectMembersAction;
 use App\Domains\CMS\Actions\Project\ListProjectsAction;
 use App\Domains\CMS\Actions\Project\ShowProjectAction;
 use App\Domains\CMS\Actions\Project\UpdateProjectAction;
 use App\Domains\CMS\DTOs\CreateProjectDTO;
-use App\Domains\CMS\DTOs\project\UpdateProjectDTO;
+use App\Domains\CMS\DTOs\Project\UpdateProjectDTO;
 use App\Domains\CMS\Services\ProjectService;
 use App\Models\Project;
 use Illuminate\Http\Request;
@@ -20,6 +23,9 @@ beforeEach(function () {
   $this->listAction = Mockery::mock(ListProjectsAction::class);
   $this->deleteAction = Mockery::mock(DeleteProjectAction::class);
   $this->projectModel = Mockery::mock(Project::class);
+  $this->joinAction = Mockery::mock(JoinProjectAction::class);
+  $this->listMembersAction = Mockery::mock(ListProjectMembersAction::class);
+  $this->leaveAction = Mockery::mock(LeaveProjectAction::class);
 
   $this->service = new ProjectService(
     $this->createAction,
@@ -27,7 +33,10 @@ beforeEach(function () {
     $this->showAction,
     $this->listAction,
     $this->deleteAction,
-    $this->projectModel
+    $this->projectModel,
+    $this->joinAction,
+    $this->listMembersAction,
+    $this->leaveAction
   );
 });
 
@@ -81,14 +90,17 @@ test('resolve returns 404 when project not found', function () {
   $projectMock = Mockery::mock(Project::class);
   $projectMock->shouldReceive('where->first')->once()->andReturn(null);
 
-  // إنشاء الخدمة بـ 6 معتمديات
+  // إنشاء الخدمة بكامل معتمدياتها (9) مع استبدال موديل المشروع بالـ Mock الخاص
   $service = new ProjectService(
     $this->createAction,
     $this->updateAction,
     $this->showAction,
     $this->listAction,
     $this->deleteAction,
-    $projectMock // المعتمدية السادسة
+    $projectMock, // المعتمدية السادسة
+    $this->joinAction,
+    $this->listMembersAction,
+    $this->leaveAction
   );
 
   $result = $service->resolve($request);

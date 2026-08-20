@@ -2,6 +2,8 @@
 
 use App\Domains\E_Commerce\Actions\Offers\DeleteOfferPricesAction;
 use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferPriceRepositoryInterface;
+use App\Domains\E_Commerce\Repositories\Interfaces\Offers\OfferRepositoryInterface;
+use App\Models\Offer;
 use App\Events\SystemLogEvent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -35,7 +37,18 @@ it('deletes offer prices and dispatches system log event', function () {
     ->once()
     ->with($offerId);
 
-  $action = new DeleteOfferPricesAction($repository);
+  // الـ Action يجلب العرض أولاً لإبطال الكاش الخاص به
+  $offerRepository = Mockery::mock(OfferRepositoryInterface::class);
+  $offerRepository->shouldReceive('find')
+    ->once()
+    ->with($offerId)
+    ->andReturn(new Offer([
+      'id' => $offerId,
+      'collection_id' => 55,
+      'project_id' => 1,
+    ]));
+
+  $action = new DeleteOfferPricesAction($repository, $offerRepository);
 
   // 3. التنفيذ
   $action->execute($offerId);
@@ -52,8 +65,9 @@ it('deletes offer prices and dispatches system log event', function () {
 
 it('defines the correct circuit breaker service name for deleting prices', function () {
   $repository = Mockery::mock(OfferPriceRepositoryInterface::class);
+  $offerRepository = Mockery::mock(OfferRepositoryInterface::class);
 
-  $action = new class($repository) extends DeleteOfferPricesAction {
+  $action = new class($repository, $offerRepository) extends DeleteOfferPricesAction {
     public function getServiceName(): string
     {
       return $this->circuitServiceName();

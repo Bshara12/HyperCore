@@ -9,6 +9,8 @@ it('maps all request fields to collection and offer data correctly', function ()
   $slug = 'old-offer-slug';
   $request = new UpdateOfferRequest();
   $request->merge([
+    // الـ DTO يقرأ project_id من الطلب ويمرره للـ constructor كـ int
+    'project_id' => 1,
     'name' => 'Updated Offer Name',
     'conditions' => ['min_amount' => 100],
     'conditions_logic' => 'or',
@@ -34,7 +36,8 @@ it('maps all request fields to collection and offer data correctly', function ()
     ->and($dto->offerData)->toHaveKey('benefit_type', 'fixed')
     ->and($dto->offerData)->toHaveKey('start_at', '2026-06-01');
 
-  expect($dto->collectionSlug)->toBe($slug);
+  expect($dto->collectionSlug)->toBe($slug)
+    ->and($dto->projectId)->toBe(1);
 });
 
 it('only includes present fields in the dto arrays', function () {
@@ -42,6 +45,7 @@ it('only includes present fields in the dto arrays', function () {
   $slug = 'minimal-update';
   $request = new UpdateOfferRequest();
   $request->merge([
+    'project_id' => 7,
     'description' => 'Only updating description',
     'end_at' => '2026-12-31'
   ]);
@@ -51,6 +55,7 @@ it('only includes present fields in the dto arrays', function () {
 
   // 3. Assert
   // يجب أن تحتوي المصفوفة على الوصف فقط
+  // ملاحظة: project_id لا يُنسخ إلى collectionData لأنه ليس من حقول الـ Collection
   expect($dto->collectionData)->toEqual(['description' => 'Only updating description'])
     ->and($dto->collectionData)->not->toHaveKey('name')
     ->and($dto->collectionData)->not->toHaveKey('slug');
@@ -58,12 +63,15 @@ it('only includes present fields in the dto arrays', function () {
   // يجب أن تحتوي المصفوفة على تاريخ الانتهاء فقط
   expect($dto->offerData)->toEqual(['end_at' => '2026-12-31'])
     ->and($dto->offerData)->not->toHaveKey('benefit_type');
+
+  expect($dto->projectId)->toBe(7);
 });
 
 it('can be instantiated via constructor', function () {
-  $dto = new UpdateOfferDTO('slug', ['c' => 1], ['o' => 2]);
+  $dto = new UpdateOfferDTO('slug', ['c' => 1], ['o' => 2], 5);
 
   expect($dto->collectionSlug)->toBe('slug')
     ->and($dto->collectionData)->toBe(['c' => 1])
-    ->and($dto->offerData)->toBe(['o' => 2]);
+    ->and($dto->offerData)->toBe(['o' => 2])
+    ->and($dto->projectId)->toBe(5);
 });
