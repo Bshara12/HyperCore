@@ -202,8 +202,11 @@ class BookingServiceTest extends TestCase
   #[Test]
   public function it_creates_paid_booking_successfully_when_amount_is_correct()
   {
+    // Fake every outbound request, not just */api/*: when CMS_SERVICE_URL is unset the
+    // client builds a host-less URL that the narrower pattern would miss, letting the
+    // request hit the network for real.
     Http::fake([
-      '*/api/*' => Http::response(['status' => 'success', 'transaction_id' => 'fake_id'], 200)
+      '*' => Http::response(['status' => 'success', 'transaction_id' => 'fake_id'], 200)
     ]);
     $resource = Resource::factory()->paid()->withFullSetup()->create([
       'status' => 'active',
