@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domains\CMS\Read\Services\EntryReadService;
+use App\Models\Project;
 use Illuminate\Http\Request;
 
 class DataTypeEntriesController extends Controller
@@ -11,8 +12,14 @@ class DataTypeEntriesController extends Controller
         private EntryReadService $service
     ) {}
 
-    public function index(Request $request, int $projectId, string $slug)
+    /**
+     * The {project} route parameter is substituted with a Project instance by
+     * route binding, so accept both shapes instead of type-erroring on it.
+     */
+    public function index(Request $request, Project|int|string $project, string $slug)
     {
+        $projectId = $project instanceof Project ? (int) $project->id : (int) $project;
+
         return response()->json(
             $this->service->getEntriesByDataTypeSlug(
                 projectId: $projectId,

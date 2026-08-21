@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\DataTypeField;
+use App\Support\CurrentProject;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\DataTypeField> $fields
@@ -30,21 +32,24 @@ class DataType extends Model
     'is_active' => 'boolean',
   ];
 
-  // public function resolveRouteBinding($value, $field = null)
-  // {
-  //   $project = app()->bound('currentProject') ? app('currentProject') : null;
+  /**
+   * Data type slugs are only unique per project, so the current project must be
+   * part of the lookup - otherwise "products" of project A can be bound while
+   * the request is scoped to project B, and the created entry ends up with
+   * project B's project_id and project A's data_type_id.
+   */
+  public function resolveRouteBinding($value, $field = null)
+  {
+    $project = CurrentProject::resolve();
 
-  //   if (!$project || !isset($project->id)) {
-  //     throw (new ModelNotFoundException)->setModel(static::class);
-  //   }
+    if (! $project) {
+      throw (new ModelNotFoundException)->setModel(static::class, [$value]);
+    }
 
-  //   $field = $field ?: 'id';
-
-  //   return $this->newQuery()
-  //     ->where($field, $value)
-  //     ->where('project_id', $project->id)
-  //     ->firstOrFail();
-  // }
+    return $this->resolveRouteBindingQuery($this, $value, $field)
+      ->where('project_id', $project->id)
+      ->firstOrFail();
+  }
 
   public function project()
   {

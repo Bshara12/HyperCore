@@ -68,7 +68,7 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user', 'throttle:api.
    * |--------------------------------------------------------------------------
    */
   Route::prefix('data-types/{dataType}/fields')->group(function () {
-    Route::post('/', [FieldController::class, 'store'])->name('cms.fields.store')->middleware('permission:cms.field.create' . 'throttle:api.heavy');
+    Route::post('/', [FieldController::class, 'store'])->name('cms.fields.store')->middleware(['permission:cms.field.create', 'throttle:api.heavy']);
     Route::get('/', [FieldController::class, 'index'])->name('cms.fields.index');
     Route::get('/trashed', [FieldController::class, 'trashed'])->name('cms.fields.trashed');
   });

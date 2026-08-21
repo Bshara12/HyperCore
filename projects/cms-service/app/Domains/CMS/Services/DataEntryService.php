@@ -20,6 +20,7 @@ use App\Events\DataEntrySavedEvent;
 use App\Events\EntryChanged;
 use App\Events\EntryRemovedFromSearch;
 use App\Models\DataType;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 
 class DataEntryService
@@ -50,6 +51,11 @@ class DataEntryService
         CreateDataEntryDTO $dto,
         ?int             $userId
     ) {
+        if ((int) $dataType->project_id !== (int) $projectId) {
+            throw (new ModelNotFoundException)
+                ->setModel(DataType::class, [$dataType->slug]);
+        }
+
         return DB::transaction(function () use ($projectId, $dataType, $slug, $dto, $userId) {
             $dataTypeId = $dataType->id;
 
