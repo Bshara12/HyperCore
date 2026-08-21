@@ -21,9 +21,9 @@ git push
    │             and opens an Issue explaining what broke
    │     pass -> CD prints "ALL TESTS PASSED SUCCESSFULLY"
    │
-   └── LAYER 3  Ruleset  (GitHub, main)
-         `CI Gate` is a required status check, so a red commit
-         can never land on main at all
+   └── LAYER 3  Ruleset  (GitHub, main)   <-- NOT YET CREATED, needs repo admin
+         once active, `CI Gate` becomes a required status check
+         and a red commit can never land on main at all
 ```
 
 Layer 1 is the only true cancellation. Layer 2 is the safety net for `--no-verify`, for a teammate
@@ -144,13 +144,24 @@ git checkout -b fix/<branch> FETCH_HEAD
 
 Your local clone still has the commit too, so nothing is lost either way.
 
-## Layer 3 — the ruleset for `main`
+## Layer 3 — the ruleset for `main`  ⚠️ NOT YET IN PLACE
+
+**Status: this is the one piece still missing, and it needs repository-admin rights.**
+
+Layers 1 and 2 are live and verified. Layer 3 is not, which means today a push whose tests fail
+**still lands on `main`**: `CI Gate` turns red and the CD banner is withheld, but nothing removes
+the commit, because the bot deliberately never touches `main`.
+
+A repository **admin** (the repo owner) has to create the ruleset — a collaborator with `push`
+rights gets `404 Not Found` from the rulesets API.
 
 **Settings → Rules → Rulesets → New branch ruleset**
 
-- **Target branches:** `main`
-- **Require status checks to pass** — add **`CI Gate`**, and enable
-  **Require branches to be up to date before merging**
+- **Name:** `main - require CI Gate`
+- **Enforcement status:** Active
+- **Target branches:** Add target → Include by pattern → `main`
+- **Require status checks to pass** — on, then Add checks → type **`CI Gate`** exactly
+  (it is the job name in `ci-push.yml`; any other spelling silently never matches)
 - **Block force pushes** — on
 - **Restrict deletions** — on
 
@@ -159,8 +170,35 @@ direct pushes to `main` are refused, because a brand-new commit has no passing c
 the intended workflow — push to a feature branch, where the pipeline and the bot both run, then
 open a PR into `main` and merge it once `CI Gate` is green.
 
-Do **not** add `main` to the bot's scope. Blocking force pushes and letting a bot force-push are
-contradictory requirements.
+Do **not** add `main` to the bot's scope as a substitute. Letting a bot force-push the trunk while
+also asking GitHub to block force pushes are contradictory requirements, and a bug in that job
+would rewrite the history of `main`.
+
+### How to confirm it works once created
+
+Push a commit to `main` that breaks a test on purpose. GitHub must refuse the push with a message
+naming the required status check. Then delete the commit locally.
+
+## Verification record
+
+Everything below was exercised against this repository on GitHub, not only locally.
+
+| Behaviour | Evidence |
+| --- | --- |
+| Tests run on push, only for affected services | Detection resolved 5, 4, 3 and 1 service across runs |
+| A shared path (`.github/**`) fans out to every service | First run tested all 5 |
+| Brand-new branch (`before` = all zeros) falls back to `HEAD~1` | Fix branch, first push |
+| Incremental detection on an existing branch | Fix branch, second push: exactly 3 services |
+| `CI Gate` rejects a failing push | Red on the first `main` run and on the fix branch |
+| `CI Gate` accepts when every suite passes | Green on `main` |
+| CD prints `ALL TESTS PASSED SUCCESSFULLY` | Ran on the fix branch and on `main` |
+| CD is withheld when the gate is red | Skipped in every failing run |
+| Bot rewinds a failing push on a feature branch | Branch tip returned from the failing commit to its parent |
+| Bot preserves the rejected commit | `refs/rejected-pushes/<branch>/<sha>` created |
+| Bot opens an explanatory Issue | Issue filed with branch, commit, services and log link |
+| Bot never touches `main` | Skipped on every `main` run |
+| `pre-push` hook aborts a real `git push` | `git push` exited 1; the branch never appeared on the remote |
+| `Auth-Service` is excluded | Never appeared in any test matrix |
 
 ## What the CD job prints
 
