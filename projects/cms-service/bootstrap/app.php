@@ -14,6 +14,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,6 +31,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => CheckPermission::class,
             'track.event' => TrackSubscriptionEvent::class,
         ]);
+
+        // The current project must be resolved before route model binding runs,
+        // otherwise project-scoped bindings (e.g. {dataType:slug}, whose slug is
+        // only unique per project) cannot know which project they belong to.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: ResolveProject::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

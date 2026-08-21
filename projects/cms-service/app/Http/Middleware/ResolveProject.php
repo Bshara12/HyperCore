@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Project;
+use App\Support\CurrentProject;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,33 +34,15 @@ class ResolveProject
     // }
     public function handle(Request $request, Closure $next)
     {
-        $projectKey = $request->header('X-Project-Key');
-        $projectId = $request->header('X-Project-Id');
-
-        $identifier = $projectKey ?: $projectId;
-
-        if (! $identifier) {
+        if (! $request->header('X-Project-Key') && ! $request->header('X-Project-Id')) {
             abort(400, 'X-Project-Key or X-Project-Id header is required');
-
         }
 
-        $project = null;
-
-        if (is_numeric($identifier)) {
-            $project = Project::find((int) $identifier);
-        } else {
-            $project = Project::where('public_id', $identifier)
-                ->orWhere('slug', $identifier)
-                ->first();
-        }
+        $project = CurrentProject::resolve($request);
 
         if (! $project) {
             abort(404, 'Project not found');
         }
-
-        // if ($project->owner_id !== auth()->id()) {
-        //   abort(403, 'Unauthorized project access');
-        // }
 
         app()->instance('currentProject', $project);
 

@@ -5,6 +5,7 @@ namespace App\Domains\CMS\Actions\data;
 use App\Domains\CMS\Repositories\Interface\FieldRepositoryInterface;
 use App\Domains\CMS\StrategyCheck\FieldValidatorResolver;
 use DomainException;
+use Illuminate\Database\Eloquent\Model;
 
 class ValidateFieldsAction
 {
@@ -27,11 +28,17 @@ class ValidateFieldsAction
                 continue;
             }
 
+            // (array) on an Eloquent model exposes its internals ("attributes",
+            // "original", ...) instead of the columns, so the validators could
+            // not read $fieldConfig['name'] and crashed while building their
+            // own error message.
+            $fieldConfig = $field instanceof Model ? $field->toArray() : (array) $field;
+
             foreach ($values[$slug] as $lang => $value) {
 
                 $validator = $this->validatorResolver->resolve($field->type);
 
-                $validator->validate($value, (array) $field);
+                $validator->validate($value, $fieldConfig);
             }
         }
     }

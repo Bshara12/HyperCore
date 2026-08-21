@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Support\CurrentProject;
 
 /**
  * @property \App\Models\DataType|null $dataType
@@ -29,21 +31,23 @@ class DataEntry extends Model
     'scheduled_at' => 'datetime',
   ];
 
-  // public function resolveRouteBinding($value, $field = null)
-  // {
-  //   $project = app('currentProject', null);
+  /**
+   * Entry slugs are unique per project only (see the project_id + slug unique
+   * index), so the current project has to be part of the lookup - otherwise a
+   * request scoped to project B can read/delete project A's entry.
+   */
+  public function resolveRouteBinding($value, $field = null)
+  {
+    $project = CurrentProject::resolve();
 
-  //   if (!$project || !isset($project->id)) {
-  //     throw (new ModelNotFoundException)->setModel(static::class);
-  //   }
+    if (! $project) {
+      throw (new ModelNotFoundException)->setModel(static::class, [$value]);
+    }
 
-  //   $field = $field ?: 'slug';
-
-  //   return $this->newQuery()
-  //     ->where($field, $value)
-  //     ->where('project_id', $project->id)
-  //     ->firstOrFail();
-  // }
+    return $this->resolveRouteBindingQuery($this, $value, $field)
+      ->where('project_id', $project->id)
+      ->firstOrFail();
+  }
 
   // test*************************
   public function project()

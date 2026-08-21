@@ -7,7 +7,9 @@ class NumberFieldValidator implements FieldValidator
     public function validate($value, array $fieldConfig): void
     {
         if (! is_numeric($value)) {
-            throw new \Exception("Field {$fieldConfig['name']} must be numeric.");
+            $name = $fieldConfig['name'] ?? 'value';
+
+            throw new \Exception("Field {$name} must be numeric.");
         }
     }
 }

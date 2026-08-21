@@ -7,7 +7,9 @@ class StringFieldValidator implements FieldValidator
     public function validate($value, array $fieldConfig): void
     {
         if (! is_string($value)) {
-            throw new \Exception("Field {$fieldConfig['name']} must be string.");
+            $name = $fieldConfig['name'] ?? 'value';
+
+            throw new \Exception("Field {$name} must be string.");
         }
     }
 }
