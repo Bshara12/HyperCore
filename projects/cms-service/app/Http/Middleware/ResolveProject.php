@@ -38,7 +38,7 @@ class ResolveProject
             abort(400, 'X-Project-Key or X-Project-Id header is required');
         }
 
-        $project = CurrentProject::resolve();
+        $project = CurrentProject::resolve($request);
 
         if (! $project) {
             abort(404, 'Project not found');

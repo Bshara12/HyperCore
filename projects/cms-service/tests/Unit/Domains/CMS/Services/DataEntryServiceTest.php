@@ -61,7 +61,9 @@ afterEach(function () {
 // ─── اختبار التابع Create ───────────────────────────────────────────
 
 test('it creates a data entry successfully and dispatches events', function () {
-  $dataType = (new DataType())->forceFill(['id' => 5]);
+  // project_id is NOT NULL on data_types, and create() refuses a data type that
+  // belongs to another project, so the fixture has to carry the project it is created under.
+  $dataType = (new DataType())->forceFill(['id' => 5, 'project_id' => 1]);
   $dto = new CreateDataEntryDTO(
     values: ['title' => 'Test Entry'],
     seo: ['meta_title' => 'SEO Title'],

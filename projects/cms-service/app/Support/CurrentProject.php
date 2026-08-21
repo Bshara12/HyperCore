@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Project;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 
 class CurrentProject
@@ -31,13 +32,13 @@ class CurrentProject
      * "api" middleware group, i.e. before the ResolveProject middleware, so
      * resolveRouteBinding() cannot rely on the binding alone.
      */
-    public static function resolve(): ?Project
+    public static function resolve(?Request $request = null): ?Project
     {
         if (App::bound('currentProject')) {
             return App::make('currentProject');
         }
 
-        $project = self::fromRequest();
+        $project = self::fromRequest($request);
 
         if ($project) {
             App::instance('currentProject', $project);
@@ -46,9 +47,9 @@ class CurrentProject
         return $project;
     }
 
-    public static function fromRequest(): ?Project
+    public static function fromRequest(?Request $request = null): ?Project
     {
-        $request = request();
+        $request ??= request();
 
         if (! $request) {
             return null;
