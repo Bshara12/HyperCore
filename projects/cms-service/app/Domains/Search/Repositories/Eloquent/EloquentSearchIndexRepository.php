@@ -22,7 +22,17 @@ class EloquentSearchIndexRepository implements SearchIndexRepositoryInterface
                 'project_id' => $dto->projectId,
                 'title' => $dto->title,
                 'content' => $dto->content,
-                'meta' => $dto->meta ? json_encode($dto->meta) : null,
+                // بدون json_encode يدوي: الموديل يُحوِّل meta بـ cast 'array'.
+                // التشفير المزدوج القديم كان يُخزِّن JSON داخل JSON string.
+                'meta' => $dto->meta ?: null,
+
+                // النص المُطبَّع الذي يُطابقه FULLTEXT — إن لم يُمرَّر
+                // فالـ saving hook في الموديل يبنيه من title/content/meta
+                'search_text' => $dto->searchText,
+
+                // كان NULL دائماً قبل الإصلاح → أي فلترة intent تُصفّر النتائج
+                'data_type_slug' => $dto->dataTypeSlug,
+
                 'status' => $dto->status,
                 'published_at' => $dto->publishedAt,
             ]

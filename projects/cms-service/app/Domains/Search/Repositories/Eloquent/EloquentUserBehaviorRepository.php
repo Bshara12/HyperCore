@@ -80,18 +80,12 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
         int $days = 30,
         int $limit = 100
     ): array {
-        return DB::table('user_click_logs as ucl')
-            ->join('search_indices as si', 'si.entry_id', '=', 'ucl.entry_id')
-            ->where('ucl.project_id', $projectId)
-            ->where('ucl.user_id', $userId)
-            ->where('ucl.clicked_at', '>=', now()->subDays($days))
-            ->orderByDesc('ucl.clicked_at')
-            ->limit($limit)
-            ->selectRaw("CONCAT_WS(' ', si.title, si.content) as indexed_text")
-            ->pluck('indexed_text')
-            ->filter()
-            ->values()
-            ->toArray();
+        return $this->clickedEntryTexts(
+            fn ($query) => $query->where('ucl.user_id', $userId),
+            $projectId,
+            $days,
+            $limit
+        );
     }
 
     public function getClickedEntryTextsForSession(
@@ -100,17 +94,75 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
         int $days = 30,
         int $limit = 100
     ): array {
-        return DB::table('user_click_logs as ucl')
+        return $this->clickedEntryTexts(
+            fn ($query) => $query->where('ucl.session_id', $sessionId),
+            $projectId,
+            $days,
+            $limit
+        );
+    }
+
+    /**
+     * نصوص المدخلات التي نقر عليها المستخدم — أساس الـ termAffinities.
+     *
+     * تفصيلان مهمّان:
+     *
+     * 1. **صف واحد لكل نقرة**: الـ JOIN على entry_id وحده يُرجع صفاً لكل
+     *    لغة مفهرسة. في مشروع ثنائي اللغة كانت النقرة الواحدة تُنتج نصّين،
+     *    فيُحتسب المصطلح مرتين ويتجاوز MIN_TERM_SIGNAL (= نقرتان) من
+     *    نقرة واحدة، وتُملأ حصة VOCAB_CAP بكلمات اللغة الأخرى.
+     *
+     * 2. **لغة النقرة**: تُستنتج من سجل البحث المرتبط (search_log_id).
+     *    من بحث بالعربية لا يجوز أن نتعلّم مفردات إنجليزية.
+     *    النقرات بلا سجل بحث (نقر مباشر) تُقبل بأي لغة ثم تُلتقط
+     *    صفاً واحداً فقط.
+     *
+     * @param  \Closure(\Illuminate\Database\Query\Builder): mixed  $scope
+     * @return string[]
+     */
+    private function clickedEntryTexts(
+        \Closure $scope,
+        int $projectId,
+        int $days,
+        int $limit
+    ): array {
+        $query = DB::table('user_click_logs as ucl')
+            ->leftJoin('user_search_logs as usl', 'usl.id', '=', 'ucl.search_log_id')
             ->join('search_indices as si', 'si.entry_id', '=', 'ucl.entry_id')
             ->where('ucl.project_id', $projectId)
-            ->where('ucl.session_id', $sessionId)
             ->where('ucl.clicked_at', '>=', now()->subDays($days))
+            ->where(function ($q) {
+                $q->whereNull('usl.language')
+                    ->orWhereColumn('si.language', '=', 'usl.language');
+            });
+
+        $scope($query);
+
+        // الـ limit يُطبَّق على صفوف الـ JOIN، فنجلب فائضاً ثم نُوحّد
+        // النقرات ونقتطع — وإلا رجعنا بعدد نقرات أقل من المطلوب.
+        $rows = $query
             ->orderByDesc('ucl.clicked_at')
-            ->limit($limit)
-            ->selectRaw("CONCAT_WS(' ', si.title, si.content) as indexed_text")
-            ->pluck('indexed_text')
-            ->filter()
-            ->values()
-            ->toArray();
+            ->limit($limit * 3)
+            ->select('ucl.id as click_id', 'si.title', 'si.content')
+            ->get();
+
+        $texts = [];
+
+        foreach ($rows as $row) {
+            if (isset($texts[$row->click_id])) {
+                continue;
+            }
+
+            $text = trim(implode(' ', array_filter([
+                (string) ($row->title ?? ''),
+                (string) ($row->content ?? ''),
+            ], fn ($part) => trim($part) !== '')));
+
+            if ($text !== '') {
+                $texts[$row->click_id] = $text;
+            }
+        }
+
+        return array_slice(array_values($texts), 0, $limit);
     }
 }

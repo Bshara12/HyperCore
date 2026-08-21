@@ -5,6 +5,7 @@ namespace App\Domains\Search\Actions;
 use App\Domains\Search\DTOs\IndexEntryDTO;
 use App\Domains\Search\Repositories\Interfaces\SearchIndexRepositoryInterface;
 use App\Domains\Search\Support\EntryFieldsExtractor;
+use App\Domains\Search\Support\SearchTextBuilder;
 use App\Models\DataEntry;
 use Illuminate\Support\Facades\Log;
 
@@ -13,6 +14,7 @@ class IndexDataEntryAction
   public function __construct(
     private SearchIndexRepositoryInterface $repository,
     private EntryFieldsExtractor $extractor,
+    private SearchTextBuilder $searchTextBuilder,
   ) {}
 
   /**
@@ -21,7 +23,7 @@ class IndexDataEntryAction
   public function execute(DataEntry $entry): void
   {
     // تأكد من تحميل العلاقات المطلوبة
-    $entry->loadMissing(['values', 'values.field', 'project']);
+    $entry->loadMissing(['values', 'values.field', 'project', 'dataType']);
 
     $project = $entry->project;
     $supportedLanguages = $this->resolveSupportedLanguages($project);
@@ -39,6 +41,13 @@ class IndexDataEntryAction
     try {
       $extracted = $this->extractor->extract($entry, $language);
 
+      // النص المُفهرس يُبنى بنفس التطبيع المُستخدَم على جانب الـ query
+      $searchText = $this->searchTextBuilder->build(
+        $extracted['title'],
+        $extracted['content'],
+        $extracted['meta'],
+      );
+
       $dto = new IndexEntryDTO(
         entryId: $entry->id,
         dataTypeId: $entry->data_type_id,
@@ -49,6 +58,8 @@ class IndexDataEntryAction
         meta: $extracted['meta'] ?: null,
         status: $entry->status,
         publishedAt: $entry->published_at?->toDateTimeString(),
+        searchText: $searchText ?: null,
+        dataTypeSlug: $entry->dataType?->slug,
       );
 
       $this->repository->upsert($dto);

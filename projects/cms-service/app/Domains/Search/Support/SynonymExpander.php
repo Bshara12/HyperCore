@@ -30,6 +30,13 @@ use Illuminate\Support\Facades\Log;
 final class SynonymExpander
 {
     private const CACHE_TTL_SECONDS  = 3600;
+
+    /**
+     * نسخة مفتاح الـ cache — تُرفَع عند تغيّر شكل المفاتيح المُخزَّنة
+     * (صارت مُطبَّعة)، وإلا بقيت الخريطة القديمة ساعةً كاملة بمفاتيح
+     * لا تُطابق رموز الـ query.
+     */
+    private const CACHE_VERSION = 'v2';
     private const MAX_SYNONYMS_PER_WORD = 3;
     private const MIN_CONFIDENCE     = 0.5;
 
@@ -55,7 +62,9 @@ final class SynonymExpander
         $hadExpansion = false;
 
         foreach ($tokens as $token) {
-            $token    = mb_strtolower(trim($token), 'UTF-8');
+            // التطبيع لا mb_strtolower فقط: الرموز الواردة من
+            // KeywordProcessor مُطبَّعة، ومفاتيح الخريطة كذلك.
+            $token    = ArabicTextNormalizer::normalizeToken($token);
             $synonyms = $synonymMap[$token] ?? [];
             $group    = [$token];
 
@@ -99,7 +108,7 @@ final class SynonymExpander
         }
 
         // ── Level 2: Redis/application cache ──────────────────────────
-        $cacheKey = "synonym_map:{$projectId}:{$language}";
+        $cacheKey = self::cacheKey($projectId, $language);
         $map      = Cache::remember(
             $cacheKey,
             self::CACHE_TTL_SECONDS,
@@ -118,7 +127,7 @@ final class SynonymExpander
 
     public function invalidateCache(int $projectId, string $language): void
     {
-        Cache::forget("synonym_map:{$projectId}:{$language}");
+        Cache::forget(self::cacheKey($projectId, $language));
 
         // مسح instance cache أيضاً — ضروري إذا نُودي في نفس الـ request
         unset($this->instanceCache["{$projectId}:{$language}"]);
@@ -132,7 +141,7 @@ final class SynonymExpander
     public function invalidateCacheForProject(int $projectId): void
     {
         foreach (['en', 'ar', 'fr', 'de', 'es'] as $lang) {
-            Cache::forget("synonym_map:{$projectId}:{$lang}");
+            Cache::forget(self::cacheKey($projectId, $lang));
         }
 
         // مسح كل instance cache entries لهذا الـ project
@@ -141,6 +150,11 @@ final class SynonymExpander
                 unset($this->instanceCache[$key]);
             }
         }
+    }
+
+    private static function cacheKey(int $projectId, string $language): string
+    {
+        return 'synonym_map:'.self::CACHE_VERSION.":{$projectId}:{$language}";
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -169,8 +183,15 @@ final class SynonymExpander
         $map = [];
 
         foreach ($rows as $row) {
-            $wordA = mb_strtolower(trim($row->word_a), 'UTF-8');
-            $wordB = mb_strtolower(trim($row->word_b), 'UTF-8');
+            // مفاتيح وقيم مُطبَّعة: مرادف مُخزَّن كـ "آيفون" كان
+            // لا يُطابَق أبداً بحثاً عن "ايفون"، وقيمته لم تكن
+            // لتُطابق النص المُفهرس في search_text.
+            $wordA = ArabicTextNormalizer::normalizeToken($row->word_a);
+            $wordB = ArabicTextNormalizer::normalizeToken($row->word_b);
+
+            if ($wordA === '' || $wordB === '' || $wordA === $wordB) {
+                continue;
+            }
 
             if (! isset($map[$wordA])) $map[$wordA] = [];
             if (! isset($map[$wordB])) $map[$wordB] = [];

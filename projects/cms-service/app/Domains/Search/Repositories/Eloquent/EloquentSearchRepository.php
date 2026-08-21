@@ -7,6 +7,7 @@ namespace App\Domains\Search\Repositories\Eloquent;
 use App\Domains\Search\DTOs\SearchQueryDTO;
 use App\Domains\Search\DTOs\UserPreferenceDTO;
 use App\Domains\Search\Repositories\Interfaces\SearchRepositoryInterface;
+use App\Domains\Search\Support\ArabicTextNormalizer;
 use App\Domains\Search\Support\ProcessedKeyword;
 use App\Domains\Search\Support\SearchResultRanker;
 use App\Domains\Search\Support\SqlFragment;
@@ -16,11 +17,31 @@ class EloquentSearchRepository implements SearchRepositoryInterface
 {
     private const DB_FETCH_LIMIT = 100;
 
+    /**
+     * intent → data_type slugs
+     *
+     * كانت المفاتيح product/article/service فقط، بينما IntentDetector
+     * يُرجع buy/repair/compare/learn → الفلترة كانت dead code.
+     * (المفاتيح القديمة مُبقاة للتوافق الخلفي.)
+     */
     private const INTENT_DATA_TYPE_MAP = [
         'product' => ['products', 'product', 'items', 'goods'],
         'article' => ['articles', 'article', 'posts', 'blog', 'news'],
         'service' => ['services', 'service', 'booking', 'appointments'],
+        'buy'     => ['products', 'product', 'items', 'goods'],
+        'repair'  => ['services', 'service', 'booking', 'appointments'],
+        'learn'   => ['articles', 'article', 'posts', 'blog', 'news'],
+        'compare' => ['articles', 'article', 'posts', 'blog', 'products', 'product'],
     ];
+
+    /**
+     * العمود الذي يُطابقه FULLTEXT.
+     *
+     * كان (title, content) الخامّين → البحث العربي مستحيل النجاح:
+     * "آيفون" في الفهرس مقابل "ايفون" في الـ query.
+     * صار search_text المُطبَّع بنفس دالة تطبيع الـ query.
+     */
+    private const MATCH_COLUMN = 'search_text';
 
     public function __construct(
         private readonly SearchResultRanker $ranker,
@@ -57,7 +78,14 @@ class EloquentSearchRepository implements SearchRepositoryInterface
     ): array {
         $intent = $processed->intent['intent'];
         $confidence = $processed->intent['confidence'];
-        $cleanWords = $processed->cleanWords;
+
+        // ── تناظر المُحلِّل: نفس التطبيع المُطبَّق وقت الفهرسة ──────────
+        // بدونه لا يمكن لأي query عربي أن يُطابق نصاً فيه همزات/تشكيل.
+        $booleanQuery = ArabicTextNormalizer::normalize($booleanQuery);
+        $cleanWords = array_values(array_filter(array_map(
+            static fn ($w) => ArabicTextNormalizer::normalizeToken((string) $w),
+            $processed->cleanWords
+        )));
         $phraseQuery = implode(' ', $cleanWords);
 
         // ── WHERE Fragment (SQL + bindings مُدمجان) ──────────────────
@@ -118,9 +146,11 @@ class EloquentSearchRepository implements SearchRepositoryInterface
         // Exclude terms من BOOLEAN MODE (كلمات تبدأ بـ -)
         $excludeTerms = $this->extractExcludeTerms($booleanQuery);
         if (! empty($excludeTerms)) {
+            // الاستثناء يُطبَّق على العمود المُطبَّع أيضاً، وإلا فإن
+            // "بدون كفر" لا يستثني عنواناً مكتوباً فيه "كَفَر" بالتشكيل.
             $fragment = $fragment->andNotLikeAll(
-                "CONCAT_WS(' ', si.title, si.content)",
-                $excludeTerms
+                'si.' . self::MATCH_COLUMN,
+                array_map([ArabicTextNormalizer::class, 'normalizeToken'], $excludeTerms)
             );
         }
 
@@ -130,7 +160,13 @@ class EloquentSearchRepository implements SearchRepositoryInterface
         } elseif ($intent !== 'general' && $confidence >= 0.3) {
             $intentSlugs = self::INTENT_DATA_TYPE_MAP[$intent] ?? [];
             if (! empty($intentSlugs)) {
-                $fragment = $fragment->andIn('si.data_type_slug', $intentSlugs);
+                // NULL-safe: الـ intent إشارة ترجيح لا فلتر قاطع، وصفوف
+                // ما قبل الـ backfill لها data_type_slug = NULL.
+                $placeholders = implode(', ', array_fill(0, count($intentSlugs), '?'));
+                $fragment = $fragment->and(
+                    "(si.data_type_slug IS NULL OR si.data_type_slug IN ({$placeholders}))",
+                    $intentSlugs
+                );
             }
         }
 
@@ -162,7 +198,7 @@ class EloquentSearchRepository implements SearchRepositoryInterface
             SELECT COUNT(*) AS total
             FROM search_indices si
             WHERE {$where->sql}
-              AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
+              AND MATCH(si.search_text) AGAINST(? IN BOOLEAN MODE)
             LIMIT 10000
         ";
 
@@ -183,10 +219,10 @@ class EloquentSearchRepository implements SearchRepositoryInterface
                 si.status, si.published_at, si.ctr_score, si.freshness_score,
                 si.title_has_numbers, si.title_word_count,
                 si.click_count, si.view_count, si.popularity_score,
-                MATCH(title, content) AGAINST(? IN NATURAL LANGUAGE MODE) AS fulltext_score
+                MATCH(si.search_text) AGAINST(? IN NATURAL LANGUAGE MODE) AS fulltext_score
             FROM search_indices si
             WHERE {$where->sql}
-              AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)
+              AND MATCH(si.search_text) AGAINST(? IN BOOLEAN MODE)
             ORDER BY fulltext_score DESC
             LIMIT ? OFFSET ?
         ";
@@ -253,7 +289,10 @@ class EloquentSearchRepository implements SearchRepositoryInterface
             ->and('si.language = ?', [$dto->language])
             ->and('si.status = ?', ['published'])
             ->andIf($dto->dataTypeSlug !== null, 'si.data_type_slug = ?', [$dto->dataTypeSlug ?? ''])
-            ->andNotLikeAll("CONCAT_WS(' ', si.title, si.content)", $excludeTerms);
+            ->andNotLikeAll(
+                'si.' . self::MATCH_COLUMN,
+                array_map([ArabicTextNormalizer::class, 'normalizeToken'], $excludeTerms)
+            );
 
         $countSql = "SELECT COUNT(*) AS total FROM search_indices si WHERE {$where->sql} LIMIT 10000";
         $total = (int) (DB::selectOne($countSql, $where->bindings)->total ?? 0);

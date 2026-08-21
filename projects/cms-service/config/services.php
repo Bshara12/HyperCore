@@ -51,7 +51,6 @@ return [
 
   'gemini' => [
     'api_key' => env('GEMINI_API_KEY'),
-    'model'   => env('GEMINI_MODEL', 'gemini-2.5-flash'),
   ],
 
   'rabbitmq' => [
@@ -71,8 +70,8 @@ return [
     'url' => env('BOOKING_URL'),
   ],
   'openrouter' => [
-    'key'      => env('OPENROUTER_API_KEY'),
-    'model'    => env('OPENROUTER_MODEL', 'openrouter/auto'),
+    'key'      => env('OPENROUTER_KEY'),
+    'model'    => env('OPENROUTER_MODEL', 'mistralai/mistral-7b-instruct'),
     'base_url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
   ],
 ];

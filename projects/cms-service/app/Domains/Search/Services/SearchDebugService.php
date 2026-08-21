@@ -7,6 +7,7 @@ use App\Domains\Search\DTOs\SearchQueryDTO;
 use App\Domains\Search\DTOs\UserPreferenceDTO;
 use App\Domains\Search\Repositories\Interfaces\SearchRepositoryInterface;
 use App\Domains\Search\Support\ArabicQueryNormalizer;
+use App\Domains\Search\Support\ArabicTextNormalizer;
 use App\Domains\Search\Support\KeywordProcessor;
 use App\Domains\Search\Support\QueryLanguageDetector;
 
@@ -927,12 +928,22 @@ private function isAlphanumeric(string $char): bool
 
   // ─────────────────────────────────────────────────────────────────
 
+  /**
+   * الكلمات المُطابِقة في العنوان.
+   *
+   * التطبيع على الطرفين: الكلمات القادمة من الـ pipeline مُطبَّعة
+   * والعنوان خام، فبدون تطبيعه يُظهر الـ debug صفر مطابقات لعنوان
+   * عربي مطابِق فعلاً — وهو أسوأ ما يمكن أن يفعله أداة تشخيص.
+   */
   private function findMatchedTerms(string $title, array $words): array
   {
     $matched = [];
-    $lower = mb_strtolower($title, 'UTF-8');
+    $normalizedTitle = ArabicTextNormalizer::normalize($title);
+
     foreach ($words as $word) {
-      if (! empty($word) && str_contains($lower, mb_strtolower($word, 'UTF-8'))) {
+      $normalizedWord = ArabicTextNormalizer::normalizeToken((string) $word);
+
+      if ($normalizedWord !== '' && str_contains($normalizedTitle, $normalizedWord)) {
         $matched[] = $word;
       }
     }

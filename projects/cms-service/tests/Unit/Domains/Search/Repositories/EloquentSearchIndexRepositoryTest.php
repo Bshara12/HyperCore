@@ -30,8 +30,15 @@ test('upsert creates new record and updates existing one', function () {
   expect(SearchIndex::count())->toBe(1);
 
   $record = SearchIndex::first();
+
+  // meta يُحفَظ عبر cast 'array' — سابقاً كان يُشفَّر مرتين
+  // (json_encode يدوي + الـ cast) فيُقرأ كـ JSON string لا كمصفوفة.
   expect($record->title)->toBe('عنوان تجريبي')
-    ->and($record->meta)->toBeJson();
+    ->and($record->meta)->toBe(['tags' => ['php', 'test']]);
+
+  // النص المُطبَّع يُبنى تلقائياً ويشمل وسوم الـ meta
+  expect($record->search_text)->toContain('عنوان تجريبي')
+    ->and($record->search_text)->toContain('php');
 
   // اختبار التحديث (نفس الـ ID واللغة)
   $updatedDto = IndexEntryDTO::fromArray([

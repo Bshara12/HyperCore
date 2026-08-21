@@ -22,9 +22,10 @@
 14. [الخطوة 10 - Progressive Relaxation](#الخطوة-10---progressive-relaxation)
 15. [الخطوة 11 - Synonym Expansion](#الخطوة-11---synonym-expansion)
 16. [الخطوة 12 - Intent Detection](#الخطوة-12---intent-detection)
-17. [تدفق البيانات الكامل](#تدفق-البيانات-الكامل)
-18. [كيفية الاختبار](#كيفية-الاختبار)
-19. [الـ API Reference](#الـ-api-reference)
+17. [الخطوة 13 - إصلاح البحث العربي](#الخطوة-13---إصلاح-البحث-العربي-analyzer-symmetry)
+18. [تدفق البيانات الكامل](#تدفق-البيانات-الكامل)
+19. [كيفية الاختبار](#كيفية-الاختبار)
+20. [الـ API Reference](#الـ-api-reference)
 
 ---
 
@@ -731,6 +732,177 @@ private const INTENT_DATA_TYPE_MAP = [
     'article' => ['articles', 'article', 'posts', 'blog', 'news', 'مقالات'],
     'service' => ['services', 'service', 'booking', 'appointments', 'خدمات'],
 ];
+```
+
+
+---
+
+## الخطوة 13 - إصلاح البحث العربي (Analyzer Symmetry)
+
+### الأعراض المُبلَّغة
+
+```
+GET /api/search?q=اي&lang=ar     → total = 4
+GET /api/search?q=ايف&lang=ar    → total = 0
+GET /api/search?q=ايفون&lang=ar  → total = 0
+```
+
+الـ endpoint واللغة والـ project id والـ token كلها صحيحة — المشكلة كانت
+في طبقة الـ IR نفسها.
+
+### الأسباب الجذرية (ثلاثة، كلٌّ منها كافٍ لتصفير النتائج)
+
+**1. عدم تناظر المُحلِّل (asymmetric analyzer)**
+
+الفهرس كان على `(title, content)` الخامّين. عنوان مثل
+`آيفون 15 برو ماكس` يُخزَّن كما هو، فيُنتج الـ tokenizer الرمز `آيفون`،
+بينما `ArabicQueryNormalizer` كان يُطبِّع الـ query إلى `ايفون`
+(ألف بلا مدّة) → لا تطابق ممكن، أياً كان الـ tokenizer.
+
+هذا يُفسّر التفاوت الغريب: `اي` كانت تُطابق كلمات عربية أخرى تبدأ بـ
+`اي` في نصوص أخرى، أما `ايف`/`ايفون` فلا يوجد لها أي رمز مُطابق
+في الفهرس لأن الرمز المُخزَّن يبدأ بـ `آ` لا `ا`.
+
+**2. ترجمة استبدالية داخل فهرس مُقيَّد باللغة**
+
+`ArabicQueryNormalizer` كان يستبدل `ايفون` بـ `iphone`، ثم
+`EloquentSearchRepository` يُقيّد الاستعلام بـ `si.language = 'ar'`.
+صفوف اللغة العربية لا تحتوي كلمة `iphone` اللاتينية → صفر نتائج دائماً.
+
+**3. الـ meta خارج الفهرس**
+
+الوسوم تُخزَّن في `meta` (`tags = "ايفون، ابل، جوال، سعر، شراء"`)
+ولم تكن جزءاً من الـ FULLTEXT index إطلاقاً، رغم أنها أدقّ حقل للبحث.
+
+### الحل
+
+**عمود `search_text` مُطبَّع + FULLTEXT خاص به**
+
+```
+title + content + meta
+        │
+        ▼
+ArabicTextNormalizer::normalize()     ← نفس الدالة على الجانبين
+        │  (آ أ إ ٱ → ا ، ى ئ → ي ، ة → ه ، إزالة تشكيل/تطويل ، ١٥ → 15)
+        ▼
++ TransliterationMap::expandTokens()  ← ايفون ⇄ iphone (إضافة لا استبدال)
+        │
+        ▼
+search_text  ──── FULLTEXT fulltext_search_text
+```
+
+- `title`/`content` تبقى خامّة كما كتبها المستخدم (للعرض والـ highlighting).
+- `search_text` هو ما يُطابقه `MATCH ... AGAINST` فقط.
+- الترجمة صارت **إضافية**: الـ query `ايفون` يصير
+  `ايفون* (iphone*)` — مجموعة OR واحدة، فيُطابق الشكلين
+  دون أي fallback من `ar` إلى `en` على العميل.
+
+### الملفات
+
+| الملف | الدور |
+|---|---|
+| `Support/ArabicTextNormalizer.php` | المُطبِّع الموحَّد (index + query) — مصدر واحد للحقيقة |
+| `Support/TransliterationMap.php` | جسر عربي ⇄ إنجليزي ثنائي الاتجاه |
+| `Support/SearchTextBuilder.php` | يبني `search_text` من title+content+meta |
+| `Support/KeywordProcessor.php` | مجموعة OR واحدة لكل كلمة (كانت AND) |
+| `Support/ArabicQueryNormalizer.php` | لم يعد يستبدل العربي بالإنجليزي |
+| `Support/SearchResultRanker.php` | يُطبّع النص قبل حساب boosts العنوان |
+| `Repositories/.../EloquentSearchRepository.php` | `MATCH(si.search_text)` + تطبيع الـ boolean query |
+| `Actions/SearchEntriesAction.php` | highlighting/snippets متسامحة بالتشكيل |
+
+### إصلاحات مصاحبة
+
+1. **`data_type_slug` كان NULL دائماً** — لم يكتبه أي مسار فهرسة
+   (upsert / reindex / seeder). صار يُكتب في الثلاثة + backfill في الـ migration.
+   وفلترة الـ intent صارت NULL-safe.
+
+2. **خريطة الـ intent في الـ repository كانت dead code** — مفاتيحها
+   `product/article/service` بينما `IntentDetector` يُرجع
+   `buy/repair/compare/learn`. أُضيفت المفاتيح الحقيقية.
+
+3. **مرادفات الـ DB كانت تُقلّل النتائج** — كانت تُسطَّح ثم تُمرَّر لـ
+   `expandWords()` فتصير كل مرادف *مجموعة إجبارية منفصلة*
+   (`+(ايفون) +(جوال)` = AND). صارت كلها في مجموعة OR واحدة.
+
+4. **`meta` كان يُشفَّر مرتين** في `upsert` (json_encode يدوي + cast `array`).
+
+### الشخصنة (Personalization)
+
+مسار الشخصنة يعتمد على **تطابق تام للرموز** بين طرفين:
+
+```
+user_click_logs ──► getClickedEntryTexts ──► KeywordTokenizer ──► termAffinities
+                                                                        │
+search_indices.title/content ──► KeywordTokenizer ──► rowTokens ──► isset()?
+```
+
+لذلك `KeywordTokenizer` صار يُطبِّع رموزه عبر `ArabicTextNormalizer`.
+قبل ذلك كانت المفاتيح خامّة (`آيفون`) والرموز مُطبَّعة (`ايفون`)، فكل
+كلمة تحمل همزة أو مدّة أو تاء مربوطة تُسقط من الشخصنة **صامتاً** —
+بلا خطأ ولا لوج. نفس التطبيع طُبِّق على مفاتيح `SynonymExpander`
+المقروءة من `synonym_suggestions`.
+
+وأُصلح خللان في مصدر البيانات (`getClickedEntryTexts`):
+
+| الخلل | الأثر |
+|---|---|
+| الـ JOIN على `entry_id` وحده | النقرة الواحدة تُنتج صفاً لكل لغة مفهرسة → المصطلح يُحتسب مرتين فيتجاوز `MIN_TERM_SIGNAL` (نقرتان) من نقرة واحدة |
+| لا فلترة بلغة النقرة | بحث بالعربية كان يُعلّم النظام مفردات إنجليزية، وتُملأ حصة `VOCAB_CAP = 20` بكلمات اللغة الأخرى |
+
+اللغة تُستنتج الآن من `user_search_logs.language` عبر `search_log_id`،
+والنقرات بلا سجل بحث تُقبل بأي لغة لكن بصف واحد فقط.
+
+> مفاتيح الـ cache رُقِّمت إلى `v2` (`user_preference:v2:*` و
+> `synonym_map:v2:*`) لأن شكل الرموز المُخزَّنة تغيّر؛ بدون الترقيم
+> تبقى التفضيلات القديمة غير مُطابقة حتى انتهاء الـ TTL.
+
+**حدود معروفة:** `SearchController::resolveSessionId` يقرأ الـ session
+من حِمْل الـ auth فقط، أي أن الزائر غير المُسجَّل لا يحصل على شخصنة
+جلسة إطلاقاً رغم وجود مسار `analyzeForSession` كاملاً.
+
+### خطوات النشر (مهم)
+
+```bash
+# 1. الـ migration: يُضيف search_text + الفهرس، ويُعيد بناء الصفوف الموجودة
+php artisan migrate
+
+# 2. (اختياري) إعادة بناء الفهرس من المصدر
+php artisan search:reindex --force
+
+# 3. أو إعادة بناء العمود المُطبَّع فقط — بدون حذف الفهرس
+php artisan search:reindex --refresh-text
+```
+
+> `search_text` نصٌّ **مُخزَّن** لا يُحتسب وقت البحث. أي تعديل على
+> `ArabicTextNormalizer` أو `TransliterationMap` يتطلب
+> `search:reindex --refresh-text` وإلا بقي الفهرس على التطبيع القديم.
+
+### التحقق
+
+```bash
+php artisan test --filter=ArabicTextNormalizer
+php artisan test --filter=ArabicSearchIndexing
+```
+
+```sql
+-- الصفوف العربية يجب أن تحتوي الشكل المُطبَّع + المقابل اللاتيني
+SELECT entry_id, LEFT(search_text, 120)
+FROM search_indices
+WHERE language = 'ar' AND search_text LIKE '%ايفون%';
+
+-- لا يجب أن يبقى أي صف بـ search_text = NULL
+SELECT COUNT(*) FROM search_indices WHERE search_text IS NULL;
+```
+
+### ملاحظة تشغيلية
+
+`innodb_ft_min_token_size` الافتراضي = 3، أي أن الكلمات العربية من
+حرفين لا تُفهرس كرموز مستقلة (تُطابقها فقط استعلامات الـ prefix
+مثل `اي*`). لخفضه إلى 2 يجب تعديل `my.cnf` وإعادة بناء الفهرس:
+
+```ini
+[mysqld]
+innodb_ft_min_token_size = 2
 ```
 
 ---

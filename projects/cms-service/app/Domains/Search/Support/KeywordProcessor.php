@@ -180,6 +180,18 @@ class KeywordProcessor
 
   private const MIN_WORD_LENGTH = 2;
 
+  /** أقصى عدد مصطلحات في مجموعة OR واحدة (منع boolean queries ضخمة) */
+  private const MAX_TERMS_PER_GROUP = 5;
+
+  /**
+   * قائمة الـ stop words مُطبَّعة — تُبنى مرة واحدة.
+   * ضرورية لأن الكلمات مُطبَّعة الآن ('أن' → 'ان')، فمقارنتها
+   * بالقائمة الخام كانت ستُعطّل تصفية الـ stop words العربية.
+   *
+   * @var array<string, bool>|null
+   */
+  private static ?array $normalizedStopWords = null;
+
   private const MAX_WORDS = 10;
 
   // ─────────────────────────────────────────────────────────────────
@@ -247,13 +259,16 @@ class KeywordProcessor
       $hadDbExpansion = $expansionResult['hadExpansion'];
     }
 
-    // ─── 4. Static Synonym Expansion (SynonymProvider) ───────────
-    // نمرر الكلمات المُوسَّعة من DB إذا وُجدت، وإلا الأصلية
-    $wordsForStaticExpansion = $hadDbExpansion
-      ? $expansionResult['expanded']  // كلمات أصلية + DB synonyms
-      : $limited;                     // كلمات أصلية فقط
-
-    $expandedGroups = $this->synonymProvider->expandWords($wordsForStaticExpansion);
+    // ─── 4. بناء مجموعة OR واحدة لكل كلمة ────────────────────────
+    //
+    // الخطأ القديم: الكلمات المُوسَّعة من DB كانت تُسطَّح في قائمة واحدة
+    // ثم تُمرَّر لـ expandWords() فتصير كل كلمة *مجموعة منفصلة*.
+    // نتيجته في الـ strict query: "+(ايفون) +(جوال)" أي AND بين
+    // الكلمة ومرادفها → المرادفات كانت تُقلّل النتائج بدل أن تزيدها.
+    //
+    // الصواب: [الكلمة + مرادفات DB + مرادفات ثابتة + المقابل عبر-اللغوي]
+    // كلها في مجموعة OR واحدة → "+(ايفون* iphone* جوال*)"
+    $expandedGroups = $this->buildTermGroups($limited, $dbExpandedGroups);
 
     // ─── 5. دمج كل المجموعات في relaxed queries ──────────────────
     $relaxedQueries = $this->buildRelaxedQueries($expandedGroups);
@@ -533,9 +548,9 @@ class KeywordProcessor
   private function cleanInput(string $input): string
   {
     $input = preg_replace('/[+\-><\(\)~*"@#$%^&=\[\]{}|\\\\]+/', ' ', $input);
-    $input = mb_strtolower($input, 'UTF-8');
-
-    return trim(preg_replace('/\s+/', ' ', $input));
+    // التطبيع هنا (لا mb_strtolower فقط) حتى تكون الكلمات المُستخرَجة
+    // بنفس شكل النص المُفهرس في search_text — وإلا لا يُطابق العربي أبداً.
+    return ArabicTextNormalizer::normalize($input);
   }
 
   private function tokenize(string $text): array
@@ -550,11 +565,74 @@ class KeywordProcessor
 
   private function removeStopWords(array $words): array
   {
-    $stopWords = array_flip(self::STOP_WORDS);
+    $stopWords = self::normalizedStopWords();
 
     return array_values(array_filter(
       $words,
-      fn($w) => ! isset($stopWords[mb_strtolower($w, 'UTF-8')])
+      fn($w) => ! isset($stopWords[ArabicTextNormalizer::normalizeToken($w)])
     ));
+  }
+
+  /**
+   * @return array<string, bool>
+   */
+  private static function normalizedStopWords(): array
+  {
+    if (self::$normalizedStopWords !== null) {
+      return self::$normalizedStopWords;
+    }
+
+    $map = [];
+    foreach (self::STOP_WORDS as $word) {
+      $map[ArabicTextNormalizer::normalizeToken($word)] = true;
+    }
+
+    return self::$normalizedStopWords = $map;
+  }
+
+  /**
+   * مجموعة OR واحدة لكل كلمة: الكلمة + مرادفات DB + مرادفات ثابتة
+   * + المقابل عبر-اللغوي (ايفون ↔ iphone).
+   *
+   * @param  string[]  $words
+   * @param  array<string, string[]>  $dbGroups  مخرجات SynonymExpander (مفتاحها الكلمة)
+   * @return string[][]
+   */
+  private function buildTermGroups(array $words, array $dbGroups): array
+  {
+    $groups = [];
+
+    foreach ($words as $word) {
+      $group = [$word];
+
+      $candidates = array_merge(
+        $dbGroups[$word] ?? [],                       // مرادفات المشروع من DB
+        $this->synonymProvider->getSynonyms($word),    // المرادفات الثابتة
+        TransliterationMap::variantsFor($word),        // المقابل عبر-اللغوي
+      );
+
+      foreach ($candidates as $candidate) {
+        $candidate = trim((string) $candidate);
+
+        if ($candidate === '' || in_array($candidate, $group, true)) {
+          continue;
+        }
+
+        // لا نُكرِّر كلمة موجودة أصلاً في الـ query كمصطلح مرادف
+        if (in_array($candidate, $words, true)) {
+          continue;
+        }
+
+        $group[] = $candidate;
+
+        if (count($group) >= self::MAX_TERMS_PER_GROUP) {
+          break;
+        }
+      }
+
+      $groups[] = array_values(array_unique($group));
+    }
+
+    return $groups;
   }
 }

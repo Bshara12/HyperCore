@@ -7,19 +7,8 @@ use App\Domains\Search\Repositories\Interfaces\UserBehaviorRepositoryInterface;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
-/**
- * UserPreferenceAnalyzer — Data-Type-Level Affinity Model
- *
- * الإصدار السابق كان يُجمّع كل data_type_id ضمن 3 فئات عريضة ثابتة
- * (product/article/service) عبر DATA_TYPE_INTENT_MAP، مما كان يُفقد
- * التمييز بين phones/laptops/tablets مثلاً (كلها كانت تُختزل إلى "product").
- *
- * هذا الإصدار يحسب affinity مستقلة لكل data_type_id فعلي، مبنية على
- * click count خام من الـ Repository ضمن نافذة تحليل ثابتة (ANALYSIS_DAYS).
- */
 class UserPreferenceAnalyzer
 {
-
     private const MIN_CLICKS_FOR_SIGNAL = 2;
     private const SATURATION_K = 3.0;
     private const MIN_TERM_SIGNAL = 2;
@@ -27,6 +16,15 @@ class UserPreferenceAnalyzer
     private const VOCAB_CAP = 20;
     private const MAX_CLICKS_ANALYZED = 100;
     private const CACHE_TTL_MINUTES = 15;
+
+    /**
+     * نسخة مفتاح الـ cache.
+     *
+     * تُرفَع عند أي تغيير في شكل الرموز المُخزَّنة داخل الـ DTO، وإلا
+     * بقيت التفضيلات المُخزَّنة بالشكل القديم ("آيفون") لا تُطابق رموز
+     * الـ ranker الجديدة ("ايفون") إلى أن تنتهي مدة الـ TTL.
+     */
+    private const CACHE_VERSION = 'v2';
     private const ANALYSIS_DAYS = 30;
 
     private const DOMAIN_NEUTRAL_WORDS = [
@@ -45,11 +43,10 @@ class UserPreferenceAnalyzer
 
     public function analyzeForUser(int $projectId, int $userId): UserPreferenceDTO
     {
-        $cacheKey = "user_preference:{$projectId}:{$userId}";
+        $cacheKey = self::userCacheKey($projectId, $userId);
 
         return $this->resolveFromCache(
             $cacheKey,
-
             function () use ($projectId, $userId) {
                 $clickCounts = $this->repository->getClickCountsByDataType(
                     $projectId, $userId, self::ANALYSIS_DAYS
@@ -65,11 +62,10 @@ class UserPreferenceAnalyzer
 
     public function analyzeForSession(int $projectId, string $sessionId): UserPreferenceDTO
     {
-        $cacheKey = "session_preference:{$projectId}:{$sessionId}";
+        $cacheKey = self::sessionCacheKey($projectId, $sessionId);
 
         return $this->resolveFromCache(
             $cacheKey,
-
             function () use ($projectId, $sessionId) {
                 $clickCounts = $this->repository->getClickCountsByDataTypeForSession(
                     $projectId, $sessionId, self::ANALYSIS_DAYS
@@ -88,7 +84,6 @@ class UserPreferenceAnalyzer
         ?int $userId,
         ?string $sessionId
     ): UserPreferenceDTO {
-
         Log::debug('UserPreferenceAnalyzer::analyze called', [
             'project_id' => $projectId,
             'user_id' => $userId,
@@ -107,16 +102,25 @@ class UserPreferenceAnalyzer
         return UserPreferenceDTO::noHistory();
     }
 
-
     public function invalidateCache(int $projectId, ?int $userId, ?string $sessionId = null): void
     {
         if ($userId !== null) {
-            Cache::forget("user_preference:{$projectId}:{$userId}");
+            Cache::forget(self::userCacheKey($projectId, $userId));
         }
 
         if ($sessionId !== null) {
-            Cache::forget("session_preference:{$projectId}:{$sessionId}");
+            Cache::forget(self::sessionCacheKey($projectId, $sessionId));
         }
+    }
+
+    private static function userCacheKey(int $projectId, int $userId): string
+    {
+        return 'user_preference:'.self::CACHE_VERSION.":{$projectId}:{$userId}";
+    }
+
+    private static function sessionCacheKey(int $projectId, string $sessionId): string
+    {
+        return 'session_preference:'.self::CACHE_VERSION.":{$projectId}:{$sessionId}";
     }
 
     private function resolveFromCache(string $cacheKey, \Closure $builder): UserPreferenceDTO
@@ -140,7 +144,6 @@ class UserPreferenceAnalyzer
 
         return $fresh;
     }
-
 
     private function buildPreference(array $clickCounts, array $indexedTexts): UserPreferenceDTO
     {
@@ -181,7 +184,6 @@ class UserPreferenceAnalyzer
                 4
             );
         }
-
 
         return $affinities;
     }

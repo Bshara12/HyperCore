@@ -14,6 +14,10 @@ class IndexEntryDTO
         public readonly ?array $meta,
         public readonly string $status,
         public readonly ?string $publishedAt,
+        /** نص مُطبَّع جاهز للـ FULLTEXT — يُبنى بـ SearchTextBuilder */
+        public readonly ?string $searchText = null,
+        /** slug نوع البيانات (denormalized) — مطلوب لفلترة الـ intent */
+        public readonly ?string $dataTypeSlug = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -28,6 +32,8 @@ class IndexEntryDTO
             meta: $data['meta'] ?? null,
             status: $data['status'] ?? 'published',
             publishedAt: $data['published_at'] ?? null,
+            searchText: $data['search_text'] ?? null,
+            dataTypeSlug: $data['data_type_slug'] ?? null,
         );
     }
 }

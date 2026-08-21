@@ -2,11 +2,19 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Search\Support\SearchTextBuilder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class SearchIndexSeeder extends Seeder
 {
+    /** data_type_id → slug (denormalized، مطلوب لفلترة الـ intent) */
+    private const DATA_TYPE_SLUGS = [
+        1 => 'products',
+        2 => 'articles',
+        3 => 'services',
+    ];
+
     public function run(): void
     {
         DB::table('search_indices')->delete();
@@ -20,8 +28,19 @@ class SearchIndexSeeder extends Seeder
         );
 
         $now = now()->toDateTimeString();
+        $searchTextBuilder = new SearchTextBuilder();
 
         foreach ($records as &$record) {
+            // النص المُطبَّع يُبنى من الـ meta كمصفوفة قبل تحويلها لـ JSON
+            $record['search_text'] = $searchTextBuilder->build(
+                $record['title'] ?? null,
+                $record['content'] ?? null,
+                $record['meta'] ?? null,
+            ) ?: null;
+
+            $record['data_type_slug'] = $record['data_type_slug']
+                ?? (self::DATA_TYPE_SLUGS[$record['data_type_id']] ?? null);
+
             $record['meta'] = isset($record['meta'])
                 ? json_encode($record['meta'], JSON_UNESCAPED_UNICODE)
                 : null;

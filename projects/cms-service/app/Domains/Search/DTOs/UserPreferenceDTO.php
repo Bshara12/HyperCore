@@ -5,7 +5,6 @@ namespace App\Domains\Search\DTOs;
 class UserPreferenceDTO
 {
     /**
-
      * @param  array<int, float>     $affinities      [data_type_id => affinity]
      *                                                 إشارة ثانوية ضعيفة (secondary/weak signal).
      * @param  array<string, float>  $termAffinities  [normalized_term => affinity]
@@ -25,19 +24,16 @@ class UserPreferenceDTO
     {
         return new self(
             affinities: [],
-
             termAffinities: [],
             totalClicks: 0,
             hasHistory: false,
         );
     }
 
-
     public function affinityFor(int $dataTypeId): float
     {
         return $this->affinities[$dataTypeId] ?? 0.0;
     }
-
 
     public function termAffinityFor(string $term): float
     {
@@ -55,7 +51,6 @@ class UserPreferenceDTO
 
         return array_slice($sorted, 0, $limit, true);
     }
-
 
     public function topTerms(int $limit = 5): array
     {

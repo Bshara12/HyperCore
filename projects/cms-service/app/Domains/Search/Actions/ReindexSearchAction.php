@@ -4,6 +4,7 @@ namespace App\Domains\Search\Actions;
 
 // use App\Domains\Search\Repositories\Interfaces\SearchIndexRepositoryInterface;
 use App\Domains\Search\Support\EntryFieldsExtractor;
+use App\Domains\Search\Support\SearchTextBuilder;
 use App\Models\DataEntry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,7 @@ class ReindexSearchAction
   public function __construct(
     // private SearchIndexRepositoryInterface $repository,
     private EntryFieldsExtractor $extractor,
+    private SearchTextBuilder $searchTextBuilder,
   ) {}
 
   /**
@@ -53,6 +55,7 @@ class ReindexSearchAction
         'values',
         'values.field',  // لتحديد نوع الحقل (title/content/meta)
         'project',       // لمعرفة supported_languages
+        'dataType',      // لتعبئة data_type_slug (كان NULL دائماً)
       ])
       ->where('status', 'published')
       ->whereNull('deleted_at')
@@ -134,6 +137,7 @@ class ReindexSearchAction
         $rows[] = [
           'entry_id' => $entry->id,
           'data_type_id' => $entry->data_type_id,
+          'data_type_slug' => $entry->dataType?->slug,
           'project_id' => $entry->project_id,
           'language' => $language,
           'title' => $extracted['title'],
@@ -141,6 +145,12 @@ class ReindexSearchAction
           'meta' => ! empty($extracted['meta'])
             ? json_encode($extracted['meta'], JSON_UNESCAPED_UNICODE)
             : null,
+          // الـ bulk insert يتجاوز أحداث الموديل → نبني النص المُطبَّع هنا
+          'search_text' => $this->searchTextBuilder->build(
+            $extracted['title'],
+            $extracted['content'],
+            $extracted['meta'],
+          ) ?: null,
           'status' => $entry->status,
           'published_at' => $entry->published_at?->toDateTimeString(),
           'created_at' => $now,
