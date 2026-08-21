@@ -13,7 +13,6 @@ use App\Domains\Booking\DTOs\Client\RescheduleBookingDTO;
 use App\Domains\Booking\Read\DTOs\GetResourceSlotsDTO;
 use App\Domains\Booking\Read\DTOs\GetResourceBookingsDTO;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 
