@@ -21,7 +21,10 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled', 'throttle:api.standard'])
+// auth.user first: ResolveProject calls CMS with the caller's token, so an
+// anonymous request used to fail there as a 500 with a stack trace instead of a
+// clean 401 — and burned a cross-service call doing it.
+Route::middleware(['auth.user', 'resolve.project', 'ecommerce.enabled', 'throttle:api.standard'])
   ->prefix('ecommerce')
   ->group(function () {
 
@@ -137,7 +140,7 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled', 'throttl
 
 
 
-Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix('ecommerce')->group(function () {
+Route::middleware(['auth.user', 'resolve.project', 'ecommerce.enabled'])->prefix('ecommerce')->group(function () {
 
     // -------------------------
     // Offers
@@ -252,16 +255,13 @@ Route::middleware(['resolve.project', 'auth.user', 'ecommerce.enabled'])->prefix
         ->middleware('permission:return.update');
 });
 
-Route::prefix('ecommerce/analytics')
-    ->middleware(['resolve.project', 'auth.user'])
-    ->group(function () {
-        Route::get('/sales', [EcommerceAnalyticsController::class, 'salesSummary']);
-        Route::get('/sales/trend', [EcommerceAnalyticsController::class, 'salesTrend']);
-        Route::get('/products/top', [EcommerceAnalyticsController::class, 'topProducts']);
-        Route::get('/offers', [EcommerceAnalyticsController::class, 'offersAnalytics']);
-        Route::get('/customers/top', [EcommerceAnalyticsController::class, 'topCustomers']);
-        Route::get('/returns', [EcommerceAnalyticsController::class, 'returnsAnalytics']);
-    });
+/*
+ | The analytics routes were declared a second time here with only
+ | ['resolve.project', 'auth.user']. Laravel keeps the LAST registration for a
+ | given method+URI, so this block silently stripped EnsureEcommerceEnabled and
+ | throttle:api.standard off six of the seven analytics endpoints. They are
+ | defined once, with their full middleware stack, in the ecommerce group above.
+ */
 
 Route::get('/test', function () {
   return gethostname();

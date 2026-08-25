@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Domains\Booking\Analytics\DTOs\AnalyticsFilterDTO;
+use App\Domains\Booking\Analytics\Requests\AnalyticsFilterRequest;
 use App\Domains\Booking\Services\BookingAnalyticsService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class BookingAnalyticsController extends Controller
 {
@@ -13,7 +13,7 @@ class BookingAnalyticsController extends Controller
     private BookingAnalyticsService $service
   ) {}
 
-  public function overview(Request $request): JsonResponse
+  public function overview(AnalyticsFilterRequest $request): JsonResponse
   {
     // 1. بناء الـ DTO لمرة واحدة واستخدامه في كل التوابع
     $dto = AnalyticsFilterDTO::fromRequest($request);

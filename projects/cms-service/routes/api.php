@@ -129,8 +129,18 @@ Route::middleware(['auth.user', 'throttle:api.heavy'])->group(function () {
    * |--------------------------------------------------------------------------
    */
 Route::prefix('cms/analytics')->middleware(['auth.user', 'throttle:api.standard'])->group(function () {
-  Route::get('/admin', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
-  Route::get('/projectOwner', [CmsAnalyticsController::class, 'projectOverview'])->middleware('resolve.project')->name('cms.analytics.projects.overview');
+  // Platform-wide figures across every project — restricted to the platform
+  // operators. It used to answer any authenticated token, handing a plain user
+  // the total project, entry and rating counts of the whole installation.
+  Route::get('/admin', [CmsAnalyticsController::class, 'adminOverview'])
+    ->middleware('permission:analytics.platform')
+    ->name('cms.analytics.admin.overview');
+
+  // project.access ties the caller to the project named in the header; without
+  // it any valid token plus any X-Project-Key returned that project's analytics.
+  Route::get('/projectOwner', [CmsAnalyticsController::class, 'projectOverview'])
+    ->middleware(['resolve.project', 'project.access'])
+    ->name('cms.analytics.projects.overview');
 });
 
 /*

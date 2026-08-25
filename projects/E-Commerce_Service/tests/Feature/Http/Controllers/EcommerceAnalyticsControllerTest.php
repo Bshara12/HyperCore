@@ -5,6 +5,7 @@ namespace Tests\Feature\Http\Controllers;
 use Tests\TestCase;
 use App\Domains\E_Commerce\Services\AnalyticsService;
 use App\Domains\E_Commerce\Analytics\DTOs\AnalyticsFilterDTO;
+use App\Domains\E_Commerce\Analytics\Requests\AnalyticsFilterRequest;
 use App\Http\Controllers\EcommerceAnalyticsController;
 use Mockery\MockInterface;
 use Illuminate\Http\Request;
@@ -26,11 +27,25 @@ class EcommerceAnalyticsControllerTest extends TestCase
     $this->analyticsServiceMock = $this->mock(AnalyticsService::class);
   }
 
-  private function createAnalyticsRequest(array $params = []): Request
+  /**
+   * summary() now type-hints AnalyticsFilterRequest so the date/limit filters
+   * are validated before they reach the SQL and the cache key.
+   *
+   * The 'project' key mirrors what ResolveProject merges into the request; the
+   * DTO reads the project from there instead of trusting a client-supplied
+   * project_id.
+   */
+  private function createAnalyticsRequest(array $params = []): AnalyticsFilterRequest
   {
-    // دمج المعاملات مع project_id الافتراضي
-    $data = array_merge(['project_id' => $this->projectId], $params);
-    $request = Request::create('/api/ecommerce/analytics/summary', 'GET', $data);
+    $data = array_merge([
+      'project_id' => $this->projectId,
+      'project' => ['id' => $this->projectId, 'enabled_modules' => ['ecommerce']],
+    ], $params);
+
+    $base = Request::create('/api/ecommerce/analytics/summary', 'GET', $data);
+
+    $request = AnalyticsFilterRequest::createFrom($base);
+    $request->setContainer($this->app);
 
     // إخبار الحاوية باستخدام هذه النسخة
     $this->app->instance('request', $request);

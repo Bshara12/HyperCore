@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Domains\E_Commerce\Analytics\DTOs\AnalyticsFilterDTO;
+use App\Domains\E_Commerce\Analytics\Requests\AnalyticsFilterRequest;
 use App\Domains\E_Commerce\Services\AnalyticsService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class EcommerceAnalyticsController extends Controller
 {
   public function __construct(protected AnalyticsService $service) {}
 
-  public function summary(Request $request): JsonResponse
+  public function summary(AnalyticsFilterRequest $request): JsonResponse
   {
     // 1. بناء الـ DTO لمرة واحدة من الـ Request
     $dto = AnalyticsFilterDTO::fromRequest($request);
