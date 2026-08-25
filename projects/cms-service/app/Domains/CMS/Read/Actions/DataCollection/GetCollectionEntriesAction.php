@@ -20,12 +20,16 @@ class GetCollectionEntriesAction extends Action
         protected ProjectRepositoryInterface $projectRepository
     ) {}
 
-    public function execute(string $projectKey, string $collectionSlug)
+    public function execute(string $projectKey, string $collectionSlug, bool $includeInactive = false)
     {
-        return $this->run(function () use ($projectKey, $collectionSlug) {
+        return $this->run(function () use ($projectKey, $collectionSlug, $includeInactive) {
 
             $projectId = $this->projectRepository->findByKey($projectKey)->id;
-            $collection = $this->repository->find($projectId, $collectionSlug);
+            $collection = $this->repository->find($projectId, $collectionSlug, $includeInactive);
+
+            if (! $collection) {
+                return null;
+            }
 
             return Cache::remember(
                 CacheKeys::collectionEntries($collection->id),

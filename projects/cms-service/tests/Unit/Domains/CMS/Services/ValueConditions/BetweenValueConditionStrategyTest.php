@@ -17,7 +17,7 @@ test('it passes the correct parameters to the repository', function () {
   // 2. نتوقع أن يتم استدعاء المستودع بالقيم الصحيحة
   $this->repository->shouldReceive('pluckEntryIdsByFieldBetween')
     ->once()
-    ->with($field, $value)
+    ->with($field, $value, 1, 1)
     ->andReturn($expectedIds);
 
   // 3. تنفيذ الدالة (تمرير dummy values لـ projectId و dataTypeId لأنهما غير مستخدمين حالياً في الكود)
@@ -32,7 +32,7 @@ test('it casts non-array values to array before passing to repository', function
 
   $this->repository->shouldReceive('pluckEntryIdsByFieldBetween')
     ->once()
-    ->with($field, ['25']) // التأكد من التحويل
+    ->with($field, ['25'], 1, 1) // التأكد من التحويل
     ->andReturn([1]);
 
   $this->strategy->apply($field, $value, 1, 1);

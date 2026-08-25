@@ -14,6 +14,7 @@ use App\Domains\CMS\Requests\RemoveCollectionItemsRequest;
 use App\Domains\CMS\Requests\ReOrderCollectionItemsRequest;
 use App\Domains\CMS\Requests\DeactivateCollectionRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -40,7 +41,7 @@ class DataCollectionControllerTest extends TestCase
     // إرجاع مصفوفة غير فارغة لتجاوز فحص الـ if في الـ Controller
     $this->serviceMock->shouldReceive('list')->once()->andReturn(['test-collection']);
 
-    $response = $this->controller->index();
+    $response = $this->controller->index(new Request());
     $this->assertEquals(200, $response->getStatusCode());
   }
 
@@ -90,7 +91,12 @@ class DataCollectionControllerTest extends TestCase
   #[Test]
   public function it_can_update_collection()
   {
-    DataCollection::factory()->create(['slug' => 'test-slug']);
+    // Must live in the resolved project: the DTO now scopes its lookup, so a
+    // collection created in some other project is deliberately not found.
+    DataCollection::factory()->create([
+      'project_id' => $this->app->make('currentProject')->id,
+      'slug' => 'test-slug',
+    ]);
 
     $request = $this->mock(UpdateDataCollectionRequest::class);
 
@@ -128,10 +134,10 @@ class DataCollectionControllerTest extends TestCase
   {
     $this->serviceMock->shouldReceive('show')
       ->once()
-      ->with('test-project-123', 'test-slug')
+      ->with('test-project-123', 'test-slug', false)
       ->andReturn(['id' => 1, 'slug' => 'test-slug']);
 
-    $response = $this->controller->show('test-slug');
+    $response = $this->controller->show(new Request(), 'test-slug');
 
     $this->assertEquals(200, $response->getStatusCode());
   }
@@ -189,13 +195,17 @@ class DataCollectionControllerTest extends TestCase
   }
 
   #[Test]
-  public function it_returns_404_when_no_collections_found()
+  public function it_returns_an_empty_list_rather_than_404_when_a_project_has_no_collections()
   {
-    // محاكاة أن الخدمة لا تعيد شيئاً (null)
-    $this->serviceMock->shouldReceive('list')->once()->andReturn(null);
+    // A project with no collections is a valid, successful state, not a missing
+    // resource. The old 404 branch was also unreachable: an empty Eloquent
+    // Collection is a truthy object, so `if (! $collections)` never fired.
+    $this->serviceMock->shouldReceive('list')->once()->andReturn(collect([]));
 
-    $response = $this->controller->index();
-    $this->assertEquals(404, $response->getStatusCode());
+    $response = $this->controller->index(new Request());
+
+    $this->assertEquals(200, $response->getStatusCode());
+    $this->assertSame([], $response->getData(true)['data']);
   }
 
   #[Test]
@@ -204,7 +214,7 @@ class DataCollectionControllerTest extends TestCase
     // محاكاة أن الخدمة لا تجد المجموعة بالـ slug
     $this->serviceMock->shouldReceive('show')->once()->andReturn(null);
 
-    $response = $this->controller->show('non-existent-slug');
+    $response = $this->controller->show(new Request(), 'non-existent-slug');
     $this->assertEquals(404, $response->getStatusCode());
   }
 
@@ -214,7 +224,7 @@ class DataCollectionControllerTest extends TestCase
     // محاكاة أن الخدمة لا تجد المجموعة بالـ ID
     $this->serviceMock->shouldReceive('showById')->once()->andReturn(null);
 
-    $response = $this->controller->showById(999);
+    $response = $this->controller->showById(new Request(), 999);
     $this->assertEquals(404, $response->getStatusCode());
   }
 
@@ -226,10 +236,10 @@ class DataCollectionControllerTest extends TestCase
     // محاكاة نجاح جلب البيانات
     $this->serviceMock->shouldReceive('getEntries')
       ->once()
-      ->with('test-project-123', 'test-slug')
+      ->with('test-project-123', 'test-slug', false)
       ->andReturn($expectedEntries);
 
-    $response = $this->controller->getEntries('test-slug');
+    $response = $this->controller->getEntries(new Request(), 'test-slug');
 
     $this->assertEquals(200, $response->getStatusCode());
     // التأكد من أن الـ JSON المحتوى يطابق البيانات المتوقعة
@@ -249,11 +259,11 @@ class DataCollectionControllerTest extends TestCase
     // 2. محاكاة الخدمة بحيث تعيد البيانات بنجاح عند طلب معرف معين
     $this->serviceMock->shouldReceive('showById')
       ->once()
-      ->with(1)
+      ->with(1, false)
       ->andReturn($expectedData);
 
     // 3. استدعاء التابع في الكونترولر
-    $response = $this->controller->showById(1);
+    $response = $this->controller->showById(new Request(), 1);
 
     // 4. التأكد من النتيجة
     $this->assertEquals(200, $response->getStatusCode());

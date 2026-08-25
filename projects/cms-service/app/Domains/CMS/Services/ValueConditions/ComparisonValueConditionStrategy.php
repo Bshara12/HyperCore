@@ -20,7 +20,9 @@ class ComparisonValueConditionStrategy implements ValueConditionStrategy
         return $this->valueRepository->pluckEntryIdsByFieldComparison(
             $field,
             $this->operator,
-            $value
+            $value,
+            $projectId,
+            $dataTypeId
         );
     }
 }

@@ -27,7 +27,7 @@ test('it identifies bad ids and excludes them from the project entries', functio
   // 1. نتوقع استدعاء البحث عن الـ badIds (مع علامات النسبة المئوية)
   $this->valueRepo->shouldReceive('pluckEntryIdsByFieldLike')
     ->once()
-    ->with($field, '%archived%')
+    ->with($field, '%archived%', $projectId, $dataTypeId)
     ->andReturn($badIds);
 
   // 2. نتوقع استدعاء الـ entryRepo مع تمرير الـ badIds للاستبعاد

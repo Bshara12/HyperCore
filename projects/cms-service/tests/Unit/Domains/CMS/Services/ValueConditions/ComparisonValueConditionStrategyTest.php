@@ -15,10 +15,11 @@ test('it passes the correct parameters and operator to the repository', function
   $value = 18;
   $expectedIds = [10, 20, 30];
 
-  // 2. التحقق من أن الاستراتيجية تمرر المعامل للـ Repository بشكل صحيح
+  // 2. التحقق من أن الاستراتيجية تمرر المعامل والنطاق للـ Repository بشكل صحيح
+  // النطاق (projectId, dataTypeId) إلزامي: بدونه يطابق الشرط كل المشاريع
   $this->repository->shouldReceive('pluckEntryIdsByFieldComparison')
     ->once()
-    ->with($field, $operator, $value)
+    ->with($field, $operator, $value, 1, 1)
     ->andReturn($expectedIds);
 
   // 3. التنفيذ

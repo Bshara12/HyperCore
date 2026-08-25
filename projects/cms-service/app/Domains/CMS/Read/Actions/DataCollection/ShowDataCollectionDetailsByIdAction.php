@@ -18,16 +18,24 @@ class ShowDataCollectionDetailsByIdAction extends Action
         protected DataCollectionRepositoryInterface $repository,
     ) {}
 
-    public function execute(int $collectionId)
+    public function execute(int $collectionId, bool $includeInactive = false)
     {
-        return $this->run(function () use ($collectionId) {
+        return $this->run(function () use ($collectionId, $includeInactive) {
 
             return Cache::remember(
-                CacheKeys::collectionById($collectionId),
+                CacheKeys::collectionById($collectionId, $includeInactive),
                 CacheKeys::TTL_MEDIUM,
-                function () use ($collectionId) {
-                    $collection = $this->repository->findById($collectionId);
-                    $collection['items'] = $this->repository->getCollectionItems($collection->id);
+                function () use ($collectionId, $includeInactive) {
+                    $collection = $this->repository->findById($collectionId, $includeInactive);
+
+                    if (! $collection) {
+                        return null;
+                    }
+
+                    $collection->setRelation(
+                        'items',
+                        $this->repository->getCollectionItems($collection->id)
+                    );
 
                     return $collection;
                 }

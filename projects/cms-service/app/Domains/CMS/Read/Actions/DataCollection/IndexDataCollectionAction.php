@@ -17,16 +17,16 @@ class IndexDataCollectionAction extends Action
 
     public function __construct(protected DataCollectionRepositoryInterface $repository, protected ProjectRepositoryInterface $projectRepository) {}
 
-    public function execute($projectKey)
+    public function execute($projectKey, bool $includeInactive = false)
     {
-        return $this->run(function () use ($projectKey) {
+        return $this->run(function () use ($projectKey, $includeInactive) {
 
             $projectId = $this->projectRepository->findByKey($projectKey)->id;
 
             return Cache::remember(
-                CacheKeys::collections($projectId),
+                CacheKeys::collections($projectId, $includeInactive),
                 CacheKeys::TTL_MEDIUM,
-                fn () => $this->repository->list($projectId)
+                fn () => $this->repository->list($projectId, $includeInactive)
             );
         });
     }

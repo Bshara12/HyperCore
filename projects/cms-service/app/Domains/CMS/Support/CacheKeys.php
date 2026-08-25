@@ -52,19 +52,30 @@ class CacheKeys
     // ============================================
     // 🔑 Collections
     // ============================================
-    public static function collections(int $projectId): string
+
+    /*
+     | Collection reads come in two visibilities: the public one hides inactive
+     | collections, the privileged one does not. They must never share a key —
+     | otherwise one manager request caches inactive rows and every visitor
+     | keeps reading them for the rest of the TTL.
+     |
+     | Use App\Domains\CMS\Support\CollectionCache to invalidate: it forgets
+     | every visibility variant of a key, and only after the transaction commits.
+     */
+
+    public static function collections(int $projectId, bool $includeInactive = false): string
     {
-        return "project:{$projectId}:collections";
+        return "project:{$projectId}:collections".($includeInactive ? ':all' : '');
     }
 
-    public static function collection(int $projectId, string $slug): string
+    public static function collection(int $projectId, string $slug, bool $includeInactive = false): string
     {
-        return "project:{$projectId}:collections:{$slug}";
+        return "project:{$projectId}:collections:{$slug}".($includeInactive ? ':all' : '');
     }
 
-    public static function collectionById(int $collectionId): string
+    public static function collectionById(int $collectionId, bool $includeInactive = false): string
     {
-        return "collections:{$collectionId}";
+        return "collections:{$collectionId}".($includeInactive ? ':all' : '');
     }
 
     public static function collectionItems(int $collectionId): string

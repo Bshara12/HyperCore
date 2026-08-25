@@ -14,7 +14,9 @@ class ContainsValueConditionStrategy implements ValueConditionStrategy
     {
         return $this->valueRepository->pluckEntryIdsByFieldLike(
             $field,
-            "%{$value}%"
+            "%{$value}%",
+            $projectId,
+            $dataTypeId
         );
     }
 }

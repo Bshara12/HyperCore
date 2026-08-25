@@ -45,7 +45,7 @@ test('it executes and caches collection entries correctly', function () {
 
   $dataRepo->shouldReceive('find')
     ->once()
-    ->with(123, 'my-slug') // 123 هو الـ id الخاص بالمشروع
+    ->with(123, 'my-slug', false) // 123 هو الـ id الخاص بالمشروع
     ->andReturn($collection);
 
   $dataRepo->shouldReceive('getEntries')

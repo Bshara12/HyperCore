@@ -518,35 +518,77 @@ class EloquentDataEntryValueRepository implements DataEntryValueRepository
         DB::table('data_entry_values')->insert($rows);
     }
 
-    public function pluckEntryIdsByFieldComparison(string $field, string $operator, $value): array
+    /**
+     * Base query for "find entries whose field <name> ...".
+     *
+     * Joins data_entries so the match can be confined to one project and one
+     * data type. Without that confinement a dynamic collection's condition is
+     * evaluated against every entry in the database that owns a field of the
+     * same name, which silently pulls other tenants' rows into the collection.
+     */
+    private function fieldValueQuery(string $field, ?int $projectId, ?int $dataTypeId)
     {
-        return DB::table('data_entry_values')
+        $query = DB::table('data_entry_values')
             ->join('data_type_fields', 'data_type_fields.id', '=', 'data_entry_values.data_type_field_id')
-            ->where('data_type_fields.name', $field)
-            ->where('data_entry_values.value', $operator, $value)
+            ->join('data_entries', 'data_entries.id', '=', 'data_entry_values.data_entry_id')
+            ->where('data_type_fields.name', $field);
+
+        if ($projectId !== null) {
+            $query->where('data_entries.project_id', $projectId);
+        }
+
+        if ($dataTypeId !== null) {
+            $query->where('data_entries.data_type_id', $dataTypeId);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Ordering comparisons that must not be lexicographic.
+     */
+    private const ORDERING_OPERATORS = ['>', '<', '>=', '<='];
+
+    public function pluckEntryIdsByFieldComparison(string $field, string $operator, $value, ?int $projectId = null, ?int $dataTypeId = null): array
+    {
+        $query = $this->fieldValueQuery($field, $projectId, $dataTypeId);
+
+        /*
+         | data_entry_values.value is longtext, so an ordering comparison against
+         | a string compares character by character: '10' > '5' is false, and
+         | 'price > 5' silently matches nothing for any two-digit price. Compare
+         | numerically when both sides actually are numbers; anything else keeps
+         | the plain comparison, which is what = and != want anyway.
+         */
+        if (is_numeric($value) && in_array($operator, self::ORDERING_OPERATORS, true)) {
+            $query->whereRaw(
+                "CAST(data_entry_values.value AS DECIMAL(30,10)) {$operator} CAST(? AS DECIMAL(30,10))",
+                [$value]
+            );
+        } else {
+            $query->where('data_entry_values.value', $operator, $value);
+        }
+
+        return $query
             ->pluck('data_entry_values.data_entry_id')
             ->toArray();
     }
 
-    public function pluckEntryIdsByFieldLike(string $field, string $pattern): array
+    public function pluckEntryIdsByFieldLike(string $field, string $pattern, ?int $projectId = null, ?int $dataTypeId = null): array
     {
-        return DB::table('data_entry_values')
-            ->join('data_type_fields', 'data_type_fields.id', '=', 'data_entry_values.data_type_field_id')
-            ->where('data_type_fields.name', $field)
+        return $this->fieldValueQuery($field, $projectId, $dataTypeId)
             ->where('data_entry_values.value', 'LIKE', $pattern)
             ->pluck('data_entry_values.data_entry_id')
             ->toArray();
     }
 
-    public function pluckEntryIdsByFieldIn(string $field, array $values): array
+    public function pluckEntryIdsByFieldIn(string $field, array $values, ?int $projectId = null, ?int $dataTypeId = null): array
     {
         if (empty($values)) {
             return [];
         }
 
-        return DB::table('data_entry_values')
-            ->join('data_type_fields', 'data_type_fields.id', '=', 'data_entry_values.data_type_field_id')
-            ->where('data_type_fields.name', $field)
+        return $this->fieldValueQuery($field, $projectId, $dataTypeId)
             ->whereIn('data_entry_values.value', $values)
             ->pluck('data_entry_values.data_entry_id')
             ->toArray();
@@ -569,16 +611,25 @@ class EloquentDataEntryValueRepository implements DataEntryValueRepository
             ->toArray();
     }
 
-    public function pluckEntryIdsByFieldBetween(string $field, array $values): array
+    public function pluckEntryIdsByFieldBetween(string $field, array $values, ?int $projectId = null, ?int $dataTypeId = null): array
     {
         if (count($values) !== 2) {
             return [];
         }
 
-        return DB::table('data_entry_values')
-            ->join('data_type_fields', 'data_type_fields.id', '=', 'data_entry_values.data_type_field_id')
-            ->where('data_type_fields.name', $field)
-            ->whereBetween('data_entry_values.value', [$values[0], $values[1]])
+        $query = $this->fieldValueQuery($field, $projectId, $dataTypeId);
+
+        // Same lexicographic trap as the ordering comparisons above.
+        if (is_numeric($values[0]) && is_numeric($values[1])) {
+            $query->whereRaw(
+                'CAST(data_entry_values.value AS DECIMAL(30,10)) BETWEEN CAST(? AS DECIMAL(30,10)) AND CAST(? AS DECIMAL(30,10))',
+                [$values[0], $values[1]]
+            );
+        } else {
+            $query->whereBetween('data_entry_values.value', [$values[0], $values[1]]);
+        }
+
+        return $query
             ->pluck('data_entry_values.data_entry_id')
             ->toArray();
     }

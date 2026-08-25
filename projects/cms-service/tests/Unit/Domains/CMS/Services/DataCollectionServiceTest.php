@@ -58,7 +58,7 @@ afterEach(function () {
 
 // ─── اختبار التابع list ───────────────────────────────────────────
 test('it fetches list of data collections by project id', function () {
-  $this->indexAction->shouldReceive('execute')->once()->with(1)->andReturn(['collection1']);
+  $this->indexAction->shouldReceive('execute')->once()->with(1, false)->andReturn(['collection1']);
 
   expect($this->service->list(1))->toBe(['collection1']);
 });
@@ -127,13 +127,17 @@ test('it updates a static data collection without resetting items', function () 
   expect($result)->toBe($mockedCollection);
 });
 
-test('it updates a dynamic data collection, deletes old items and regenerates new ones', function () {
+test('it updates a dynamic data collection and regenerates its items in one step', function () {
   $dto = (object) ['collection_id' => 11, 'name' => 'Updated Dynamic'];
   $mockedCollection = (object) ['id' => 11, 'type' => 'dynamic'];
 
   $this->updateAction->shouldReceive('execute')->once()->with($dto)->andReturn($mockedCollection);
-  // 🔥 التأكد من تفريغ العناصر القديمة وإعادة توليد الجديدة للـ dynamic
-  $this->deleteItemsAction->shouldReceive('execute')->once()->with(11);
+
+  // No separate delete step any more: GenerateDynamicItemsAction replaces the
+  // items inside a single transaction. Deleting first as its own committed step
+  // left the collection empty for the whole regeneration window, and
+  // permanently empty if generation then failed.
+  $this->deleteItemsAction->shouldNotReceive('execute');
   $this->generateAction->shouldReceive('execute')->once()->with($mockedCollection);
 
   $result = $this->service->update($dto);
@@ -147,12 +151,12 @@ test('it deletes a data collection by slug', function () {
 });
 
 test('it shows data collection details by keys', function () {
-  $this->showDetailsAction->shouldReceive('execute')->once()->with('proj-key', 'coll-slug')->andReturn(['details']);
+  $this->showDetailsAction->shouldReceive('execute')->once()->with('proj-key', 'coll-slug', false)->andReturn(['details']);
   expect($this->service->show('proj-key', 'coll-slug'))->toBe(['details']);
 });
 
 test('it shows data collection details by id', function () {
-  $this->showDetailsByIdAction->shouldReceive('execute')->once()->with(10)->andReturn(['details-by-id']);
+  $this->showDetailsByIdAction->shouldReceive('execute')->once()->with(10, false)->andReturn(['details-by-id']);
   expect($this->service->showById(10))->toBe(['details-by-id']);
 });
 
@@ -175,7 +179,7 @@ test('it reorders items in data collection', function () {
 });
 
 test('it fetches collection entries', function () {
-  $this->getEntriesAction->shouldReceive('execute')->once()->with('proj-key', 'coll-slug')->andReturn(['entries']);
+  $this->getEntriesAction->shouldReceive('execute')->once()->with('proj-key', 'coll-slug', false)->andReturn(['entries']);
   expect($this->service->getEntries('proj-key', 'coll-slug'))->toBe(['entries']);
 });
 

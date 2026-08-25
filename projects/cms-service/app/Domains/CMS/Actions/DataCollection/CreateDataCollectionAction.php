@@ -3,10 +3,9 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
-use App\Domains\CMS\Support\CacheKeys;
+use App\Domains\CMS\Support\CollectionCache;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
-use Illuminate\Support\Facades\Cache;
 
 class CreateDataCollectionAction extends Action
 {
@@ -24,14 +23,15 @@ class CreateDataCollectionAction extends Action
         return $this->run(function () use ($dto) {
 
             $collection = $this->repository->create($dto);
-            Cache::forget(CacheKeys::collections($dto->project_id));
+
+            CollectionCache::forgetList($dto->project_id);
 
             event(new SystemLogEvent(
                 module: 'cms',
                 eventType: 'collection_create',
                 userId: null,
                 entityType: 'collection',
-                entityId: null
+                entityId: $collection->id
             ));
 
             return $collection;

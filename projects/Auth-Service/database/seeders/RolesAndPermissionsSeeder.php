@@ -18,6 +18,20 @@ class RolesAndPermissionsSeeder extends Seeder
             'show.user',
             'delete.user',
             'update.user',
+
+            /*
+             | CMS data collections. The routes guard on these names, so without
+             | a catalog entry every collection write answers 403 — including
+             | for admins.
+             |
+             | Note for e-commerce: an offer IS a CMS collection, and activating
+             | one reads the (currently inactive) collection back from CMS. Any
+             | role that gets offer.update therefore also needs
+             | cms.collection.update, or activation fails with a 404.
+             */
+            'cms.collection.create',
+            'cms.collection.update',
+            'cms.collection.delete',
         ];
 
         $permissionIds = [];
@@ -55,6 +69,9 @@ class RolesAndPermissionsSeeder extends Seeder
             $permissionIds['read.data'],
             $permissionIds['update.data'],
             $permissionIds['delete.data'],
+            $permissionIds['cms.collection.create'],
+            $permissionIds['cms.collection.update'],
+            $permissionIds['cms.collection.delete'],
         ]);
 
         // ✅ admin أصبح يمتلك كل صلاحيات super_admin السابقة بالإضافة لصلاحياته الأصلية

@@ -74,7 +74,8 @@ class DynamicCollectionQueryBuilder
       $entryIds = $this->applyValueConditionReturnEntryIds($field, $operator, $value);
 
       // إذا الشرط لم يرجع شيء → النتيجة النهائية صفر
-      if (empty($entryIds)) {
+      // if (empty($entryIds)) {
+      if (empty($entryIds) && $logic === 'and') {
         return collect([]);
       }
 

@@ -31,7 +31,7 @@ test('it retrieves collection details by id and injects items', function () {
   // 4. تحديد التوقعات
   $repo->shouldReceive('findById')
     ->once()
-    ->with(789)
+    ->with(789, false)
     ->andReturn($mockCollection);
 
   $repo->shouldReceive('getCollectionItems')

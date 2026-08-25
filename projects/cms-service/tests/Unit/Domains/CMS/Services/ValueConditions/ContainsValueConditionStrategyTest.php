@@ -18,7 +18,7 @@ test('it wraps the value in wildcards and passes it to the repository', function
   // التأكد من أن القيمة أصبحت %search-term% قبل إرسالها
   $this->repository->shouldReceive('pluckEntryIdsByFieldLike')
     ->once()
-    ->with($field, $expectedWildcardValue)
+    ->with($field, $expectedWildcardValue, 1, 1)
     ->andReturn($expectedIds);
 
   $result = $this->strategy->apply($field, $value, 1, 1);
@@ -33,7 +33,7 @@ test('it handles empty values by wrapping them in wildcards', function () {
 
   $this->repository->shouldReceive('pluckEntryIdsByFieldLike')
     ->once()
-    ->with($field, $expectedWildcardValue)
+    ->with($field, $expectedWildcardValue, 1, 1)
     ->andReturn([]);
 
   $this->strategy->apply($field, $value, 1, 1);

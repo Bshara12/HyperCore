@@ -473,3 +473,116 @@ test('replacePartial deletes existing localized values correctly', function () {
     'value' => 'Old English Value'
   ]);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Tenant scoping + numeric comparison
+|
+| Both regressions were found by driving the real API: a dynamic collection in
+| one project materialised 80 entries belonging to three other projects, and
+| "price > 5" matched nothing because value is longtext and '10' > '5' is false
+| lexicographically.
+|--------------------------------------------------------------------------
+*/
+
+function seedPricedEntry(int $projectId, int $dataTypeId, string $price): \App\Models\DataEntry
+{
+  $field = \App\Models\DataTypeField::firstOrCreate(
+    ['data_type_id' => $dataTypeId, 'name' => 'price'],
+    ['type' => 'number', 'required' => false]
+  );
+
+  $entry = \App\Models\DataEntry::factory()->create([
+    'project_id' => $projectId,
+    'data_type_id' => $dataTypeId,
+  ]);
+
+  \Illuminate\Support\Facades\DB::table('data_entry_values')->insert([
+    'data_entry_id' => $entry->id,
+    'data_type_field_id' => $field->id,
+    'language' => null,
+    'value' => $price,
+    'created_at' => now(),
+    'updated_at' => now(),
+  ]);
+
+  return $entry;
+}
+
+test('field comparison stays inside the given project and data type', function () {
+  $repo = new \App\Domains\CMS\Repositories\Eloquent\EloquentDataEntryValueRepository();
+
+  $mine = \App\Models\Project::factory()->create();
+  $theirs = \App\Models\Project::factory()->create();
+
+  $myType = \App\Models\DataType::factory()->create(['project_id' => $mine->id]);
+  $myOtherType = \App\Models\DataType::factory()->create(['project_id' => $mine->id]);
+  $theirType = \App\Models\DataType::factory()->create(['project_id' => $theirs->id]);
+
+  $wanted = seedPricedEntry($mine->id, $myType->id, '10');
+  $wrongType = seedPricedEntry($mine->id, $myOtherType->id, '10');
+  $otherTenant = seedPricedEntry($theirs->id, $theirType->id, '10');
+
+  $ids = $repo->pluckEntryIdsByFieldComparison('price', '=', '10', $mine->id, $myType->id);
+
+  expect($ids)->toBe([$wanted->id])
+    ->and($ids)->not->toContain($wrongType->id)
+    ->and($ids)->not->toContain($otherTenant->id);
+});
+
+test('ordering comparisons are numeric, not lexicographic', function () {
+  $repo = new \App\Domains\CMS\Repositories\Eloquent\EloquentDataEntryValueRepository();
+
+  $project = \App\Models\Project::factory()->create();
+  $type = \App\Models\DataType::factory()->create(['project_id' => $project->id]);
+
+  $ten = seedPricedEntry($project->id, $type->id, '10');
+  $twenty = seedPricedEntry($project->id, $type->id, '20');
+  $thirty = seedPricedEntry($project->id, $type->id, '30');
+
+  // '10' > '5' is false as text — this is the case that used to return nothing.
+  $gt5 = $repo->pluckEntryIdsByFieldComparison('price', '>', '5', $project->id, $type->id);
+  sort($gt5);
+  expect($gt5)->toBe(collect([$ten->id, $twenty->id, $thirty->id])->sort()->values()->all());
+
+  $gte20 = $repo->pluckEntryIdsByFieldComparison('price', '>=', '20', $project->id, $type->id);
+  sort($gte20);
+  expect($gte20)->toBe(collect([$twenty->id, $thirty->id])->sort()->values()->all());
+
+  $lt25 = $repo->pluckEntryIdsByFieldComparison('price', '<', '25', $project->id, $type->id);
+  sort($lt25);
+  expect($lt25)->toBe(collect([$ten->id, $twenty->id])->sort()->values()->all());
+});
+
+test('between is numeric and scoped too', function () {
+  $repo = new \App\Domains\CMS\Repositories\Eloquent\EloquentDataEntryValueRepository();
+
+  $project = \App\Models\Project::factory()->create();
+  $other = \App\Models\Project::factory()->create();
+  $type = \App\Models\DataType::factory()->create(['project_id' => $project->id]);
+  $otherType = \App\Models\DataType::factory()->create(['project_id' => $other->id]);
+
+  seedPricedEntry($project->id, $type->id, '10');
+  $twenty = seedPricedEntry($project->id, $type->id, '20');
+  $thirty = seedPricedEntry($project->id, $type->id, '30');
+  $foreign = seedPricedEntry($other->id, $otherType->id, '20');
+
+  $ids = $repo->pluckEntryIdsByFieldBetween('price', ['15', '35'], $project->id, $type->id);
+  sort($ids);
+
+  expect($ids)->toBe(collect([$twenty->id, $thirty->id])->sort()->values()->all())
+    ->and($ids)->not->toContain($foreign->id);
+});
+
+test('equality still works as a plain comparison', function () {
+  $repo = new \App\Domains\CMS\Repositories\Eloquent\EloquentDataEntryValueRepository();
+
+  $project = \App\Models\Project::factory()->create();
+  $type = \App\Models\DataType::factory()->create(['project_id' => $project->id]);
+
+  $twenty = seedPricedEntry($project->id, $type->id, '20');
+  seedPricedEntry($project->id, $type->id, '30');
+
+  expect($repo->pluckEntryIdsByFieldComparison('price', '=', '20', $project->id, $type->id))
+    ->toBe([$twenty->id]);
+});

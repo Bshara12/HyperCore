@@ -14,7 +14,9 @@ class InValueConditionStrategy implements ValueConditionStrategy
     {
         return $this->valueRepository->pluckEntryIdsByFieldIn(
             $field,
-            (array) $value
+            (array) $value,
+            $projectId,
+            $dataTypeId
         );
     }
 }

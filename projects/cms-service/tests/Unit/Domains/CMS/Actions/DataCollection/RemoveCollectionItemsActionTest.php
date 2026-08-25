@@ -27,6 +27,8 @@ test('it removes items, clears cache, and dispatches log event', function () {
   // 2. تجهيز الموديل الحقيقي لضمان تطابق النوع
   $collection = new DataCollection();
   $collection->id = 55;
+  $collection->project_id = 10;
+  $collection->slug = 'some-collection';
 
   // 3. تجهيز الـ Mock للـ Repository
   $repoMock = Mockery::mock(DataCollectionRepositoryInterface::class);
@@ -54,6 +56,9 @@ test('it removes items, clears cache, and dispatches log event', function () {
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionItems($collection->id));
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionEntries($collection->id));
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionById($collection->id));
+
+  // The slug-addressed show payload embeds the items, so it must go too.
+  Cache::shouldHaveReceived('forget')->with(CacheKeys::collection($collection->project_id, $collection->slug));
 
   // التأكد من إطلاق الحدث بالمعلومات الصحيحة
   Event::assertDispatched(SystemLogEvent::class, function ($event) use ($dto) {
