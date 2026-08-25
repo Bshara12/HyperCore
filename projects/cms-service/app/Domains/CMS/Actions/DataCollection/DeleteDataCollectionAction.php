@@ -3,10 +3,11 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
-use App\Domains\CMS\Support\CacheKeys;
+use App\Domains\CMS\Support\CollectionCache;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
-use Illuminate\Support\Facades\Cache;
+use App\Models\DataCollection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DeleteDataCollectionAction extends Action
 {
@@ -21,27 +22,30 @@ class DeleteDataCollectionAction extends Action
 
   public function execute($collectionSlug)
   {
-    $this->run(function () use ($collectionSlug) {
+    // Resolved before run(): a missing collection is a 404, not a transient
+    // failure, and anything thrown inside run() other than a validation error
+    // gets retried three times and rethrown as a generic 500.
+    $collection = $this->repository->getBySlug($collectionSlug);
 
-      $collection = $this->repository->getBySlug($collectionSlug);
+    if (! $collection) {
+      throw (new ModelNotFoundException)->setModel(DataCollection::class);
+    }
 
-      $this->repository->delete($collection->id);
+    $projectId = $collection->project_id;
+    $collectionId = $collection->id;
 
-      // ✅ امسح كل الـ Cache المتعلق بهذه الـ Collection
-      Cache::forget(CacheKeys::collection($collection->project_id, $collectionSlug));
-      Cache::forget(CacheKeys::collectionById($collection->id));
-      Cache::forget(CacheKeys::collectionItems($collection->id));
-      Cache::forget(CacheKeys::collectionEntries($collection->id));
-      Cache::forget(CacheKeys::collections($collection->project_id));
-      event(new SystemLogEvent(
-        module: 'cms',
-        eventType: 'delete_collection',
-        userId: null,
-        entityType: 'collection',
-        entityId: $collection->id
-      ));
-
-      // return $this->repository->delete($collection->id);
+    $this->run(function () use ($collectionId) {
+      $this->repository->delete($collectionId);
     });
+
+    CollectionCache::forgetAll($projectId, $collectionSlug, $collectionId);
+
+    event(new SystemLogEvent(
+      module: 'cms',
+      eventType: 'delete_collection',
+      userId: null,
+      entityType: 'collection',
+      entityId: $collectionId
+    ));
   }
 }

@@ -3,10 +3,9 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
-use App\Domains\CMS\Support\CacheKeys;
+use App\Domains\CMS\Support\CollectionCache;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
-use Illuminate\Support\Facades\Cache;
 
 class UpdateDataCollectionAction extends Action
 {
@@ -25,13 +24,12 @@ class UpdateDataCollectionAction extends Action
 
       $collection = $this->repository->update($dto);
 
-      Cache::forget(CacheKeys::collectionById($dto->collection_id));
-      Cache::forget(CacheKeys::collectionItems($dto->collection_id));
-      Cache::forget(CacheKeys::collectionEntries($dto->collection_id));
-      Cache::forget(CacheKeys::collections($collection->project_id));
-
-      // 🚀 السطر المفقود: تنظيف كاش الـ show الخاص بالمحرر والـ conditions
-      Cache::forget(CacheKeys::collection($collection->project_id, $collection->slug));
+      // $dto->slug is the slug the collection was addressed by; $collection->slug
+      // is what it holds now. They are equal while the slug stays immutable —
+      // forgetting both keeps this correct if that ever changes, instead of
+      // leaving the old key serving stale data for a full TTL.
+      CollectionCache::forgetAll($dto->project_id, $dto->slug, $dto->collection_id);
+      CollectionCache::forgetCollection($collection->project_id, $collection->slug);
 
       event(new SystemLogEvent(
         module: 'cms',

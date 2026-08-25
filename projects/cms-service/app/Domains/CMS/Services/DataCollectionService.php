@@ -37,9 +37,9 @@ class DataCollectionService
         protected DeactivateCollectionAction $deactivateCollection
     ) {}
 
-    public function list($projectId)
+    public function list($projectId, bool $includeInactive = false)
     {
-        return $this->indexAction->execute($projectId);
+        return $this->indexAction->execute($projectId, $includeInactive);
     }
 
     public function create(CreateDataCollectionDTO $dto)
@@ -58,7 +58,10 @@ class DataCollectionService
         $collection = $this->updateAction->execute($dto);
 
         if ($collection->type === 'dynamic') {
-            $this->deleteItemsAction->execute($dto->collection_id);
+            // No separate delete step: GenerateDynamicItemsAction replaces the
+            // items inside one transaction. Deleting first as its own committed
+            // step left the collection empty for the whole regeneration window,
+            // and permanently empty if generation then failed.
             $this->generateAction->execute($collection);
         }
 
@@ -70,14 +73,14 @@ class DataCollectionService
         $this->deleteAction->execute($collectionSlug);
     }
 
-    public function show(string $projectKey, string $collectionSlug)
+    public function show(string $projectKey, string $collectionSlug, bool $includeInactive = false)
     {
-        return $this->showDetailsAction->execute($projectKey, $collectionSlug);
+        return $this->showDetailsAction->execute($projectKey, $collectionSlug, $includeInactive);
     }
 
-    public function showById(int $collectionId)
+    public function showById(int $collectionId, bool $includeInactive = false)
     {
-        return $this->showDetailsByIdAction->execute($collectionId);
+        return $this->showDetailsByIdAction->execute($collectionId, $includeInactive);
     }
 
     public function addItems(CollectionItemsDTO $dto)
@@ -95,9 +98,9 @@ class DataCollectionService
         return $this->reOrderItemsAction->execute($dto);
     }
 
-    public function getEntries(string $projectKey, string $collectionSlug)
+    public function getEntries(string $projectKey, string $collectionSlug, bool $includeInactive = false)
     {
-        return $this->getEntriesAction->execute($projectKey, $collectionSlug);
+        return $this->getEntriesAction->execute($projectKey, $collectionSlug, $includeInactive);
     }
 
     public function deactivate(DeactivateCollectionDTO $dto)

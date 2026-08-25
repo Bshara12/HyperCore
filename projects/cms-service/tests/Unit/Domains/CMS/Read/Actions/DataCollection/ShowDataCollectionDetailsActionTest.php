@@ -43,7 +43,7 @@ test('it retrieves collection details and injects its items', function () {
   // إرجاع الكائن بدلاً من المصفوفة
   $dataRepo->shouldReceive('find')
     ->once()
-    ->with(123, 'collection-slug')
+    ->with(123, 'collection-slug', false)
     ->andReturn($mockCollection);
 
   $dataRepo->shouldReceive('getCollectionItems')

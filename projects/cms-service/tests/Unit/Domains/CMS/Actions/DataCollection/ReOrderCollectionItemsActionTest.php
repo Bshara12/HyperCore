@@ -25,6 +25,8 @@ test('it reorders items, clears cache, and returns result', function () {
   // 2. تجهيز الموديل الحقيقي لضمان تطابق النوع
   $collection = new DataCollection();
   $collection->id = 55;
+  $collection->project_id = 10;
+  $collection->slug = 'some-collection';
 
   // 3. تجهيز الـ Mock للـ Repository
   $repoMock = Mockery::mock(DataCollectionRepositoryInterface::class);
@@ -52,6 +54,9 @@ test('it reorders items, clears cache, and returns result', function () {
   // التأكد من مسح مفاتيح الكاش المحددة فقط
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionItems($collection->id));
   Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionById($collection->id));
+
+  // The slug-addressed show payload embeds the items, so it must go too.
+  Cache::shouldHaveReceived('forget')->with(CacheKeys::collection($collection->project_id, $collection->slug));
 
   // التأكد من أن الـ Action أعاد النتيجة المتوقعة
   expect($result)->toBe(true);

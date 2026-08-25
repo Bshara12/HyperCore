@@ -14,7 +14,9 @@ class BetweenValueConditionStrategy implements ValueConditionStrategy
     {
         return $this->valueRepository->pluckEntryIdsByFieldBetween(
             $field,
-            (array) $value
+            (array) $value,
+            $projectId,
+            $dataTypeId
         );
     }
 }

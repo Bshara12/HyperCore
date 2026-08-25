@@ -20,13 +20,20 @@ interface DataCollectionRepositoryInterface
 
     public function deleteItems(int $collectionId): void;
 
-    public function list(int $projectId);
+    public function list(int $projectId, bool $includeInactive = false);
 
-    public function find(int $projectId, string $slug): ?DataCollection;
+    public function find(int $projectId, string $slug, bool $includeInactive = false): ?DataCollection;
 
-    public function findById(int $collectionId): ?DataCollection;
+    public function findById(int $collectionId, bool $includeInactive = false): ?DataCollection;
 
     public function getCollectionItems(int $collectionId);
+
+    /**
+     * Replace every item of a collection atomically.
+     *
+     * @param  int[]  $entryIds
+     */
+    public function replaceItems(int $collectionId, array $entryIds): void;
 
     public function insertItems(int $collectionId, array $items): void;
 

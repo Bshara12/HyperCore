@@ -8,34 +8,37 @@ use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Events\SystemLogEvent;
 use App\Models\DataCollection;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Mockery;
 
-uses(RefreshDatabase::class);
+beforeEach(function () {
+  $this->mock(\App\Domains\Core\Services\CircuitBreakerService::class, function ($mock) {
+    $mock->shouldReceive('canProceed')->andReturn(true);
+    $mock->shouldIgnoreMissing();
+  });
+});
 
 afterEach(function () {
   Mockery::close();
 });
 
 test('it updates collection, clears all associated caches, and dispatches update event', function () {
-  // 1. إنشاء الـ DTO الحقيقي بدلاً من stdClass
   $dto = new UpdateDataCollectionDTO(
     collection_id: 55,
+    project_id: 10,
+    slug: 'my-collection',
     data: [
       'name' => 'Updated Name',
-      'is_active' => true
+      'is_active' => true,
     ]
   );
 
-  // 2. تجهيز الموديل مع تعيين الـ slug لتجنب خطأ الـ TypeError
   $collection = new DataCollection();
   $collection->id = 55;
   $collection->project_id = 10;
-  $collection->slug = 'updated-name'; // 👈 تعيين الـ slug هنا
+  $collection->slug = 'my-collection';
 
-  // 3. تجهيز الـ Mock
   $repoMock = Mockery::mock(DataCollectionRepositoryInterface::class);
 
   $repoMock->shouldReceive('update')
@@ -43,29 +46,54 @@ test('it updates collection, clears all associated caches, and dispatches update
     ->with($dto)
     ->andReturn($collection);
 
-  // 4. تهيئة الـ Fakes
   Cache::spy();
   Event::fake();
 
-  // 5. التنفيذ
   $action = new UpdateDataCollectionAction($repoMock);
   $result = $action->execute($dto);
 
-  // 6. التأكيدات
-  // التأكد من مسح مفاتيح الكاش (بما فيها المفتاح الجديد الخاص بالـ slug)
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionById($dto->collection_id));
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionItems($dto->collection_id));
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionEntries($dto->collection_id));
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::collections($collection->project_id));
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::collection($collection->project_id, $collection->slug)); // 👈 التأكد من مسحه أيضاً
+  foreach ([false, true] as $includeInactive) {
+    Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionById(55, $includeInactive));
+    Cache::shouldHaveReceived('forget')->with(CacheKeys::collections(10, $includeInactive));
+    Cache::shouldHaveReceived('forget')->with(CacheKeys::collection(10, 'my-collection', $includeInactive));
+  }
 
-  // التأكد من إطلاق الحدث بالمعلومات الصحيحة
+  Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionItems(55));
+  Cache::shouldHaveReceived('forget')->with(CacheKeys::collectionEntries(55));
+
   Event::assertDispatched(SystemLogEvent::class, function ($event) use ($dto) {
     return $event->module === 'cms'
       && $event->eventType === 'update_collection'
       && $event->entityId === $dto->collection_id;
   });
 
-  // التأكد من أن الـ Action أعاد الموديل المحدث
   expect($result)->toBe($collection);
+});
+
+test('it also clears the cache key of the slug the collection was addressed by', function () {
+  // Guard against a regression of the rename bug: if a slug ever changes again,
+  // the key the collection was *found* under must be invalidated too, otherwise
+  // it keeps serving the pre-update payload for the rest of the TTL.
+  $dto = new UpdateDataCollectionDTO(
+    collection_id: 55,
+    project_id: 10,
+    slug: 'old-slug',
+    data: ['name' => 'New Name']
+  );
+
+  $collection = new DataCollection();
+  $collection->id = 55;
+  $collection->project_id = 10;
+  $collection->slug = 'new-slug';
+
+  $repoMock = Mockery::mock(DataCollectionRepositoryInterface::class);
+  $repoMock->shouldReceive('update')->once()->with($dto)->andReturn($collection);
+
+  Cache::spy();
+  Event::fake();
+
+  (new UpdateDataCollectionAction($repoMock))->execute($dto);
+
+  Cache::shouldHaveReceived('forget')->with(CacheKeys::collection(10, 'old-slug', false));
+  Cache::shouldHaveReceived('forget')->with(CacheKeys::collection(10, 'new-slug', false));
 });

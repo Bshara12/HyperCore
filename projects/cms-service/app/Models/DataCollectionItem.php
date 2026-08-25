@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DataCollectionItem extends Model
 {
@@ -14,12 +15,12 @@ class DataCollectionItem extends Model
         'sort_order',
     ];
 
-    public function collection()
+    public function collection(): BelongsTo
     {
         return $this->belongsTo(DataCollection::class, 'collection_id');
     }
 
-    public function entry()
+    public function entry(): BelongsTo
     {
         return $this->belongsTo(DataEntry::class, 'item_id');
     }

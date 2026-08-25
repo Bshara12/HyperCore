@@ -38,12 +38,12 @@ test('it retrieves and caches data collections for a project', function () {
 
   $dataRepo->shouldReceive('list')
     ->once()
-    ->with(123)
+    ->with(123, false)
     ->andReturn($expectedCollections);
 
   // 5. التنفيذ
   $action = new IndexDataCollectionAction($dataRepo, $projectRepo);
-  $results = $action->execute('test-project-key');
+  $results = $action->execute('test-project-key', false);
 
   // 6. التأكيد
   expect($results)->toBe($expectedCollections);

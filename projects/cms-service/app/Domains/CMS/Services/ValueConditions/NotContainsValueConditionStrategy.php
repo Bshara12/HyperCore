@@ -16,7 +16,9 @@ class NotContainsValueConditionStrategy implements ValueConditionStrategy
     {
         $badIds = $this->valueRepository->pluckEntryIdsByFieldLike(
             $field,
-            "%{$value}%"
+            "%{$value}%",
+            $projectId,
+            $dataTypeId
         );
 
         return $this->entryRepository->pluckIdsForProjectTypeExcluding(

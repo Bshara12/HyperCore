@@ -16,7 +16,7 @@ test('it passes the correct parameters and casts input to array', function () {
   // التحقق من أن الاستراتيجية تقوم بتحويل القيمة إلى مصفوفة قبل تمريرها
   $this->repository->shouldReceive('pluckEntryIdsByFieldIn')
     ->once()
-    ->with($field, ['1'])
+    ->with($field, ['1'], 1, 1)
     ->andReturn($expectedIds);
 
   $result = $this->strategy->apply($field, $value, 1, 1);
@@ -32,7 +32,7 @@ test('it handles array input without extra casting issues', function () {
   // التحقق من أن المصفوفة تمر كما هي
   $this->repository->shouldReceive('pluckEntryIdsByFieldIn')
     ->once()
-    ->with($field, $value)
+    ->with($field, $value, 1, 1)
     ->andReturn($expectedIds);
 
   $result = $this->strategy->apply($field, $value, 1, 1);

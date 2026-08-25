@@ -13,20 +13,30 @@ use App\Domains\CMS\Requests\RemoveCollectionItemsRequest;
 use App\Domains\CMS\Requests\ReOrderCollectionItemsRequest;
 use App\Domains\CMS\Requests\UpdateDataCollectionRequest;
 use App\Domains\CMS\Services\DataCollectionService;
+use Illuminate\Http\Request;
 
 class DataCollectionController extends Controller
 {
     public function __construct(protected DataCollectionService $service) {}
 
-    public function index()
+    /**
+     * Inactive collections are hidden from consumers and visible to whoever can
+     * manage them — otherwise deactivating a collection would also hide the only
+     * screen from which it can be reactivated.
+     */
+    private function includeInactive(Request $request): bool
     {
-        $collections = $this->service->list(app('currentProject')->public_id);
+        $user = $request->attributes->get('auth_user');
 
-        if (! $collections) {
-            return response()->json([
-                'message' => 'No collections found',
-            ], 404);
-        }
+        return in_array('cms.collection.update', $user['permissions'] ?? [], true);
+    }
+
+    public function index(Request $request)
+    {
+        $collections = $this->service->list(
+            app('currentProject')->public_id,
+            $this->includeInactive($request)
+        );
 
         return response()->json([
             'data' => $collections,
@@ -64,9 +74,13 @@ class DataCollectionController extends Controller
         ]);
     }
 
-    public function show(string $collectionSlug)
+    public function show(Request $request, string $collectionSlug)
     {
-        $data = $this->service->show(app('currentProject')->public_id, $collectionSlug);
+        $data = $this->service->show(
+            app('currentProject')->public_id,
+            $collectionSlug,
+            $this->includeInactive($request)
+        );
 
         if (! $data) {
             return response()->json([
@@ -79,9 +93,9 @@ class DataCollectionController extends Controller
         ]);
     }
 
-    public function showById(int $collectionId)
+    public function showById(Request $request, int $collectionId)
     {
-        $data = $this->service->showById($collectionId);
+        $data = $this->service->showById($collectionId, $this->includeInactive($request));
 
         if (! $data) {
             return response()->json([
@@ -125,9 +139,19 @@ class DataCollectionController extends Controller
         ]);
     }
 
-    public function getEntries($collectionSlug)
+    public function getEntries(Request $request, $collectionSlug)
     {
-        $entries = $this->service->getEntries(app('currentProject')->public_id, $collectionSlug);
+        $entries = $this->service->getEntries(
+            app('currentProject')->public_id,
+            $collectionSlug,
+            $this->includeInactive($request)
+        );
+
+        if ($entries === null) {
+            return response()->json([
+                'message' => 'Collection not found',
+            ], 404);
+        }
 
         return response()->json($entries);
     }

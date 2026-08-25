@@ -92,14 +92,14 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user', 'throttle:api.
     Route::get('/{collectionSlug}/entries', [DataCollectionController::class, 'getEntries'])->name('cms.collections.entries');
 
     Route::middleware('throttle:api.heavy')->group(function () {
-      Route::post('/', [DataCollectionController::class, 'store'])->name('cms.collections.store');
-      Route::patch('/{collectionSlug}', [DataCollectionController::class, 'update'])->name('cms.collections.update');
-      Route::delete('/{collectionSlug}', [DataCollectionController::class, 'destroy'])->name('cms.collections.destroy');
+      Route::post('/', [DataCollectionController::class, 'store'])->name('cms.collections.store')->middleware('permission:cms.collection.create');
+      Route::patch('/{collectionSlug}', [DataCollectionController::class, 'update'])->name('cms.collections.update')->middleware('permission:cms.collection.update');
+      Route::delete('/{collectionSlug}', [DataCollectionController::class, 'destroy'])->name('cms.collections.destroy')->middleware('permission:cms.collection.delete');
 
-      Route::post('/{collectionSlug}/insert', [DataCollectionController::class, 'addItems'])->name('cms.collections.items.insert');
-      Route::delete('/{collectionSlug}/items', [DataCollectionController::class, 'removeItems'])->name('cms.collections.items.remove');
-      Route::post('/{collectionSlug}/items/reorder', [DataCollectionController::class, 'reorderItems'])->name('cms.collections.items.reorder');
-      Route::patch('/{collectionSlug}/deactivate', [DataCollectionController::class, 'deactivate'])->name('cms.collections.deactivate');
+      Route::post('/{collectionSlug}/insert', [DataCollectionController::class, 'addItems'])->name('cms.collections.items.insert')->middleware('permission:cms.collection.update');
+      Route::delete('/{collectionSlug}/items', [DataCollectionController::class, 'removeItems'])->name('cms.collections.items.remove')->middleware('permission:cms.collection.update');
+      Route::post('/{collectionSlug}/items/reorder', [DataCollectionController::class, 'reorderItems'])->name('cms.collections.items.reorder')->middleware('permission:cms.collection.update');
+      Route::patch('/{collectionSlug}/deactivate', [DataCollectionController::class, 'deactivate'])->name('cms.collections.deactivate')->middleware('permission:cms.collection.update');
     });
   });
 });

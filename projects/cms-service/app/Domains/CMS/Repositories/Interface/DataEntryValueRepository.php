@@ -23,19 +23,24 @@ interface DataEntryValueRepository
     public function bulkInsertFromSnapshot(int $entryId, array $values): void;
 
     /**
-     * Filtering helpers used by dynamic collections (Strategy pattern)
+     * Filtering helpers used by dynamic collections (Strategy pattern).
+     *
+     * $projectId and $dataTypeId are the tenant scope. They are optional only
+     * for backwards compatibility of existing callers — a dynamic collection
+     * must always pass them, otherwise a condition like price < 25 matches
+     * every entry of every project that happens to own a field of that name.
      */
-    public function pluckEntryIdsByFieldComparison(string $field, string $operator, $value): array;
+    public function pluckEntryIdsByFieldComparison(string $field, string $operator, $value, ?int $projectId = null, ?int $dataTypeId = null): array;
 
-    public function pluckEntryIdsByFieldLike(string $field, string $pattern): array;
+    public function pluckEntryIdsByFieldLike(string $field, string $pattern, ?int $projectId = null, ?int $dataTypeId = null): array;
 
-    public function pluckEntryIdsByFieldIn(string $field, array $values): array;
+    public function pluckEntryIdsByFieldIn(string $field, array $values, ?int $projectId = null, ?int $dataTypeId = null): array;
 
     public function pluckEntryIdsByFieldInCollection(int $projectId, int $dataTypeId, array $values): array;
 
     public function returnEntryIdsFromCollectionItems(array $collectionIds): array;
 
-    public function pluckEntryIdsByFieldBetween(string $field, array $values): array;
+    public function pluckEntryIdsByFieldBetween(string $field, array $values, ?int $projectId = null, ?int $dataTypeId = null): array;
 
     /**
      * Same helpers but scoped to a candidate set (performance for Offer Engine)

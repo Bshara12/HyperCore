@@ -3,10 +3,9 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
-use App\Domains\CMS\Support\CacheKeys;
+use App\Domains\CMS\Support\CollectionCache;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
-use Illuminate\Support\Facades\Cache;
 
 class DeleteDataCollectionItemsAction extends Action
 {
@@ -33,9 +32,7 @@ class DeleteDataCollectionItemsAction extends Action
 
       $this->repository->deleteItems($collectionId);
 
-      Cache::forget(CacheKeys::collectionItems($collectionId));
-      Cache::forget(CacheKeys::collectionEntries($collectionId));
-      Cache::forget(CacheKeys::collectionById($collectionId));
+      CollectionCache::forgetItems($collectionId);
     });
   }
 }

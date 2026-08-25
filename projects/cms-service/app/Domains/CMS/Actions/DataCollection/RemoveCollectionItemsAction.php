@@ -3,10 +3,9 @@
 namespace App\Domains\CMS\Actions\DataCollection;
 
 use App\Domains\CMS\Repositories\Interface\DataCollectionRepositoryInterface;
-use App\Domains\CMS\Support\CacheKeys;
+use App\Domains\CMS\Support\CollectionCache;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
-use Illuminate\Support\Facades\Cache;
 
 class RemoveCollectionItemsAction extends Action
 {
@@ -26,9 +25,7 @@ class RemoveCollectionItemsAction extends Action
             $collection = $this->repository->getBySlug($dto->collectionSlug);
             $this->repository->removeItems($collection->id, $dto->items);
 
-            Cache::forget(CacheKeys::collectionItems($collection->id));
-            Cache::forget(CacheKeys::collectionEntries($collection->id));
-            Cache::forget(CacheKeys::collectionById($collection->id));
+            CollectionCache::forgetContents($collection->project_id, $collection->slug, $collection->id);
 
             event(new SystemLogEvent(
                 module: 'cms',

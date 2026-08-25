@@ -13,11 +13,38 @@ beforeEach(function () {
 });
 
 test('it can get collection by slug', function () {
-  $collection = DataCollection::factory()->create(['slug' => 'test-collection']);
+  $project = bindCurrentProject();
+
+  $collection = DataCollection::factory()->create([
+    'project_id' => $project->id,
+    'slug' => 'test-collection',
+  ]);
 
   $result = $this->repository->getBySlug('test-collection');
 
   expect($result->id)->toBe($collection->id);
+});
+
+test('getBySlug never crosses into another project holding the same slug', function () {
+  $mine = bindCurrentProject();
+  $theirs = \App\Models\Project::factory()->create();
+
+  // The unique index is (project_id, slug), so the same slug in two projects is
+  // valid data. An unscoped lookup returned whichever row was created first.
+  $theirCollection = DataCollection::factory()->create([
+    'project_id' => $theirs->id,
+    'slug' => 'summer-sale',
+  ]);
+
+  $myCollection = DataCollection::factory()->create([
+    'project_id' => $mine->id,
+    'slug' => 'summer-sale',
+  ]);
+
+  $result = $this->repository->getBySlug('summer-sale');
+
+  expect($result->id)->toBe($myCollection->id)
+    ->and($result->id)->not->toBe($theirCollection->id);
 });
 
 test('it can reorder items correctly./vendor/bin/pest tests/Unit/Domains/CMS/Repositories/DataCollectionRepositoryEloquentTest.php --coverage', function () {
@@ -135,16 +162,67 @@ test('it inserts items and prevents duplicates', function () {
   expect($items)->toHaveCount(1);
 });
 
-// 3. اختبار حذف العناصر مع الـ DomainException
-test('it throws exception when removing items from different collection', function () {
+// 3. حذف العناصر محصور بالتجميعة المستهدفة
+test('it leaves items of another collection untouched', function () {
   $collection1 = DataCollection::factory()->create();
   $collection2 = DataCollection::factory()->create();
 
   $item = DataCollectionItem::factory()->create(['collection_id' => $collection2->id]);
 
-  // محاولة حذف عنصر ينتمي لـ collection2 باستخدام collection1
-  expect(fn() => $this->repository->removeItems($collection1->id, [$item->item_id]))
-    ->toThrow(DomainException::class, "You can't remove items from different collection.");
+  // Removing by an item_id that only exists in collection2 is a no-op for
+  // collection1 — it used to throw, because the lookup ignored collection_id.
+  $this->repository->removeItems($collection1->id, [$item->item_id]);
+
+  expect(DataCollectionItem::find($item->id))->not->toBeNull();
+});
+
+test('it removes an entry from one collection while keeping it in another', function () {
+  // The exact case the old implementation got wrong: the same entry sitting in
+  // two collections made a legitimate removal fail.
+  $entry = DataEntry::factory()->create();
+
+  $collection1 = DataCollection::factory()->create();
+  $collection2 = DataCollection::factory()->create();
+
+  $inFirst = DataCollectionItem::create([
+    'collection_id' => $collection1->id,
+    'item_id' => $entry->id,
+    'sort_order' => 1,
+  ]);
+
+  $inSecond = DataCollectionItem::create([
+    'collection_id' => $collection2->id,
+    'item_id' => $entry->id,
+    'sort_order' => 1,
+  ]);
+
+  $this->repository->removeItems($collection2->id, [$entry->id]);
+
+  expect(DataCollectionItem::find($inSecond->id))->toBeNull()
+    ->and(DataCollectionItem::find($inFirst->id))->not->toBeNull();
+});
+
+test('it renumbers sort_order after a removal', function () {
+  $collection = DataCollection::factory()->create();
+
+  $entries = DataEntry::factory()->count(3)->create();
+
+  foreach ($entries as $index => $entry) {
+    DataCollectionItem::create([
+      'collection_id' => $collection->id,
+      'item_id' => $entry->id,
+      'sort_order' => $index + 1,
+    ]);
+  }
+
+  $this->repository->removeItems($collection->id, [$entries[0]->id]);
+
+  $remaining = DataCollectionItem::where('collection_id', $collection->id)
+    ->orderBy('sort_order')
+    ->pluck('sort_order')
+    ->all();
+
+  expect($remaining)->toBe([1, 2]);
 });
 
 // 4. اختبار getEntries (تحتاج لتجهيز العلاقات)
@@ -299,4 +377,179 @@ test('it does nothing when deactivating a non-existent collection', function () 
   $this->repository->deactivate($dto);
 
   expect(true)->toBeTrue();
+});
+
+/*
+|--------------------------------------------------------------------------
+| is_active enforcement on read paths
+|--------------------------------------------------------------------------
+*/
+
+test('list hides inactive collections by default and shows them on request', function () {
+  $project = \App\Models\Project::factory()->create();
+
+  $active = DataCollection::factory()->create([
+    'project_id' => $project->id,
+    'is_active' => true,
+  ]);
+
+  $inactive = DataCollection::factory()->create([
+    'project_id' => $project->id,
+    'is_active' => false,
+  ]);
+
+  expect($this->repository->list($project->id)->pluck('id')->all())
+    ->toBe([$active->id]);
+
+  expect($this->repository->list($project->id, true)->pluck('id')->sort()->values()->all())
+    ->toBe(collect([$active->id, $inactive->id])->sort()->values()->all());
+});
+
+test('find hides an inactive collection by default', function () {
+  $project = \App\Models\Project::factory()->create();
+
+  DataCollection::factory()->create([
+    'project_id' => $project->id,
+    'slug' => 'hidden',
+    'is_active' => false,
+  ]);
+
+  expect($this->repository->find($project->id, 'hidden'))->toBeNull()
+    ->and($this->repository->find($project->id, 'hidden', true))->not->toBeNull();
+});
+
+test('findById hides an inactive collection by default', function () {
+  $collection = DataCollection::factory()->create(['is_active' => false]);
+
+  expect($this->repository->findById($collection->id))->toBeNull()
+    ->and($this->repository->findById($collection->id, true))->not->toBeNull();
+});
+
+/*
+|--------------------------------------------------------------------------
+| deactivate / reactivate
+|--------------------------------------------------------------------------
+*/
+
+test('it can deactivate and then reactivate a collection', function () {
+  $project = \App\Models\Project::factory()->create();
+
+  $collection = DataCollection::factory()->create([
+    'project_id' => $project->id,
+    'slug' => 'toggle-me',
+    'is_active' => true,
+  ]);
+
+  $this->repository->deactivate(new \App\Domains\CMS\DTOs\DataCollection\DeactivateCollectionDTO(
+    project_id: $project->id,
+    slug: 'toggle-me',
+    is_active: false,
+  ));
+
+  expect($collection->fresh()->is_active)->toBeFalse();
+
+  // The lookup used to filter on is_active = true, which made this unreachable.
+  $this->repository->deactivate(new \App\Domains\CMS\DTOs\DataCollection\DeactivateCollectionDTO(
+    project_id: $project->id,
+    slug: 'toggle-me',
+    is_active: true,
+  ));
+
+  expect($collection->fresh()->is_active)->toBeTrue();
+});
+
+/*
+|--------------------------------------------------------------------------
+| replaceItems
+|--------------------------------------------------------------------------
+*/
+
+test('replaceItems swaps the whole item set and numbers it from one', function () {
+  $collection = DataCollection::factory()->create();
+  $entries = DataEntry::factory()->count(3)->create();
+
+  DataCollectionItem::create([
+    'collection_id' => $collection->id,
+    'item_id' => $entries[0]->id,
+    'sort_order' => 1,
+  ]);
+
+  $this->repository->replaceItems($collection->id, [$entries[1]->id, $entries[2]->id]);
+
+  $rows = DataCollectionItem::where('collection_id', $collection->id)
+    ->orderBy('sort_order')
+    ->get();
+
+  expect($rows->pluck('item_id')->all())->toBe([$entries[1]->id, $entries[2]->id])
+    ->and($rows->pluck('sort_order')->all())->toBe([1, 2]);
+});
+
+test('replaceItems with an empty set clears the collection', function () {
+  $collection = DataCollection::factory()->create();
+  DataCollectionItem::factory()->count(2)->create(['collection_id' => $collection->id]);
+
+  $this->repository->replaceItems($collection->id, []);
+
+  expect(DataCollectionItem::where('collection_id', $collection->id)->count())->toBe(0);
+});
+
+test('replaceItems does not touch another collection', function () {
+  $mine = DataCollection::factory()->create();
+  $other = DataCollection::factory()->create();
+
+  $otherItem = DataCollectionItem::factory()->create(['collection_id' => $other->id]);
+  $entry = DataEntry::factory()->create();
+
+  $this->repository->replaceItems($mine->id, [$entry->id]);
+
+  expect(DataCollectionItem::find($otherItem->id))->not->toBeNull();
+});
+
+/*
+|--------------------------------------------------------------------------
+| getCollectionItems
+|--------------------------------------------------------------------------
+*/
+
+test('getCollectionItems returns items ordered by sort_order with their entry', function () {
+  $collection = DataCollection::factory()->create();
+  $entries = DataEntry::factory()->count(3)->create();
+
+  // Inserted out of order on purpose: the read used to return insertion order,
+  // which made the reorder endpoint invisible.
+  DataCollectionItem::create(['collection_id' => $collection->id, 'item_id' => $entries[0]->id, 'sort_order' => 3]);
+  DataCollectionItem::create(['collection_id' => $collection->id, 'item_id' => $entries[1]->id, 'sort_order' => 1]);
+  DataCollectionItem::create(['collection_id' => $collection->id, 'item_id' => $entries[2]->id, 'sort_order' => 2]);
+
+  $items = $this->repository->getCollectionItems($collection->id);
+
+  expect($items->pluck('item_id')->all())
+    ->toBe([$entries[1]->id, $entries[2]->id, $entries[0]->id]);
+
+  $serialised = $items->toArray();
+
+  expect($serialised[0])->toHaveKey('data')
+    ->and($serialised[0]['data']['id'])->toBe($entries[1]->id)
+    ->and($serialised[0]['data'])->toHaveKey('values')
+    ->and($serialised[0])->not->toHaveKey('entry');
+});
+
+test('getCollectionItems keeps a null data key when the entry is soft deleted', function () {
+  $collection = DataCollection::factory()->create();
+  $entry = DataEntry::factory()->create();
+
+  DataCollectionItem::create([
+    'collection_id' => $collection->id,
+    'item_id' => $entry->id,
+    'sort_order' => 1,
+  ]);
+
+  // DataEntry soft deletes, so no FK cascade fires: the item row survives while
+  // the relation resolves to null. The item must still render, with data: null.
+  $entry->delete();
+
+  $items = $this->repository->getCollectionItems($collection->id);
+
+  expect($items)->toHaveCount(1)
+    ->and($items->first()->toArray()['data'])->toBeNull();
 });
