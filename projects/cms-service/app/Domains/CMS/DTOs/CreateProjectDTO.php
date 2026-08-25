@@ -11,6 +11,7 @@ class CreateProjectDTO
         public int $ownerId,
         public ?array $supportedLanguages,
         public ?array $enabledModules,
+        public ?string $description = null,
     ) {}
 
     public static function fromRequest(CreateProjectRequest $request): self
@@ -34,7 +35,10 @@ class CreateProjectDTO
             $request->name,
             $userId,
             $request->supported_languages,
-            $request->enabled_modules
+            $request->enabled_modules,
+            // input(), not ->description: the magic accessor falls back to
+            // route parameters when the key is absent from the payload.
+            $request->input('description')
         );
     }
 
@@ -42,6 +46,7 @@ class CreateProjectDTO
     {
         return [
             'name' => $this->name,
+            'description' => $this->description,
             'owner_id' => $this->ownerId,
             'supported_languages' => $this->supportedLanguages,
             'enabled_modules' => $this->enabledModules,

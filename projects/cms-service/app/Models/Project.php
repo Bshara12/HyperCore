@@ -13,7 +13,7 @@ class Project extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['name', 'owner_id', 'slug', 'supported_languages', 'enabled_modules', 'public_id'];
+    protected $fillable = ['name', 'description', 'owner_id', 'slug', 'supported_languages', 'enabled_modules', 'public_id'];
 
     protected $casts = [
         'supported_languages' => 'array',

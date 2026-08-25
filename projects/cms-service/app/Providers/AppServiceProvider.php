@@ -447,25 +447,22 @@ class AppServiceProvider extends ServiceProvider
     // @codeCoverageIgnoreStart
     // 1. للمسارات القياسية الجلب والقراءة
     RateLimiter::for('api.standard', function (Request $request) {
-      return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+      return Limit::perMinute(60)->by($this->rateLimitKey($request));
     });
 
     // 2. للعمليات الثقيلة (الكتابة، التعديل، الحفظ والدفع)
-
-    // RateLimiter::for('api.heavy', function (Request $request) {
-    //   return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
-    // });
     RateLimiter::for('api.heavy', function (Request $request) {
-    $key = $request->user()?->id ?: $request->ip();
-    return [
+      $key = $this->rateLimitKey($request);
+
+      return [
         Limit::perSecond(2)->by($key),   // يمنع burst/spam مفاجئ
         Limit::perMinute(15)->by($key),  // الكوتا العامة زي ما هي
-    ];
-});
+      ];
+    });
 
     // 3. لعمليات الذكاء الاصطناعي المكلفة
     RateLimiter::for('api.ai', function (Request $request) {
-      return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+      return Limit::perMinute(5)->by($this->rateLimitKey($request));
     });
     // @codeCoverageIgnoreEnd
 
@@ -474,5 +471,40 @@ class AppServiceProvider extends ServiceProvider
             ? Project::findOrFail($value)
             : Project::where('slug', $value)->firstOrFail();
     });
+  }
+
+  /**
+   * The identity a rate limit is counted against.
+   *
+   * This used to be `$request->user()?->id ?: $request->ip()`, which produced a
+   * single global bucket for the whole platform:
+   *
+   *   - No Laravel auth guard is used here — AuthUserMiddleware puts the
+   *     identity in the request attributes — so $request->user() is always null
+   *     and every call fell through to the IP.
+   *   - Behind nginx the IP is the proxy container's, identical for everyone.
+   *
+   * So one user spending 60 requests locked out every other user. Prefer the
+   * authenticated user id; fall back to the bearer token (still per-session,
+   * and works even if this limiter is evaluated before the auth middleware);
+   * only then the IP.
+   */
+  private function rateLimitKey(Request $request): string
+  {
+    $user = $request->attributes->get('auth_user');
+
+    $userId = is_array($user)
+      ? ($user['id'] ?? null)
+      : (is_object($user) ? ($user->id ?? null) : null);
+
+    if ($userId) {
+      return 'user:'.$userId;
+    }
+
+    if ($token = $request->bearerToken()) {
+      return 'token:'.hash('sha256', $token);
+    }
+
+    return 'ip:'.$request->ip();
   }
 }

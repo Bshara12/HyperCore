@@ -55,10 +55,26 @@ class CreateFieldAction extends Action
 
   public function ensureDataTypeRelationExists(CreateFieldDTO $dto, array $settings): int
   {
-    $relatedDataType = DataType::find($settings['related_data_type_id']);
+    /*
+     | A relation must stay inside one project.
+     |
+     | Checking only that the target exists was an existence check, not an
+     | ownership check: any caller able to name a data_type id could point a
+     | field at another tenant's type. Resolve the owning project from the
+     | field's own data type and require the target to share it.
+     */
+    $ownerProjectId = DataType::where('id', $dto->data_type_id)->value('project_id');
+
+    if (! $ownerProjectId) {
+      abort(422, 'DataType does not exist.');
+    }
+
+    $relatedDataType = DataType::where('id', $settings['related_data_type_id'])
+      ->where('project_id', $ownerProjectId)
+      ->first();
 
     if (! $relatedDataType) {
-      abort(422, 'Related DataType does not exist.');
+      abort(422, 'Related DataType does not exist in this project.');
     }
 
 

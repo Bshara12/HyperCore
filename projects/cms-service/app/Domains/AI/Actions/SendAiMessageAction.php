@@ -65,6 +65,16 @@ class SendAiMessageAction
             $history
         );
 
+        /*
+         | Failed when the generator says so explicitly, or when it produced no
+         | schema at all — the system prompt mandates one, so an empty schema is
+         | a failed turn, not a conversational reply. A missing "success" key is
+         | NOT read as failure: absence of a signal must not invent one.
+         */
+        $schema = $aiResponse['technical_schema'] ?? null;
+
+        $generationFailed = ($aiResponse['success'] ?? true) === false || empty($schema);
+
         // ─── احفظ رد الـ AI ──────────────────────────────────
         $aiMessage = $this->repository->addMessage(
             conversationId: $conversation->id,
@@ -82,14 +92,17 @@ class SendAiMessageAction
         }
 
         return [
-            'type' => 'schema_generated',
+            // A failed generation must not be reported with the same type as a
+            // successful one — the caller has no other way to tell them apart.
+            'type' => $generationFailed ? 'schema_generation_failed' : 'schema_generated',
             'conversation_id' => $conversation->id,
             'conversation_title' => $conversation->title,
             'message_id' => $aiMessage->id,
             'ai_chat_bubble' => $aiResponse['ai_chat_bubble'],
             'technical_schema' => $aiResponse['technical_schema'] ?? null,
             'is_new_conversation' => ! $dto->conversationId,
-            'can_provision' => ! empty($aiResponse['technical_schema']),
+            'can_provision' => ! $generationFailed && ! empty($aiResponse['technical_schema']),
+            'error' => $aiResponse['error'] ?? null,
         ];
     }
 
@@ -157,6 +170,18 @@ class SendAiMessageAction
               ."• عدد الحقول الكلي: {$result['total_fields']}\n"
               .'• الموديولات المفعّلة: '.implode(', ', $result['modules']);
 
+            // Fields the schema asked for but that were not created. Reported
+            // here so an incomplete project cannot pass for a complete one.
+            $warnings = $result['warnings'] ?? [];
+
+            if (! empty($warnings)) {
+                $successContent .= "\n\n⚠️ حقول لم يتم إنشاؤها (".count($warnings)."):\n";
+
+                foreach ($warnings as $warning) {
+                    $successContent .= "• {$warning['data_type']}.{$warning['field']} — {$warning['reason']}\n";
+                }
+            }
+
             $aiMessage = $this->repository->addMessage(
                 conversationId: $conversation->id,
                 role: 'assistant',
@@ -183,6 +208,8 @@ class SendAiMessageAction
                 'total_types' => $result['total_types'],
                 'total_fields' => $result['total_fields'],
                 'data_types' => $result['data_types'],
+                'warnings' => $result['warnings'] ?? [],
+                'skipped_fields' => $result['skipped_fields'] ?? 0,
             ];
         } catch (\Throwable $e) {
             $errorContent = '❌ فشل إنشاء المشروع: '.$e->getMessage();

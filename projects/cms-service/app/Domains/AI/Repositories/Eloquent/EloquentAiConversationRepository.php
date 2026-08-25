@@ -86,8 +86,17 @@ class EloquentAiConversationRepository implements AiConversationRepositoryInterf
 
     public function getMessages(int $conversationId): Collection
     {
+        /*
+         | id is the tiebreaker, not decoration. sequence is derived from
+         | max(sequence) at the start of a turn and written as +1 / +2, so two
+         | concurrent turns in one conversation produce duplicate sequences.
+         | Ordering by sequence alone then leaves the row order up to the
+         | storage engine — and "the last assistant message carrying a schema"
+         | is what provisioning builds the project from.
+         */
         return AiMessage::where('conversation_id', $conversationId)
             ->orderBy('sequence')
+            ->orderBy('id')
             ->get();
     }
 

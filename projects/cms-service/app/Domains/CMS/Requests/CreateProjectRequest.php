@@ -10,6 +10,7 @@ class CreateProjectRequest extends FormRequest
   {
     return [
       'name' => 'required|string|max:255',
+      'description' => 'nullable|string|max:2000',
       'supported_languages' => 'nullable|array',
       'enabled_modules' => 'nullable|array',
     ];

@@ -32,6 +32,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'track.event' => TrackSubscriptionEvent::class,
         ]);
 
+        // Every request arrives through the nginx container, so without this
+        // $request->ip() is the proxy's address for all callers — which made the
+        // IP fallback of the rate limiters a single shared bucket.
+        $middleware->trustProxies(at: '*');
+
         // The current project must be resolved before route model binding runs,
         // otherwise project-scoped bindings (e.g. {dataType:slug}, whose slug is
         // only unique per project) cannot know which project they belong to.

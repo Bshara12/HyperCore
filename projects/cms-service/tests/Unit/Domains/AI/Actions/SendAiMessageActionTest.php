@@ -104,7 +104,91 @@ test('it handles chat for a new conversation, generates title and returns schema
         'technical_schema' => $aiResponse['technical_schema'],
         'is_new_conversation' => true,
         'can_provision' => true,
+        'error' => null,
     ]);
+});
+
+test('it reports a failed schema generation instead of passing it off as a normal reply', function () {
+    $repoMock = mock(AiConversationRepositoryInterface::class);
+    $generateSchemaMock = mock(GenerateProjectSchemaAction::class);
+    $provisionProjectMock = mock(ProvisionProjectFromSchemaAction::class);
+
+    $dto = new SendMessageDTO(
+        userId: 1,
+        content: 'build me something',
+        conversationId: 10,
+        action: SendMessageDTO::ACTION_CHAT,
+    );
+
+    $conversation = new AiConversation();
+    $conversation->id = 10;
+    $conversation->title = 'existing';
+
+    $repoMock->shouldReceive('findConversationForUser')->once()->with(10, 1)->andReturn($conversation);
+    $repoMock->shouldReceive('getLastSequence')->once()->with(10)->andReturn(0);
+    $repoMock->shouldReceive('addMessage')->once()->with(10, 'user', 'build me something', null, 1);
+    $repoMock->shouldReceive('getMessages')->once()->with(10)->andReturn(collect([]));
+
+    // What GenerateProjectSchemaAction now returns when the model answers with
+    // something that is not a JSON object.
+    $generateSchemaMock->shouldReceive('execute')->once()->andReturn([
+        'success' => false,
+        'ai_chat_bubble' => 'تعذّر توليد مخطط صالح من الرد. حاول إعادة صياغة وصف مشروعك.',
+        'technical_schema' => null,
+        'provider_used' => 'Gemini #1',
+        'error' => 'unparsable_response',
+    ]);
+
+    $failedMessage = new AiMessage();
+    $failedMessage->id = 201;
+
+    $repoMock->shouldReceive('addMessage')
+        ->once()
+        ->with(10, 'assistant', 'تعذّر توليد مخطط صالح من الرد. حاول إعادة صياغة وصف مشروعك.', null, 2)
+        ->andReturn($failedMessage);
+
+    $action = new SendAiMessageAction($repoMock, $generateSchemaMock, $provisionProjectMock);
+    $result = $action->execute($dto);
+
+    expect($result['type'])->toBe('schema_generation_failed')
+        ->and($result['can_provision'])->toBeFalse()
+        ->and($result['error'])->toBe('unparsable_response');
+});
+
+test('an empty schema counts as a failed turn even when success is not reported', function () {
+    $repoMock = mock(AiConversationRepositoryInterface::class);
+    $generateSchemaMock = mock(GenerateProjectSchemaAction::class);
+    $provisionProjectMock = mock(ProvisionProjectFromSchemaAction::class);
+
+    $dto = new SendMessageDTO(
+        userId: 1,
+        content: 'hello',
+        conversationId: 10,
+        action: SendMessageDTO::ACTION_CHAT,
+    );
+
+    $conversation = new AiConversation();
+    $conversation->id = 10;
+    $conversation->title = 'existing';
+
+    $repoMock->shouldReceive('findConversationForUser')->once()->andReturn($conversation);
+    $repoMock->shouldReceive('getLastSequence')->once()->andReturn(0);
+    $repoMock->shouldReceive('addMessage')->once()->with(10, 'user', 'hello', null, 1);
+    $repoMock->shouldReceive('getMessages')->once()->andReturn(collect([]));
+
+    $generateSchemaMock->shouldReceive('execute')->once()->andReturn([
+        'ai_chat_bubble' => 'sure',
+        'technical_schema' => [],
+    ]);
+
+    $message = new AiMessage();
+    $message->id = 202;
+    $repoMock->shouldReceive('addMessage')->once()->andReturn($message);
+
+    $result = (new SendAiMessageAction($repoMock, $generateSchemaMock, $provisionProjectMock))->execute($dto);
+
+    expect($result['type'])->toBe('schema_generation_failed')
+        ->and($result['can_provision'])->toBeFalse();
 });
 
 test('it handles chat for an existing conversation and builds history correctly', function () {
