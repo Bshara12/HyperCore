@@ -307,19 +307,19 @@ Route::prefix('admin/search')
 
 
 
-Route::middleware(['auth.user'])->prefix('ai')->group(function () {
-  Route::get('/conversations', [AiConversationController::class, 'index'])
-    ->name('ai-conversations.index');
+// Route::middleware(['auth.user'])->prefix('ai')->group(function () {
+//   Route::get('/conversations', [AiConversationController::class, 'index'])
+//     ->name('ai-conversations.index');
 
-  Route::post('/conversations', [AiConversationController::class, 'store'])
-    ->name('ai-conversations.store');
+//   Route::post('/conversations', [AiConversationController::class, 'store'])
+//     ->name('ai-conversations.store');
 
-  Route::get('/conversations/{id}', [AiConversationController::class, 'show'])
-    ->name('ai-conversations.show');
+//   Route::get('/conversations/{id}', [AiConversationController::class, 'show'])
+//     ->name('ai-conversations.show');
 
-  Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy'])
-    ->name('ai-conversations.destroy');
-});
+//   Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy'])
+//     ->name('ai-conversations.destroy');
+// });
 
 
 

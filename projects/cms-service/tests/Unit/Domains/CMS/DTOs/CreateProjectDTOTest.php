@@ -49,8 +49,17 @@ test('it maps properties to array correctly', function () {
 
   expect($dto->toArray())->toBe([
     'name' => 'Name',
+    'description' => null,
     'owner_id' => 1,
     'supported_languages' => ['ar'],
     'enabled_modules' => ['cms'],
   ]);
+});
+
+test('it carries the description through to the array', function () {
+  // The AI schema has always produced project_info.description; it used to be
+  // dropped because the DTO had nowhere to put it.
+  $dto = new CreateProjectDTO('Name', 1, ['ar'], ['cms'], 'A generated description.');
+
+  expect($dto->toArray()['description'])->toBe('A generated description.');
 });

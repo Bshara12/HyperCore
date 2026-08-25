@@ -13,6 +13,7 @@ use App\Models\DataTypeField;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ProvisionProjectFromSchemaAction
 {
@@ -22,6 +23,13 @@ class ProvisionProjectFromSchemaAction
   // dataTypeMap['brand']    = 5   ← بالـ slug المفرد
   private array $dataTypeMap = [];
 
+  /**
+   * Fields the schema asked for that could not be created, with the reason.
+   *
+   * @var array<int, array{data_type: string, field: string, reason: string}>
+   */
+  private array $fieldFailures = [];
+
   public function __construct(
     private CreateProjectAction $createProject,
     private CreateDataTypeAction $createDataType,
@@ -30,6 +38,15 @@ class ProvisionProjectFromSchemaAction
 
   public function execute(ProvisionProjectFromSchemaDTO $dto): array
   {
+    /*
+     | Reset per run. Both are instance state, and a second execute() on the
+     | same instance previously started with the previous project's names still
+     | in the map — so a relation could resolve to a data type from the earlier
+     | provisioning run.
+     */
+    $this->dataTypeMap = [];
+    $this->fieldFailures = [];
+
     return DB::transaction(function () use ($dto) {
 
       // ─── Step 1: إنشاء المشروع ─────────────────────────────
@@ -39,7 +56,7 @@ class ProvisionProjectFromSchemaAction
           ownerId: $dto->ownerId,
           supportedLanguages: $dto->projectInfo['languages'] ?? ['ar', 'en'],
           enabledModules: $dto->projectInfo['modules'] ?? ['cms'],
-          // description: $dto->projectInfo['description'] ?? null,
+          description: $dto->projectInfo['description'] ?? null,
         )
       );
 
@@ -145,9 +162,25 @@ class ProvisionProjectFromSchemaAction
   // =========================================================
   private function resolveDataTypeId(string $identifier): ?int
   {
-    // ─── حالة 1: رقم صحيح أُرسل مباشرة ─────────────────
+    /*
+     | A numeric identifier is NOT resolvable here and must never be trusted.
+     |
+     | The schema is produced by an LLM steered by user text, so a user can ask
+     | for `"related_data_type_id": 48` and get it verbatim. Returning that
+     | integer unchanged addressed the global data_types table, which let a
+     | freshly provisioned project link a relation to a data type owned by a
+     | different tenant.
+     |
+     | Only names registered while provisioning THIS schema are resolvable —
+     | the map is the tenant boundary.
+     */
     if (is_numeric($identifier)) {
-      return (int) $identifier;
+      Log::warning(
+        "[AI Provision] Rejected numeric data type reference '{$identifier}' — " .
+          'relations may only target types created in this schema.'
+      );
+
+      return null;
     }
 
     // ─── حالة 2: ابحث في الـ map بالصيغة الأصلية ────────
@@ -195,6 +228,12 @@ class ProvisionProjectFromSchemaAction
     $rawRelatedId = $settings['related_data_type_id'] ?? null;
 
     if (! $rawRelatedId) {
+      $this->fieldFailures[] = [
+        'data_type' => $this->dataTypeNameFor($dataTypeId),
+        'field' => $fieldData['name'] ?? '(unnamed)',
+        'reason' => 'relation field is missing related_data_type_id',
+      ];
+
       Log::warning("[AI Provision] Relation field '{$fieldData['name']}' missing related_data_type_id.");
 
       return;
@@ -204,6 +243,12 @@ class ProvisionProjectFromSchemaAction
     $resolvedId = $this->resolveDataTypeId((string) $rawRelatedId);
 
     if (! $resolvedId) {
+      $this->fieldFailures[] = [
+        'data_type' => $this->dataTypeNameFor($dataTypeId),
+        'field' => $fieldData['name'] ?? '(unnamed)',
+        'reason' => "could not resolve related data type '{$rawRelatedId}' within this project",
+      ];
+
       Log::warning("[AI Provision] Skipping relation field '{$fieldData['name']}' — could not resolve '{$rawRelatedId}'.");
 
       return;
@@ -224,6 +269,12 @@ class ProvisionProjectFromSchemaAction
     $targetId = $this->resolveDataTypeId($relation['target']);
 
     if (! $sourceId || ! $targetId) {
+      $this->fieldFailures[] = [
+        'data_type' => (string) ($relation['source'] ?? '?'),
+        'field' => (string) ($relation['field_name'] ?? 'relation'),
+        'reason' => "relation '{$relation['source']}' → '{$relation['target']}' could not be resolved within this project",
+      ];
+
       Log::warning("[AI Provision] Skipping relation '{$relation['source']}' → '{$relation['target']}'.");
 
       return;
@@ -268,6 +319,8 @@ class ProvisionProjectFromSchemaAction
     array $fieldData,
     int $sortOrder,
   ): void {
+    $fieldName = $fieldData['name'] ?? '(unnamed)';
+
     try {
       // ✅ نظّف الـ validation rules من القيم غير المدعومة
       $fieldData['validation_rules'] = $this->sanitizeValidationRules(
@@ -289,8 +342,35 @@ class ProvisionProjectFromSchemaAction
         )
       );
     } catch (\Throwable $e) {
-      Log::warning("[AI Provision] Field '{$fieldData['name']}' skipped: " . $e->getMessage());
+      /*
+       | A field the schema asked for and that does not exist afterwards is a
+       | broken data type, not a detail. Provisioning still completes — an LLM
+       | quirk on one field should not throw away a whole project the user can
+       | otherwise use — but the failure is recorded and reported back instead
+       | of living only in the log.
+       */
+      $reason = $e instanceof HttpExceptionInterface
+        ? ($e->getMessage() ?: 'rejected with HTTP '.$e->getStatusCode())
+        : $e->getMessage();
+
+      $this->fieldFailures[] = [
+        'data_type' => $this->dataTypeNameFor($dataTypeId),
+        'field' => $fieldName,
+        'reason' => $reason,
+      ];
+
+      Log::warning("[AI Provision] Field '{$fieldName}' skipped: ".$reason);
     }
+  }
+
+  /**
+   * Reverse lookup of a data type's display name, for readable failure reports.
+   */
+  private function dataTypeNameFor(int $dataTypeId): string
+  {
+    $name = array_search($dataTypeId, $this->dataTypeMap, true);
+
+    return $name === false ? "#{$dataTypeId}" : (string) $name;
   }
 
   // ─────────────────────────────────────────────────────────
@@ -377,6 +457,10 @@ class ProvisionProjectFromSchemaAction
       'total_types' => count($dataTypesDetails),
       'total_fields' => array_sum(array_map(fn($dt) => count($dt['fields']), $dataTypesDetails)),
       'modules' => $dto->projectInfo['modules'] ?? ['cms'],
+
+      // Anything the schema asked for that is NOT in the project above.
+      'warnings' => $this->fieldFailures,
+      'skipped_fields' => count($this->fieldFailures),
     ];
   }
 }

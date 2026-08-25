@@ -15,9 +15,11 @@ uses(RefreshDatabase::class);
 
 test('it ensures data type relation exists correctly', function () {
   Event::fake();
-  // 1. إنشاء بيانات حقيقية
-  $relatedType = DataType::factory()->create(['id' => 99]);
-  $currentType = DataType::factory()->create(['id' => 1]);
+  // 1. إنشاء بيانات حقيقية — النوعان ضمن نفس المشروع، لأن العلاقة عبر
+  //    المشاريع مرفوضة عمداً (كل factory()->create() ينشئ مشروعاً خاصاً به)
+  $project = \App\Models\Project::factory()->create();
+  $relatedType = DataType::factory()->create(['id' => 99, 'project_id' => $project->id]);
+  $currentType = DataType::factory()->create(['id' => 1, 'project_id' => $project->id]);
 
   // 2. جهز الـ DTO
   $dto = new CreateFieldDTO(1, 'test', 'relation', true, false, [], [
@@ -44,6 +46,10 @@ test('it ensures data type relation exists correctly', function () {
 
 test('it throws 422 exception when related data type does not exist', function () {
   Event::fake();
+
+  $project = \App\Models\Project::factory()->create();
+  DataType::factory()->create(['id' => 1, 'project_id' => $project->id]);
+
   $dto = new CreateFieldDTO(1, 'test', 'relation', true, false, [], [
     'relation_type' => 'belongs_to',
     'related_data_type_id' => 999, // هذا لن يجده في الـ DB
@@ -58,16 +64,43 @@ test('it throws 422 exception when related data type does not exist', function (
 
   // 4. التنفيذ: الكود سيبحث عن 999 ولن يجده في DB -> سيرجع null -> سيطلق abort(422)
   expect(fn() => $action->ensureDataTypeRelationExists($dto, $dto->settings))
-    ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class, 'Related DataType does not exist.');
+    ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class, 'Related DataType does not exist in this project.');
+});
+
+test('it refuses to relate a field to a data type owned by another project', function () {
+  Event::fake();
+
+  $mine = \App\Models\Project::factory()->create();
+  $theirs = \App\Models\Project::factory()->create();
+
+  DataType::factory()->create(['id' => 1, 'project_id' => $mine->id]);
+  DataType::factory()->create(['id' => 77, 'project_id' => $theirs->id]);
+
+  $dto = new CreateFieldDTO(1, 'linked_ref', 'relation', false, false, [], [
+    'relation_type' => 'belongs_to',
+    'related_data_type_id' => 77,
+  ]);
+
+  $action = new CreateFieldAction(
+    Mockery::mock(FieldRepositoryInterface::class),
+    Mockery::mock(FieldTypeFactory::class)
+  );
+
+  expect(fn () => $action->ensureDataTypeRelationExists($dto, $dto->settings))
+    ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class, 'Related DataType does not exist in this project.');
+
+  expect(\App\Models\DataTypeRelation::count())->toBe(0);
 });
 
 test('it processes relation type field correctly and attaches relation id', function () {
   Event::fake();
-  // 1. يجب إنشاء الـ DataType الأساسي (الذي يمتلك الحقل)
-  $dataType = DataType::factory()->create(['id' => 1]);
+  $project = \App\Models\Project::factory()->create();
 
-  // 2. يجب إنشاء الـ DataType المرتبط (الذي نشير إليه في العلاقة)
-  $relatedDataType = DataType::factory()->create(['id' => 88]);
+  // 1. يجب إنشاء الـ DataType الأساسي (الذي يمتلك الحقل)
+  $dataType = DataType::factory()->create(['id' => 1, 'project_id' => $project->id]);
+
+  // 2. الـ DataType المرتبط — ضمن نفس المشروع
+  $relatedDataType = DataType::factory()->create(['id' => 88, 'project_id' => $project->id]);
 
   // 3. إعداد الموكات للـ Dependencies
   $repoMock = Mockery::mock(FieldRepositoryInterface::class);

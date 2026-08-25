@@ -31,6 +31,27 @@ class GenerateProjectSchemaAction
 
       $parsedData = $this->parseJson($rawText);
 
+      /*
+       | A model that answers with prose, a truncated object or plain garbage
+       | used to land here as success => true with an empty schema. The caller
+       | then stored an "assistant" message that looks like a normal reply, and
+       | nothing anywhere said the generation had actually failed.
+       */
+      if ($parsedData === null) {
+        Log::error('[AI Schema] Provider returned unparsable output', [
+          'provider' => $result['provider'],
+          'raw_excerpt' => mb_substr($rawText, 0, 500),
+        ]);
+
+        return [
+          'success' => false,
+          'ai_chat_bubble' => 'تعذّر توليد مخطط صالح من الرد. حاول إعادة صياغة وصف مشروعك.',
+          'technical_schema' => null,
+          'provider_used' => $result['provider'],
+          'error' => 'unparsable_response',
+        ];
+      }
+
       return [
         'success' => true,
         'ai_chat_bubble' => $parsedData['assistant_message'] ?? 'لم يتم استلام رسالة.',
@@ -202,19 +223,26 @@ EOT;
   }
 
   // ─────────────────────────────────────────────────────────
-  private function parseJson(string $text): array
+  /**
+   * @return array<string, mixed>|null null when the response is not a JSON object
+   */
+  private function parseJson(string $text): ?array
   {
     $text = str_replace(['```json', '```'], '', $text);
     $text = trim($text);
     $start = strpos($text, '{');
     $end = strrpos($text, '}');
 
-    if ($start !== false && $end !== false) {
-      $text = substr($text, $start, $end - $start + 1);
+    if ($start === false || $end === false || $end < $start) {
+      return null;
     }
+
+    $text = substr($text, $start, $end - $start + 1);
 
     $decoded = json_decode($text, true, 512, JSON_UNESCAPED_UNICODE);
 
-    return is_array($decoded) ? $decoded : [];
+    // Distinguish "no object" from "an object that happens to be empty":
+    // both used to collapse into [] and read as success.
+    return is_array($decoded) ? $decoded : null;
   }
 }
