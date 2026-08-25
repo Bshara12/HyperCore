@@ -32,6 +32,16 @@ class RolesAndPermissionsSeeder extends Seeder
             'cms.collection.create',
             'cms.collection.update',
             'cms.collection.delete',
+
+            /*
+             | Analytics.
+             |
+             | analytics.platform covers the cross-project figures of the whole
+             | installation — operators only, never a project admin.
+             | analytics.view covers a single project's reports.
+             */
+            'analytics.platform',
+            'analytics.view',
         ];
 
         $permissionIds = [];
@@ -72,9 +82,15 @@ class RolesAndPermissionsSeeder extends Seeder
             $permissionIds['cms.collection.create'],
             $permissionIds['cms.collection.update'],
             $permissionIds['cms.collection.delete'],
+            $permissionIds['analytics.view'],
         ]);
 
-        // ✅ admin أصبح يمتلك كل صلاحيات super_admin السابقة بالإضافة لصلاحياته الأصلية
+        /*
+         | ✅ admin أصبح يمتلك كل صلاحيات super_admin السابقة بالإضافة لصلاحياته الأصلية
+         |
+         | ومنها analytics.platform: admin هنا هو مدير المنصة (وريث super_admin)،
+         | لا مدير مشروع. الفصل الحقيقي أن owner و user لا يملكانها.
+         */
         $this->syncPermissions($roleIds['admin'], array_values($permissionIds));
 
         // hyper_core → كل الصلاحيات أيضاً على مستوى الكتالوج

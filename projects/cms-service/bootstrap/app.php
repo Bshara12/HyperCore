@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.user' => AuthUserMiddleware::class,
             'permission' => CheckPermission::class,
             'track.event' => TrackSubscriptionEvent::class,
+            'project.access' => \App\Http\Middleware\EnsureProjectAccess::class,
         ]);
 
         // Every request arrives through the nginx container, so without this

@@ -62,4 +62,62 @@ class AnalyticsFilterDTOTest extends TestCase
     // يجب أن يعود لـ daily حسب المنطق المكتوب في الـ DTO
     $this->assertEquals('daily', $dto->period);
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Regressions
+  |--------------------------------------------------------------------------
+  */
+
+  public function test_it_prefers_the_resolved_project_over_a_client_supplied_id(): void
+  {
+    // ResolveProject merges the resolved project into the request; a caller
+    // passing their own project_id must not win.
+    $request = new Request(['project_id' => 999]);
+    $request->merge(['project' => ['id' => 7]]);
+
+    $dto = AnalyticsFilterDTO::fromRequest($request);
+
+    $this->assertEquals(7, $dto->projectId);
+  }
+
+  public function test_it_refuses_to_run_when_no_project_was_resolved(): void
+  {
+    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+
+    AnalyticsFilterDTO::fromRequest(new Request());
+  }
+
+  public function test_it_caps_the_limit(): void
+  {
+    // limit reaches both ->limit() and the cache key, so it has to be bounded.
+    $request = new Request(['project_id' => 1, 'limit' => 999999999]);
+
+    $dto = AnalyticsFilterDTO::fromRequest($request);
+
+    $this->assertEquals(AnalyticsFilterDTO::MAX_LIMIT, $dto->limit);
+  }
+
+  /**
+   * @dataProvider invalidFilterProvider
+   */
+  public function test_the_filter_request_rejects_invalid_filters(array $payload, string $invalidKey): void
+  {
+    $rules = (new \App\Domains\E_Commerce\Analytics\Requests\AnalyticsFilterRequest)->rules();
+
+    $validator = \Illuminate\Support\Facades\Validator::make($payload, $rules);
+
+    $this->assertTrue($validator->fails());
+    $this->assertTrue($validator->errors()->has($invalidKey));
+  }
+
+  public static function invalidFilterProvider(): array
+  {
+    return [
+      'garbage from' => [['from' => 'NOT-A-DATE'], 'from'],
+      'inverted range' => [['from' => '2030-01-01', 'to' => '2020-01-01'], 'to'],
+      'oversized limit' => [['limit' => 999999999], 'limit'],
+      'unknown period' => [['period' => 'hourly'], 'period'],
+    ];
+  }
 }

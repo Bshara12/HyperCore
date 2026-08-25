@@ -8,6 +8,27 @@ use Exception;
 class EcommerceAnalyticsClient
 {
   /**
+   * Everything needed to issue the call, without issuing it.
+   *
+   * Lets a caller put this request into an Http::pool alongside another
+   * service's instead of awaiting them one after the other.
+   *
+   * @return array{url: string, headers: array<string, string>, query: array<string, mixed>}
+   */
+  public function summaryRequest(string $token, $projectId, array $filters = []): array
+  {
+    return [
+      'url' => config('services.ecommerce_service.url') . '/ecommerce/analytics/summary',
+      'headers' => [
+        'Authorization' => 'Bearer ' . $token,
+        'X-Project-Id' => (string) $projectId,
+        'Accept' => 'application/json',
+      ],
+      'query' => $filters,
+    ];
+  }
+
+  /**
    * دالة مساعدة لتنفيذ الطلبات لخدمة المتجر لتقليل تكرار الكود
    */
   private function fetchAnalytics(string $token, $projectId, string $endpoint, array $filters = []): array
@@ -15,7 +36,9 @@ class EcommerceAnalyticsClient
     $response = Http::withToken($token)
       // تأكد من اسم الهيدر الخاص بالمشروع بناءً على ما يقبله الـ Middleware لديك
       ->withHeaders(['X-Project-Id' => $projectId])
-      ->get(config('services.ecommerce_service.url') . '/ecommerce/analytics/' . $endpoint, $filters);
+      // ltrim: some callers pass '/sales/trend', which otherwise produced a
+      // double slash in the path.
+      ->get(config('services.ecommerce_service.url') . '/ecommerce/analytics/' . ltrim($endpoint, '/'), $filters);
     if (! $response->successful()) {
       throw new Exception("Ecommerce Service Error: " . $response->body(), $response->status());
     }

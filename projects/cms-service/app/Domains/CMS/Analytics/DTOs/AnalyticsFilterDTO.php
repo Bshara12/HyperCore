@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 
 class AnalyticsFilterDTO
 {
+    /** Upper bound mirrored from AnalyticsFilterRequest. */
+    public const MAX_LIMIT = 100;
+
     public function __construct(
         public readonly string $from,
         public readonly string $to,
@@ -30,7 +33,8 @@ class AnalyticsFilterDTO
               : 'daily',
             projectId: $project->id,
             project: $project,
-            limit: (int) $request->input('limit', 10),
+            // Bounded: limit lands both in ->limit() and in the cache key.
+            limit: min((int) $request->input('limit', 10), self::MAX_LIMIT),
         );
     }
 }

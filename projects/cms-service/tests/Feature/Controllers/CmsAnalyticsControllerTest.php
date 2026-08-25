@@ -5,9 +5,11 @@ namespace Tests\Feature\Http\Controllers;
 use Tests\TestCase;
 use App\Domains\CMS\Services\AnalyticsService;
 use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
+use App\Domains\CMS\Analytics\Requests\AnalyticsFilterRequest;
 use App\Http\Controllers\CmsAnalyticsController;
 use Mockery\MockInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -28,6 +30,23 @@ class CmsAnalyticsControllerTest extends TestCase
     // 2. Mock للـ Repository باستخدام الواجهة لأن الـ DTO يطلبها
     $this->projectRepositoryMock = $this->mock(ProjectRepositoryInterface::class);
     $this->app->instance(ProjectRepositoryInterface::class, $this->projectRepositoryMock);
+  }
+
+  /**
+   * projectOverview now type-hints AnalyticsFilterRequest so the date/limit
+   * filters are validated before they reach the SQL and the cache key. Calling
+   * the controller directly therefore has to hand it that request type.
+   */
+  private function createAnalyticsFilterRequest(array $params = []): AnalyticsFilterRequest
+  {
+    $base = $this->createAnalyticsRequest($params);
+
+    $request = AnalyticsFilterRequest::createFrom($base);
+    $request->setContainer($this->app);
+
+    $this->app->instance('request', $request);
+
+    return $request;
   }
 
   private function createAnalyticsRequest(array $params = []): Request
@@ -87,7 +106,7 @@ class CmsAnalyticsControllerTest extends TestCase
     $this->analyticsServiceMock->shouldReceive('topRatedEntries')->once()->andReturn(['top' => 'ok']);
     $this->analyticsServiceMock->shouldReceive('ratingsReport')->once()->andReturn(['report' => 'ok']);
 
-    $request = $this->createAnalyticsRequest();
+    $request = $this->createAnalyticsFilterRequest();
     $controller = new CmsAnalyticsController($this->analyticsServiceMock);
 
     $ecommerceMock = \Mockery::mock(\App\Services\EcommerceAnalyticsClient::class);
@@ -100,6 +119,9 @@ class CmsAnalyticsControllerTest extends TestCase
     $responseData = $response->getData();
     $this->assertTrue($responseData->success);
     $this->assertObjectHasProperty('data', $responseData);
+
+    // No module enabled, so nothing to fail.
+    $this->assertObjectNotHasProperty('partial_failures', $responseData);
   }
 
   #[Test]
@@ -110,21 +132,48 @@ class CmsAnalyticsControllerTest extends TestCase
     $this->analyticsServiceMock->shouldReceive('topRatedEntries')->once()->andReturn(['top' => 'ok']);
     $this->analyticsServiceMock->shouldReceive('ratingsReport')->once()->andReturn(['report' => 'ok']);
 
-    $request = $this->createAnalyticsRequest();
+    $request = $this->createAnalyticsFilterRequest();
     $mockProject = app('currentProject');
     $mockProject->enabled_modules = ['ecommerce', 'booking'];
 
     $controller = new CmsAnalyticsController($this->analyticsServiceMock);
 
+    // The clients now describe the call instead of performing it; the
+    // controller issues both through one Http::pool.
     $ecommerceMock = \Mockery::mock(\App\Services\EcommerceAnalyticsClient::class);
-    $ecommerceMock->shouldReceive('getSummary')->once()->andReturn(['ecommerce_data' => 'ok']);
+    $ecommerceMock->shouldReceive('summaryRequest')->once()->andReturn([
+      'url' => 'http://ecommerce.test/api/ecommerce/analytics/summary',
+      'headers' => [],
+      'query' => [],
+    ]);
 
     $bookingMock = \Mockery::mock(\App\Services\BookingAnalyticsClient::class);
-    $bookingMock->shouldReceive('getOverview')->once()->andThrow(new \Exception('Booking service down'));
+    $bookingMock->shouldReceive('overviewRequest')->once()->andReturn([
+      'url' => 'http://booking.test/api/booking/analytics/overview',
+      'headers' => [],
+      'query' => [],
+    ]);
+
+    Http::fake([
+      'ecommerce.test/*' => Http::response(['data' => ['ecommerce_data' => 'ok']], 200),
+      // Booking is down: the module must fail on its own without taking
+      // ecommerce — or the whole report — with it.
+      'booking.test/*' => Http::response(['message' => 'Booking service down'], 503),
+    ]);
 
     $response = $controller->projectOverview($request, $ecommerceMock, $bookingMock);
 
     $this->assertEquals(200, $response->getStatusCode());
+
+    $responseData = $response->getData();
+
+    $this->assertEquals('ok', $responseData->data->ecommerce->ecommerce_data);
+    $this->assertNull($responseData->data->booking);
+
+    // The failure is reported rather than being indistinguishable from "no data".
+    $this->assertObjectHasProperty('partial_failures', $responseData);
+    $this->assertObjectHasProperty('booking', $responseData->partial_failures);
+    $this->assertStringContainsString('503', $responseData->partial_failures->booking);
   }
 
   #[Test]
@@ -135,25 +184,33 @@ class CmsAnalyticsControllerTest extends TestCase
     $this->analyticsServiceMock->shouldReceive('topRatedEntries')->once()->andReturn(['top' => 'ok']);
     $this->analyticsServiceMock->shouldReceive('ratingsReport')->once()->andReturn(['report' => 'ok']);
 
-    $request = $this->createAnalyticsRequest();
+    $request = $this->createAnalyticsFilterRequest();
     $mockProject = app('currentProject');
     $mockProject->enabled_modules = ['ecommerce']; // تفعيل الموديول ليدخل إلى الشرط
 
     $controller = new CmsAnalyticsController($this->analyticsServiceMock);
 
-    // جعل الـ Client يرمي Exception لتغطية كود الـ catch
     $ecommerceMock = \Mockery::mock(\App\Services\EcommerceAnalyticsClient::class);
-    $ecommerceMock->shouldReceive('getSummary')->once()->andThrow(new \Exception('Ecommerce service down'));
+    $ecommerceMock->shouldReceive('summaryRequest')->once()->andReturn([
+      'url' => 'http://ecommerce.test/api/ecommerce/analytics/summary',
+      'headers' => [],
+      'query' => [],
+    ]);
 
     $bookingMock = \Mockery::mock(\App\Services\BookingAnalyticsClient::class);
+
+    Http::fake([
+      'ecommerce.test/*' => Http::response(['message' => 'Ecommerce service down'], 500),
+    ]);
 
     $response = $controller->projectOverview($request, $ecommerceMock, $bookingMock);
 
     $this->assertEquals(200, $response->getStatusCode());
 
-    // التأكد أن الـ catch قامت بتعيين القيمة إلى null وعدم إيقاف التنفيذ
+    // الفشل لا يوقف التقرير، لكنه يُبلَّغ عنه صراحةً
     $responseData = $response->getData();
     $this->assertTrue($responseData->success);
     $this->assertNull($responseData->data->ecommerce);
+    $this->assertObjectHasProperty('ecommerce', $responseData->partial_failures);
   }
 }

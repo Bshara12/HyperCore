@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Domains\CMS\Analytics\DTOs\AdminOverviewDTO;
 use App\Domains\CMS\Analytics\DTOs\AnalyticsFilterDTO;
+use App\Domains\CMS\Analytics\Requests\AnalyticsFilterRequest;
 use App\Domains\CMS\Services\AnalyticsService;
 use App\Services\BookingAnalyticsClient;
 use App\Services\EcommerceAnalyticsClient;
 use Exception;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class CmsAnalyticsController extends Controller
 {
@@ -99,7 +103,7 @@ class CmsAnalyticsController extends Controller
   }
 
   public function projectOverview(
-    Request $request,
+    AnalyticsFilterRequest $request,
     EcommerceAnalyticsClient $ecommerceClient,
     BookingAnalyticsClient $bookingClient
   ): JsonResponse {
@@ -115,11 +119,10 @@ class CmsAnalyticsController extends Controller
     ];
 
     // 3. استخراج التوكن والمعلومات المطلوبة للخدمات المصغرة (Microservices)
-    // ملاحظة: تأكد إن كان الـ DTO يتيح الوصول للبيانات كـ Array أو Object وقابليتها للتعديل
     $token = $request->bearerToken();
-    $project = $dto->project ?? [];
-    $projectId = $project['public_id'] ?? null;
-    $enabledModules = $project['enabled_modules'] ?? [];
+    $project = $dto->project;                     // non-nullable on the DTO
+    $projectId = $project->public_id;
+    $enabledModules = $project->enabled_modules ?? [];
 
     // الفلاتر المطلوبة للـ APIs الخارجية
     $filters = [
@@ -128,38 +131,108 @@ class CmsAnalyticsController extends Controller
       'period' => $dto->period,
     ];
 
-    // 4. التحقق من وجود موديل المتجر الإلكتروني ecommerce
+    /*
+     | 4 + 5. الموديولات الخارجية.
+     |
+     | كانت تُستدعى بالتسلسل — أي أن زمن الاستجابة هو مجموع الخدمتين. صارت
+     | متوازية، والفشل يظهر صراحةً في partial_failures بدل أن يُبتلع في null
+     | لا يميّزه المستهلك عن «لا توجد بيانات». هكذا ظلّ كسر مسار Booking
+     | (404) غير مرئي.
+     */
+    $partialFailures = [];
+
+    $specs = [];
+
     if (in_array('ecommerce', $enabledModules) && $projectId) {
-      try {
-        $data['ecommerce'] = $ecommerceClient->getSummary($token, $projectId, $filters);
-      } catch (Exception $e) {
-        // return response()->json([
-        //   'success' => false,
-        //   'message' => "Error fetching ecommerce analytics: " . $e->getMessage(),
-        // ], 500);
-        report($e);
-        $data['ecommerce'] = null;
-      }
+      $specs['ecommerce'] = $ecommerceClient->summaryRequest($token, $projectId, $filters);
     }
 
-    // 5. التحقق من وجود موديل الحجوزات booking
     if (in_array('booking', $enabledModules) && $projectId) {
-      try {
-        $data['booking'] = $bookingClient->getOverview($token, $projectId, $filters);
-      } catch (Exception $e) {
-        // return response()->json([
-        //   'success' => false,
-        //   'message' => "Error fetching booking analytics: " . $e->getMessage(),
-        // ], 500);
-        report($e);
-        $data['booking'] = null;
+      $specs['booking'] = $bookingClient->overviewRequest($token, $projectId, $filters);
+    }
+
+    foreach ($this->fetchConcurrently($specs) as $module => $outcome) {
+      if ($outcome['ok']) {
+        $data[$module] = $outcome['value'];
+
+        continue;
       }
+
+      report($outcome['error']);
+
+      $data[$module] = null;
+      $partialFailures[$module] = $outcome['error']->getMessage();
     }
 
     // 6. إرجاع النتيجة النهائية المدمجة
-    return response()->json([
+    $payload = [
       'success' => true,
       'data'    => $data,
-    ]);
+    ];
+
+    if ($partialFailures !== []) {
+      $payload['partial_failures'] = $partialFailures;
+    }
+
+    return response()->json($payload);
+  }
+
+  /**
+   * Issue the module requests side by side instead of one after the other.
+   *
+   * Http::pool dispatches them on Guzzle's async transport, so wall-clock is
+   * the slowest single call rather than the sum. A failure in one module never
+   * cancels the other — each outcome is reported independently.
+   *
+   * @param  array<string, array{url: string, headers: array<string,string>, query: array<string,mixed>}>  $specs
+   * @return array<string, array{ok: bool, value?: mixed, error?: \Throwable}>
+   */
+  private function fetchConcurrently(array $specs): array
+  {
+    if ($specs === []) {
+      return [];
+    }
+
+    $keys = array_keys($specs);
+
+    $responses = Http::pool(function (Pool $pool) use ($specs) {
+      foreach ($specs as $key => $spec) {
+        $pool->as($key)
+          ->withHeaders($spec['headers'])
+          ->timeout(60)
+          ->get($spec['url'], $spec['query']);
+      }
+    });
+
+    $results = [];
+
+    foreach ($keys as $key) {
+      $response = $responses[$key] ?? null;
+
+      // A connection-level failure comes back as the exception itself.
+      if ($response instanceof Throwable) {
+        $results[$key] = ['ok' => false, 'error' => $response];
+
+        continue;
+      }
+
+      if ($response === null || ! $response->successful()) {
+        $status = $response?->status() ?? 0;
+        $body = $response ? mb_substr($response->body(), 0, 300) : 'no response';
+
+        $results[$key] = [
+          'ok' => false,
+          'error' => new Exception("{$key} analytics request failed with HTTP {$status}: {$body}"),
+        ];
+
+        continue;
+      }
+
+      $json = $response->json();
+
+      $results[$key] = ['ok' => true, 'value' => $json['data'] ?? $json];
+    }
+
+    return $results;
   }
 }
