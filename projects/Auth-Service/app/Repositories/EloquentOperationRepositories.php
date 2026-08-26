@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -11,7 +12,7 @@ class EloquentOperationRepositories implements OperationRepositoryInteface
 
     public function getAllUsers()
     {
-        return \App\Models\User::all();
+        return User::all();
     }
 
     // ═══════════════════════════════════════════════════════════════════════

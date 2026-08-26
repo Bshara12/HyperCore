@@ -8,7 +8,11 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\SubscriptionUsage;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+
 class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
 {
   public function create(
@@ -130,35 +134,11 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
       ?? 0;
   }
 
-  // public function incrementFeatureUsage(
-  //   int $subscriptionId,
-  //   string $featureKey,
-  //   int $amount = 1
-  // ): void {
-
-  //   $usage = SubscriptionUsage::query()
-
-  //     ->firstOrCreate(
-  //       [
-  //         'subscription_id' => $subscriptionId,
-  //         'feature_key' => $featureKey
-  //       ],
-  //       [
-  //         'used_value' => 0
-  //       ]
-  //     );
-
-  //   $usage->increment(
-  //     'used_value',
-  //     $amount
-  //   );
-  // }
-
   public function incrementFeatureUsage(
     int $subscriptionId,
     string $featureKey,
     int $amount = 1,
-    ?string $resetAt = null
+    DateTimeInterface|string|null $resetAt = null
   ): void {
     // 1. التأكد من وجود السجل أو إنشاؤه بقيمة افتراضية 0
     $usage = SubscriptionUsage::firstOrCreate(
@@ -169,10 +149,21 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
       [
         'used_value' => 0,
         'reset_at' => $resetAt,
-        'created_at' => now(),
-        'updated_at' => now(),
       ]
     );
+
+    /*
+    | firstOrCreate only applies the defaults when the row is created.
+    | An existing row whose reset_at was never set (rule created before
+    | the row, or rule switched from `never` to a periodic reset_type)
+    | would otherwise never be picked up by the reset scheduler.
+    */
+    if ($resetAt !== null && $usage->reset_at === null) {
+
+      $usage->reset_at = Carbon::parse($resetAt);
+
+      $usage->save();
+    }
 
     // 2. زيادة القيمة بأمان
     $usage->increment('used_value', $amount);
@@ -181,7 +172,7 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
   public function resetUsage(
     int $subscriptionId,
     string $featureKey,
-    ?string $nextResetAt
+    DateTimeInterface|string|null $nextResetAt
   ): void {
 
     DB::table('subscription_usages')
@@ -229,5 +220,65 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
         'usages',
       ])
       ->find($id);
+  }
+
+  // ─── Admin (project-scoped) ───────────────────────────────────────
+
+  /**
+   * Every subscription of one project, for the admin dashboard.
+   *
+   * Unlike findForUser() this is NOT filtered by user_id — the caller is
+   * an operator looking at the project's subscriber list, so the project
+   * scope is what keeps the result set bounded.
+   */
+  public function paginateForProject(
+    int $projectId,
+    ?string $status,
+    ?int $planId,
+    ?int $userId,
+    int $perPage
+  ): LengthAwarePaginator {
+
+    return Subscription::query()
+      ->where('project_id', $projectId)
+      ->when(
+        $status,
+        fn ($query) => $query->where('status', $status)
+      )
+      ->when(
+        $planId,
+        fn ($query) => $query->where('plan_id', $planId)
+      )
+      ->when(
+        $userId,
+        fn ($query) => $query->where('user_id', $userId)
+      )
+      ->with([
+        'plan',
+        'usages',
+      ])
+      ->latest()
+      ->paginate($perPage);
+  }
+
+  /**
+   * Subscription count per status for one project, e.g.
+   * ['active' => 12, 'cancelled' => 3].
+   *
+   * One grouped query instead of one COUNT per status.
+   *
+   * @return array<string, int>
+   */
+  public function statusCountsForProject(
+    int $projectId
+  ): array {
+
+    return Subscription::query()
+      ->where('project_id', $projectId)
+      ->groupBy('status')
+      ->selectRaw('status, COUNT(*) as total')
+      ->pluck('total', 'status')
+      ->map(fn ($total) => (int) $total)
+      ->all();
   }
 }

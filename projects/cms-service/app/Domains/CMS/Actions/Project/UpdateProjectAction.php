@@ -39,7 +39,8 @@ class UpdateProjectAction extends Action
             );
 
             Cache::forget(CacheKeys::project($project->id));
-            Cache::forget(CacheKeys::allProjects());
+
+            CacheKeys::bumpProjectListVersion();
 
             return $updated;
         });

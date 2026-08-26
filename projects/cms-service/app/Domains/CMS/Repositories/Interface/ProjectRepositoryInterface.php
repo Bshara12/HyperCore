@@ -17,6 +17,16 @@ interface ProjectRepositoryInterface
 
     public function all(): Collection;
 
+    /**
+     * Projects a given user owns, holds a role in, or has joined.
+     *
+     * @param  int[]  $roleProjectIds  project ids from the caller's role pivots
+     */
+    public function allForUser(
+        int $userId,
+        array $roleProjectIds = []
+    ): Collection;
+
     public function delete(Project $project): void;
 
     // ⭐ جديد

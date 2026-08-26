@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Support\SeedContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,7 +25,7 @@ class CmsEventSeeder extends Seeder
                     'public_id' => Str::uuid(),
                     'slug' => 'pulse360',
                     'name' => 'Pulse360',
-                    'owner_id' => 1,
+                    'owner_id' => (new SeedContext)->ownerId('analytics-owner@hypercore.test'),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Domains\Search\Support\Text\Segmenter;
 use App\Domains\Search\Support\Text\TextFolder;
 use Carbon\Carbon;
+use Database\Seeders\Support\SeedContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -117,7 +118,7 @@ class Pulse360CmsSeeder extends Seeder
             'public_id' => Str::uuid(),
             'slug' => 'pulse360',
             'name' => 'Pulse360',
-            'owner_id' => 1,
+            'owner_id' => (new SeedContext)->ownerId('pulse360-owner@hypercore.test'),
             'supported_languages' => json_encode(['en', 'ar']),
             'enabled_modules' => json_encode(['cms', 'subscriptions', 'booking', 'search', 'ai']),
             'created_at' => now(),

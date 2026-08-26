@@ -13,7 +13,7 @@ class SessionService
         $this->sessions = $sessionRepository;
     }
 
-    public function create(string $userId, ?string $ip, ?string $userAgent): string
+    public function create(int $userId, ?string $ip, ?string $userAgent): string
     {
         $deviceName = $this->detectDevice($userAgent);
 
@@ -26,15 +26,27 @@ class SessionService
      */
     private function detectDevice(?string $agent): string
     {
-        if (!$agent) return 'Unknown device';
+        if (! $agent) {
+            return 'Unknown device';
+        }
 
         $agent = strtolower($agent);
 
-        if (str_contains($agent, 'windows')) return 'Windows device';
-        if (str_contains($agent, 'iphone')) return 'iPhone';
-        if (str_contains($agent, 'mac')) return 'Mac device';
-        if (str_contains($agent, 'android')) return 'Android device';
-        if (str_contains($agent, 'linux')) return 'Linux device';
+        if (str_contains($agent, 'windows')) {
+            return 'Windows device';
+        }
+        if (str_contains($agent, 'iphone')) {
+            return 'iPhone';
+        }
+        if (str_contains($agent, 'mac')) {
+            return 'Mac device';
+        }
+        if (str_contains($agent, 'android')) {
+            return 'Android device';
+        }
+        if (str_contains($agent, 'linux')) {
+            return 'Linux device';
+        }
 
         return 'Browser device';
     }

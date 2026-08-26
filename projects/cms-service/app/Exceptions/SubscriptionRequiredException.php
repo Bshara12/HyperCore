@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use App\Domains\Subscription\Enums\SubscriptionErrorCode;
+
 class SubscriptionRequiredException extends SubscriptionException
 {
     public function __construct(
@@ -17,7 +19,8 @@ class SubscriptionRequiredException extends SubscriptionException
     {
         return [
 
-            'code' => 'SUBSCRIPTION_REQUIRED',
+            'code' => SubscriptionErrorCode::SUBSCRIPTION_REQUIRED
+                ->value,
 
             'required_features' => $this->requiredFeatures,
         ];

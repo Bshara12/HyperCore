@@ -6,6 +6,7 @@ use App\Domains\CMS\Actions\Project\ListProjectsAction;
 use App\Domains\CMS\Repositories\Interface\ProjectRepositoryInterface;
 use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Services\CircuitBreakerService;
+use App\Support\ActingUser;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
@@ -19,40 +20,67 @@ beforeEach(function () {
       ->andReturn(true);
     $mock->shouldReceive('reportSuccess')->andReturn(true);
   });
+
+  Cache::flush();
 });
 
 afterEach(function () {
   Mockery::close();
 });
 
-test('it returns projects from cache or database', function () {
-  // 1. تجهيز البيانات المتوقعة
+/** يضع هوية المتصل حيث يقرؤها ActingUser: على خصائص الطلب لا في مدخلاته. */
+function actAsProjectLister(?int $id, array $roles = []): void
+{
+  request()->attributes->set('auth_user', $id === null ? null : [
+    'id' => $id,
+    'roles' => $roles,
+  ]);
+}
+
+test('a platform operator gets every project, cached under the global key', function () {
+  actAsProjectLister(1, [['name' => ActingUser::ROLE_HYPER_CORE, 'project_id' => null]]);
+
   $projects = collect(['Project 1', 'Project 2']);
 
-  // 2. Mock للـ Repository
   $repoMock = Mockery::mock(ProjectRepositoryInterface::class);
+  $repoMock->shouldReceive('all')->once()->andReturn($projects);
+  $repoMock->shouldNotReceive('allForUser');
 
-  // 3. اختبار الـ Cache
-  // نستخدم shouldReceive لتوقع استدعاء remember
-  Cache::shouldReceive('remember')
-    ->once()
-    ->with(
-      CacheKeys::allProjects(), // المفتاح
-      CacheKeys::TTL_LONG,      // المدة
-      Mockery::type('callable') // الكلوجر (Closure)
-    )
-    ->andReturnUsing(function ($key, $ttl, $callback) use ($repoMock, $projects) {
-      // هنا نتحقق من أن الـ callback يقوم باستدعاء الـ repository
-      $repoMock->shouldReceive('all')->once()->andReturn($projects);
-      return $callback(); // تنفيذ الـ Closure وإرجاع النتيجة
-    });
+  $result = (new ListProjectsAction($repoMock))->execute();
 
-  // 4. التنفيذ
-  $action = new ListProjectsAction($repoMock);
-  $result = $action->execute();
-
-  // 5. التأكيدات
   expect($result)->toBeInstanceOf(Collection::class)
     ->and($result)->toHaveCount(2)
-    ->and($result)->toBe($projects);
+    ->and($result)->toBe($projects)
+    ->and(Cache::get(CacheKeys::allProjects()))->toBe($projects);
+});
+
+/*
+| القائمة الكاملة كانت تُخدَّم لكل متصل تحت مفتاح واحد مشترك، وفيها الـ
+| public_id الذي تُنطَّق به كل طلبات الـ CMS — أي مسار حيّ إلى بيانات مستأجر
+| آخر. فالنطاق هنا ليس تفصيلاً في العرض، والاختبار يحرسه لا يفترضه.
+*/
+test('an ordinary caller only gets the projects scoped to them', function () {
+  actAsProjectLister(55, [['name' => 'editor', 'pivot' => ['project_id' => 7]]]);
+
+  $scoped = collect(['Project 7']);
+
+  $repoMock = Mockery::mock(ProjectRepositoryInterface::class);
+  $repoMock->shouldReceive('allForUser')->once()->with(55, [7])->andReturn($scoped);
+  $repoMock->shouldNotReceive('all');
+
+  $result = (new ListProjectsAction($repoMock))->execute();
+
+  expect($result)->toBe($scoped)
+    ->and(Cache::get(CacheKeys::userProjects(55, [7])))->toBe($scoped)
+    ->and(Cache::has(CacheKeys::allProjects()))->toBeFalse();
+});
+
+test('an unidentifiable caller gets nothing rather than everything', function () {
+  actAsProjectLister(null);
+
+  $repoMock = Mockery::mock(ProjectRepositoryInterface::class);
+  $repoMock->shouldNotReceive('all');
+  $repoMock->shouldNotReceive('allForUser');
+
+  expect((new ListProjectsAction($repoMock))->execute())->toBeEmpty();
 });

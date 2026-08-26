@@ -8,11 +8,18 @@ uses(RefreshDatabase::class);
 
 test('it identifies feature types correctly', function () {
   $booleanFeature = SubscriptionFeature::factory()->create(['feature_type' => 'boolean']);
-  $limitFeature = SubscriptionFeature::factory()->create(['feature_type' => 'limit']);
+
+  /*
+   | 'number' هو النوع الذي يكتبه ويقرؤه النطاق كلّه — CheckUsageLimitAction
+   | و CheckFeatureAccessAction و ProcessUsageEventAction. 'limit' لم يكن
+   | يُكتَب قط، فكانت isLimit() ترجع false دائماً على بيانات حقيقية.
+   */
+  $limitFeature = SubscriptionFeature::factory()->create(['feature_type' => 'number']);
 
   expect($booleanFeature->isBoolean())->toBeTrue()
     ->and($limitFeature->isLimit())->toBeTrue()
-    ->and($booleanFeature->isLimit())->toBeFalse();
+    ->and($booleanFeature->isLimit())->toBeFalse()
+    ->and($limitFeature->isBoolean())->toBeFalse();
 });
 
 test('it belongs to a plan', function () {

@@ -37,6 +37,8 @@ class DeleteProjectAction
         foreach ($keys as $key) {
             Cache::forget($key);
         }
+
+        CacheKeys::bumpProjectListVersion();
     }
 
     /**
@@ -49,12 +51,8 @@ class DeleteProjectAction
     {
         $projectId = $project->id;
 
-        if ($projectId === null) {
-            return [CacheKeys::allProjects()];
-        }
-
+        // The project lists are retired via the version stamp, not by key.
         $keys = [
-            CacheKeys::allProjects(),
             CacheKeys::project($projectId),
             CacheKeys::dataTypes($projectId),
             CacheKeys::collections($projectId),
