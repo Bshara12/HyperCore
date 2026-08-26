@@ -35,7 +35,24 @@ class Project extends Model
         parent::boot();
 
         static::creating(function ($project) {
-            $project->slug = Str::slug($project->name);
+            /*
+             | Derive the slug from the name only when one was not supplied.
+             |
+             | This used to overwrite unconditionally, which silently discarded
+             | any slug the caller had set — including the unique one the
+             | factory generates. Tests then ended up with the slug of
+             | Str::slug($faker->company()), and company() is not unique, so a
+             | repeated name collided with the global unique index on
+             | projects.slug and failed the run at random.
+             |
+             | Nothing in the request path relies on the overwrite:
+             | CreateProjectAction assigns $data['slug'] itself, and
+             | CreateProjectRequest has no slug rule, so a client cannot supply
+             | one.
+             */
+            if (empty($project->slug)) {
+                $project->slug = Str::slug($project->name);
+            }
         });
     }
 
