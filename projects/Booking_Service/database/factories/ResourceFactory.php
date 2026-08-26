@@ -15,7 +15,17 @@ class ResourceFactory extends Factory
   {
     return [
       'data_entry_id' => $this->faker->numberBetween(1, 1000),
-      'project_id'    => $this->faker->numberBetween(1, 100),
+      /*
+       | Out of the range tests actually use.
+       |
+       | This used to be numberBetween(1, 100), and BookingFactory creates a
+       | Resource for every Booking, so a test working on project_id = 1 could
+       | silently gain an extra resource whenever one of those random ids landed
+       | on 1 — a ~3% failure rate that only ever showed up in CI. A test that
+       | wants a specific project passes it explicitly; the default just must
+       | not collide with the low ids everyone uses.
+       */
+      'project_id'    => $this->faker->numberBetween(100000, 999999),
       'name'          => $this->faker->words(3, true),
       'type'          => $this->faker->randomElement(['room', 'court', 'seat', 'doctor']),
       'capacity'      => $this->faker->numberBetween(1, 50),

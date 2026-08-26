@@ -187,13 +187,21 @@ test('getOverview returns correct structure and calculations with data', functio
   $repo = new EloquentBookingAnalyticsRepository();
 
   // 1. تجهيز بيانات الموارد (Resources)
-  Resource::factory()->create(['project_id' => $projectId, 'status' => 'active', 'payment_type' => 'paid']);
+  $paidActive = Resource::factory()->create(['project_id' => $projectId, 'status' => 'active', 'payment_type' => 'paid']);
   Resource::factory()->create(['project_id' => $projectId, 'status' => 'active', 'payment_type' => 'free']);
   Resource::factory()->create(['project_id' => $projectId, 'status' => 'inactive', 'payment_type' => 'paid']);
 
-  // 2. تجهيز بيانات الحجوزات (Bookings) بوضعيات مختلفة
+  /*
+   | 2. تجهيز بيانات الحجوزات (Bookings) بوضعيات مختلفة
+   |
+   | resource_id صريح: BookingFactory يضع Resource::factory() افتراضياً، أي أن
+   | كل حجز كان يولّد مورداً إضافياً بمشروع عشوائي — وحين يقع على المشروع 1
+   | يصبح عدد الموارد 4 بدل 3 ويفشل الاختبار. لذلك نربط الحجوزات بمورد
+   | أنشأه الاختبار نفسه.
+   */
   // حجز مكتمل
   Booking::factory()->create([
+    'resource_id' => $paidActive->id,
     'project_id' => $projectId,
     'status' => 'completed',
     'amount' => 100,
@@ -202,6 +210,7 @@ test('getOverview returns correct structure and calculations with data', functio
 
   // حجز ملغى مع استرداد
   Booking::factory()->create([
+    'resource_id' => $paidActive->id,
     'project_id' => $projectId,
     'status' => 'cancelled',
     'amount' => 50,
@@ -211,6 +220,7 @@ test('getOverview returns correct structure and calculations with data', functio
 
   // حجز عدم حضور (No-Show)
   Booking::factory()->create([
+    'resource_id' => $paidActive->id,
     'project_id' => $projectId,
     'status' => 'no_show',
     'amount' => 80,
