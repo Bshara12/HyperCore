@@ -13,7 +13,9 @@ class OfferFactory extends Factory
   public function definition(): array
   {
     return [
-      'project_id' => $this->faker->numberBetween(1, 100),
+      // Out of the range tests use — OfferPriceFactory creates an Offer for
+      // every price, so a low default can pollute a per-project count.
+      'project_id' => $this->faker->numberBetween(100000, 999999),
       'collection_id' => $this->faker->numberBetween(1, 500),
       'is_code_offer' => false,
       'offer_duration' => null,

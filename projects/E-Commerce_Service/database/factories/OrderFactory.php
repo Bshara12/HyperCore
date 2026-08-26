@@ -13,7 +13,9 @@ class OrderFactory extends Factory
   {
     return [
       'user_id' => $this->faker->numberBetween(1, 1000),
-      'project_id' => $this->faker->numberBetween(1, 100),
+      // Out of the range tests use — OrderItemFactory creates an Order for
+      // every item, so a low default can pollute a per-project count.
+      'project_id' => $this->faker->numberBetween(100000, 999999),
       'status' => 'pending',
       'total_price' => $this->faker->randomFloat(2, 50, 2000), // سعر بين 50 و 2000
       'currency' => 'USD',
