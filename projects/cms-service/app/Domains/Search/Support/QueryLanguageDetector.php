@@ -28,7 +28,6 @@ final class QueryLanguageDetector
 
     // private const ARABIC_EXTENDED_PATTERN = '/[\x{0600}-\x{06FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u';
 
-
     // ─── Thresholds ───────────────────────────────────────────────────
     // موحّدة هنا — تغييرها يؤثر على كل النظام
     private const ARABIC_DOMINANT_THRESHOLD = 0.30;

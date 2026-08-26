@@ -56,7 +56,7 @@ test('tokenize يُرجع كلمات مُطبَّعة فريدة', function () {
 });
 
 test('looseRegex يُطابق النص الخام بكل أشكال الهمزة والتشكيل', function () {
-    $pattern = '/' . ArabicTextNormalizer::looseRegex('ايفون') . '/u';
+    $pattern = '/'.ArabicTextNormalizer::looseRegex('ايفون').'/u';
 
     expect(preg_match($pattern, 'آيفون 15 برو ماكس'))->toBe(1)
         ->and(preg_match($pattern, 'أيفون'))->toBe(1)

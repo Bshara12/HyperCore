@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Search\Support\SearchTextBuilder;
+use App\Domains\Search\Support\Text\Segmenter;
+use App\Domains\Search\Support\Text\TextFolder;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 /**
  * Pulse360CmsSeeder
@@ -34,12 +35,19 @@ class Pulse360CmsSeeder extends Seeder
 {
     // ─── Resolved IDs ─────────────────────────────────────────────────────────
     private int $projectId;
+
     private int $categoryTypeId;
+
     private int $articleTypeId;
+
     private int $eventTypeId;
+
     private int $articleCategoryRelationId;
+
     private int $freePlanId;
+
     private int $proPlanId;
+
     private int $premiumPlanId;
 
     // ─── Field map: [typeId][fieldName] => fieldId ────────────────────────────
@@ -47,11 +55,16 @@ class Pulse360CmsSeeder extends Seeder
 
     // ─── Collected entries (used by other methods) ────────────────────────────
     private array $categoryEntries = [];   // [{id, name, slug}]
-    private array $articleEntries  = [];   // [{id, slug, access}]
-    private array $eventEntries    = [];   // [{id, slug, title}]
-    private array $userIds         = [];
-    private array $premiumUserIds  = [];
-    private array $proUserIds      = [];
+
+    private array $articleEntries = [];   // [{id, slug, access}]
+
+    private array $eventEntries = [];   // [{id, slug, title}]
+
+    private array $userIds = [];
+
+    private array $premiumUserIds = [];
+
+    private array $proUserIds = [];
 
     // =========================================================================
     // ENTRY POINT
@@ -96,18 +109,19 @@ class Pulse360CmsSeeder extends Seeder
 
         if ($existing) {
             $this->projectId = $existing->id;
+
             return;
         }
 
         $this->projectId = DB::table('projects')->insertGetId([
-            'public_id'           => Str::uuid(),
-            'slug'                => 'pulse360',
-            'name'                => 'Pulse360',
-            'owner_id'            => 1,
+            'public_id' => Str::uuid(),
+            'slug' => 'pulse360',
+            'name' => 'Pulse360',
+            'owner_id' => 1,
             'supported_languages' => json_encode(['en', 'ar']),
-            'enabled_modules'     => json_encode(['cms', 'subscriptions', 'booking', 'search', 'ai']),
-            'created_at'          => now(),
-            'updated_at'          => now(),
+            'enabled_modules' => json_encode(['cms', 'subscriptions', 'booking', 'search', 'ai']),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -118,8 +132,8 @@ class Pulse360CmsSeeder extends Seeder
     private function seedDataTypes(): void
     {
         $this->categoryTypeId = $this->upsertDataType('category', 'Category');
-        $this->articleTypeId  = $this->upsertDataType('article',  'Article');
-        $this->eventTypeId    = $this->upsertDataType('event',    'Event');
+        $this->articleTypeId = $this->upsertDataType('article', 'Article');
+        $this->eventTypeId = $this->upsertDataType('event', 'Event');
 
         $this->upsertFields($this->categoryTypeId, [
             ['name' => 'name',        'type' => 'text'],
@@ -164,13 +178,15 @@ class Pulse360CmsSeeder extends Seeder
             ->where('slug', $slug)
             ->first();
 
-        if ($existing) return $existing->id;
+        if ($existing) {
+            return $existing->id;
+        }
 
         return DB::table('data_types')->insertGetId([
             'project_id' => $this->projectId,
-            'name'       => $name,
-            'slug'       => $slug,
-            'is_active'  => true,
+            'name' => $name,
+            'slug' => $slug,
+            'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -186,18 +202,19 @@ class Pulse360CmsSeeder extends Seeder
 
             if ($existing) {
                 $this->fields[$typeId][$field['name']] = $existing->id;
+
                 continue;
             }
 
             $id = DB::table('data_type_fields')->insertGetId([
                 'data_type_id' => $typeId,
-                'name'         => $field['name'],
-                'type'         => $field['type'],
-                'required'     => false,
+                'name' => $field['name'],
+                'type' => $field['type'],
+                'required' => false,
                 'translatable' => in_array($field['name'], ['title', 'content', 'summary', 'description']),
-                'sort_order'   => $i,
-                'created_at'   => now(),
-                'updated_at'   => now(),
+                'sort_order' => $i,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             $this->fields[$typeId][$field['name']] = $id;
@@ -217,16 +234,17 @@ class Pulse360CmsSeeder extends Seeder
 
         if ($existing) {
             $this->articleCategoryRelationId = $existing->id;
+
             return;
         }
 
         $this->articleCategoryRelationId = DB::table('data_type_relations')->insertGetId([
-            'data_type_id'         => $this->articleTypeId,
+            'data_type_id' => $this->articleTypeId,
             'related_data_type_id' => $this->categoryTypeId,
-            'relation_type'        => 'many_to_many',
-            'relation_name'        => 'categories',
-            'created_at'           => now(),
-            'updated_at'           => now(),
+            'relation_type' => 'many_to_many',
+            'relation_name' => 'categories',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -243,28 +261,32 @@ class Pulse360CmsSeeder extends Seeder
                 $id = DB::table('users')->where('email', $user['email'])->value('id');
             } else {
                 $id = DB::table('users')->insertGetId([
-                    'name'              => $user['name'],
-                    'email'             => $user['email'],
-                    'password'          => Hash::make('password'),
+                    'name' => $user['name'],
+                    'email' => $user['email'],
+                    'password' => Hash::make('password'),
                     'email_verified_at' => now(),
-                    'created_at'        => now()->subDays(rand(30, 365)),
-                    'updated_at'        => now(),
+                    'created_at' => now()->subDays(rand(30, 365)),
+                    'updated_at' => now(),
                 ]);
             }
 
             $this->userIds[] = $id;
 
-            if ($user['role'] === 'premium') $this->premiumUserIds[] = $id;
-            if ($user['role'] === 'pro')     $this->proUserIds[]     = $id;
+            if ($user['role'] === 'premium') {
+                $this->premiumUserIds[] = $id;
+            }
+            if ($user['role'] === 'pro') {
+                $this->proUserIds[] = $id;
+            }
 
             $walletExists = DB::table('wallets')->where('user_id', $id)->exists();
             if (! $walletExists) {
                 DB::table('wallets')->insert([
-                    'user_id'       => $id,
+                    'user_id' => $id,
                     'wallet_number' => strtoupper(Str::random(10)),
-                    'balance'       => $user['role'] === 'premium' ? rand(50, 500) : rand(0, 50),
-                    'created_at'    => now(),
-                    'updated_at'    => now(),
+                    'balance' => $user['role'] === 'premium' ? rand(50, 500) : rand(0, 50),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -330,11 +352,11 @@ class Pulse360CmsSeeder extends Seeder
     {
         $plans = [
             [
-                'slug'          => 'free',
-                'name'          => 'Free',
-                'description'   => 'Basic access to public news content.',
-                'price'         => 0.00,
-                'currency'      => 'USD',
+                'slug' => 'free',
+                'name' => 'Free',
+                'description' => 'Basic access to public news content.',
+                'price' => 0.00,
+                'currency' => 'USD',
                 'duration_days' => 36500,
                 'features' => [
                     ['feature_key' => 'articles_per_month', 'feature_type' => 'limit',   'feature_value' => ['limit' => 10]],
@@ -347,11 +369,11 @@ class Pulse360CmsSeeder extends Seeder
                 ],
             ],
             [
-                'slug'          => 'pro',
-                'name'          => 'Pro',
-                'description'   => 'Unlimited articles, AI personalization, and no ads.',
-                'price'         => 12.00,
-                'currency'      => 'USD',
+                'slug' => 'pro',
+                'name' => 'Pro',
+                'description' => 'Unlimited articles, AI personalization, and no ads.',
+                'price' => 12.00,
+                'currency' => 'USD',
                 'duration_days' => 30,
                 'features' => [
                     ['feature_key' => 'articles_per_month', 'feature_type' => 'limit',   'feature_value' => ['limit' => -1]],
@@ -366,11 +388,11 @@ class Pulse360CmsSeeder extends Seeder
                 ],
             ],
             [
-                'slug'          => 'premium',
-                'name'          => 'Premium',
-                'description'   => 'Everything in Pro plus exclusive insights and priority support.',
-                'price'         => 25.00,
-                'currency'      => 'USD',
+                'slug' => 'premium',
+                'name' => 'Premium',
+                'description' => 'Everything in Pro plus exclusive insights and priority support.',
+                'price' => 25.00,
+                'currency' => 'USD',
                 'duration_days' => 30,
                 'features' => [
                     ['feature_key' => 'articles_per_month', 'feature_type' => 'limit',   'feature_value' => ['limit' => -1]],
@@ -403,17 +425,17 @@ class Pulse360CmsSeeder extends Seeder
                 ? $existing->id
                 : DB::table('subscription_plans')->insertGetId(array_merge($plan, [
                     'project_id' => $this->projectId,
-                    'is_active'  => true,
-                    'metadata'   => json_encode(['billing_cycles' => ['monthly', 'yearly']]),
+                    'is_active' => true,
+                    'metadata' => json_encode(['billing_cycles' => ['monthly', 'yearly']]),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]));
 
             match ($plan['slug']) {
-                'free'    => $this->freePlanId    = $planId,
-                'pro'     => $this->proPlanId     = $planId,
+                'free' => $this->freePlanId = $planId,
+                'pro' => $this->proPlanId = $planId,
                 'premium' => $this->premiumPlanId = $planId,
-                default   => null,
+                default => null,
             };
 
             foreach ($features as $feature) {
@@ -424,12 +446,12 @@ class Pulse360CmsSeeder extends Seeder
 
                 if (! $exists) {
                     DB::table('subscription_features')->insert([
-                        'plan_id'       => $planId,
-                        'feature_key'   => $feature['feature_key'],
-                        'feature_type'  => $feature['feature_type'],
+                        'plan_id' => $planId,
+                        'feature_key' => $feature['feature_key'],
+                        'feature_type' => $feature['feature_type'],
                         'feature_value' => json_encode($feature['feature_value']),
-                        'created_at'    => now(),
-                        'updated_at'    => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -453,17 +475,18 @@ class Pulse360CmsSeeder extends Seeder
 
             if ($existing) {
                 $this->categoryEntries[] = ['id' => $existing->id, 'name' => $cat['name'], 'slug' => $slug];
+
                 continue;
             }
 
             $entryId = $this->createEntry($this->categoryTypeId, $slug);
 
             $this->setValues($entryId, $this->categoryTypeId, [
-                'name'        => $cat['name'],
-                'slug'        => $slug,
+                'name' => $cat['name'],
+                'slug' => $slug,
                 'description' => $cat['description'],
-                'image'       => $cat['image'],
-                'color'       => $cat['color'],
+                'image' => $cat['image'],
+                'color' => $cat['color'],
             ]);
 
             $this->categoryEntries[] = ['id' => $entryId, 'name' => $cat['name'], 'slug' => $slug];
@@ -474,7 +497,7 @@ class Pulse360CmsSeeder extends Seeder
     {
         return [
             ['name' => 'Technology',            'color' => '#00F5D4', 'description' => 'Latest in hardware, software, and digital innovation.',          'image' => 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800'],
-            ['name' => 'Artificial Intelligence','color' => '#7C3AED', 'description' => 'Machine learning, neural networks, and AI breakthroughs.',       'image' => 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800'],
+            ['name' => 'Artificial Intelligence', 'color' => '#7C3AED', 'description' => 'Machine learning, neural networks, and AI breakthroughs.',       'image' => 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800'],
             ['name' => 'Business',              'color' => '#2563EB', 'description' => 'Corporate news, mergers, leadership, and strategy.',              'image' => 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800'],
             ['name' => 'Finance',               'color' => '#16A34A', 'description' => 'Markets, investments, banking, and economic trends.',             'image' => 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800'],
             ['name' => 'Science',               'color' => '#0891B2', 'description' => 'Research, discoveries, and scientific breakthroughs.',            'image' => 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800'],
@@ -510,7 +533,7 @@ class Pulse360CmsSeeder extends Seeder
         $journalists = ['Lena Fischer', 'Omar Al-Rashid', 'Priya Sharma', 'Carlos Mendez', 'Emily Chen'];
 
         foreach ($this->articlesData() as $idx => $article) {
-            $slug = Str::slug($article['title']) . '-' . substr(md5($article['title']), 0, 5);
+            $slug = Str::slug($article['title']).'-'.substr(md5($article['title']), 0, 5);
 
             $existing = DB::table('data_entries')
                 ->where('project_id', $this->projectId)
@@ -519,34 +542,35 @@ class Pulse360CmsSeeder extends Seeder
 
             if ($existing) {
                 $this->articleEntries[] = ['id' => $existing->id, 'slug' => $slug, 'access' => $article['access']];
+
                 continue;
             }
 
             $publishedAt = Carbon::now()->subDays(rand(1, 180));
-            $entryId     = $this->createEntry($this->articleTypeId, $slug, $publishedAt);
+            $entryId = $this->createEntry($this->articleTypeId, $slug, $publishedAt);
 
             $this->setValues($entryId, $this->articleTypeId, [
-                'title'     => $article['title'],
-                'slug'      => $slug,
-                'summary'   => $article['summary'],
-                'content'   => $article['content'],
-                'image'     => $article['image'],
-                'author'    => $journalists[array_rand($journalists)],
+                'title' => $article['title'],
+                'slug' => $slug,
+                'summary' => $article['summary'],
+                'content' => $article['content'],
+                'image' => $article['image'],
+                'author' => $journalists[array_rand($journalists)],
                 'read_time' => (string) rand(3, 15),
-                'access'    => $article['access'],
-                'tags'      => json_encode($article['tags']),
-                'featured'  => $idx < 6 ? 'true' : 'false',
+                'access' => $article['access'],
+                'tags' => json_encode($article['tags']),
+                'featured' => $idx < 6 ? 'true' : 'false',
             ]);
 
             foreach ($article['categories'] as $catName) {
                 $cat = collect($this->categoryEntries)->firstWhere('name', $catName);
                 if ($cat) {
                     DB::table('data_entry_relations')->insert([
-                        'data_entry_id'         => $entryId,
-                        'related_entry_id'      => $cat['id'],
+                        'data_entry_id' => $entryId,
+                        'related_entry_id' => $cat['id'],
                         'data_type_relation_id' => $this->articleCategoryRelationId,
-                        'created_at'            => now(),
-                        'updated_at'            => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -633,6 +657,7 @@ class Pulse360CmsSeeder extends Seeder
 
             if ($existing) {
                 $this->eventEntries[] = ['id' => $existing->id, 'slug' => $slug, 'title' => $event['title']];
+
                 continue;
             }
 
@@ -643,17 +668,17 @@ class Pulse360CmsSeeder extends Seeder
             );
 
             $this->setValues($entryId, $this->eventTypeId, [
-                'title'       => $event['title'],
-                'slug'        => $slug,
+                'title' => $event['title'],
+                'slug' => $slug,
                 'description' => $event['description'],
-                'content'     => $event['content'],
-                'image'       => $event['image'],
-                'date'        => $event['date'],
-                'end_date'    => $event['end_date'],
-                'location'    => $event['location'],
-                'organizer'   => $event['organizer'],
-                'access'      => $event['access'],
-                'tags'        => json_encode($event['tags']),
+                'content' => $event['content'],
+                'image' => $event['image'],
+                'date' => $event['date'],
+                'end_date' => $event['end_date'],
+                'location' => $event['location'],
+                'organizer' => $event['organizer'],
+                'access' => $event['access'],
+                'tags' => json_encode($event['tags']),
             ]);
 
             $this->eventEntries[] = ['id' => $entryId, 'slug' => $slug, 'title' => $event['title']];
@@ -673,11 +698,11 @@ class Pulse360CmsSeeder extends Seeder
             ['title' => 'HealthTech Summit 2026',              'description' => 'The intersection of medicine, AI, genomics, and digital health — where breakthroughs meet bedside.',              'content' => "HealthTech Summit 2026 convenes clinicians, tech entrepreneurs, pharma executives, and patient advocates.\n\nTopics: AI diagnostics in low-resource settings, CRISPR therapeutics pipeline, wearable biosensors, mental health technology, and drug pricing.\n\nIncludes a dedicated regulatory dialogue session with FDA and EMA representatives.",                          'image' => 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800', 'date' => '2026-09-18', 'end_date' => '2026-09-20', 'location' => 'London, UK',             'organizer' => 'MedTech Alliance',             'access' => 'paid', 'tags' => ['health', 'medtech', 'AI', 'genomics']],
             ['title' => 'Global Finance Leaders Summit',       'description' => 'Exclusive gathering of central bankers, institutional investors, and finance ministers.',                          'content' => "Global Finance Leaders Summit 2026 convenes 300 senior figures from central banking, sovereign wealth funds, and private finance.\n\nThemes: AI disruption of financial services, CBDC implementations, emerging market debt sustainability, and geopolitical fragmentation of capital flows.\n\nOperates under Chatham House rules for frank debate on topics rarely discussed publicly.",      'image' => 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800', 'date' => '2026-10-28', 'end_date' => '2026-10-29', 'location' => 'Zurich, Switzerland',    'organizer' => 'World Economic Institute',     'access' => 'paid', 'tags' => ['finance', 'banking', 'economy', 'investment']],
             ['title' => 'Quantum Computing Business Forum',    'description' => 'Bridging quantum research labs and enterprise adoption — case studies, vendor demos, and investment sessions.',    'content' => "Quantum Computing Business Forum is designed for enterprise technology leaders evaluating quantum adoption timelines.\n\nTracks: Near-Term Applications (optimization, simulation, cryptography migration), Infrastructure (hardware comparison, cloud quantum), and Investment & Policy.\n\nVendors including IBM, Google, IonQ, and Quantinuum will present live demonstrations and roadmaps.",        'image' => 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800', 'date' => '2026-12-04', 'end_date' => '2026-12-05', 'location' => 'New York, USA',          'organizer' => 'Quantum Industry Consortium',  'access' => 'paid', 'tags' => ['quantum computing', 'enterprise', 'IBM', 'technology']],
-            ['title' => 'Media & Journalism Innovation Summit','description' => 'How newsrooms are adapting to AI-generated content, declining trust, and new business models.',                   'content' => "Media & Journalism Innovation Summit brings together 600 journalists, editors, media executives, and academics.\n\nTopics: AI content detection, synthetic media and deepfakes, journalist safety, subscription fatigue, and ethics of AI-assisted reporting.\n\nFeatured speaker: Reuters Editor-in-Chief on building trust in the age of synthetic media.",                          'image' => 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800', 'date' => '2026-08-05', 'end_date' => '2026-08-06', 'location' => 'New York, USA',          'organizer' => 'International Press Institute', 'access' => 'free', 'tags' => ['media', 'journalism', 'AI', 'news']],
+            ['title' => 'Media & Journalism Innovation Summit', 'description' => 'How newsrooms are adapting to AI-generated content, declining trust, and new business models.',                   'content' => "Media & Journalism Innovation Summit brings together 600 journalists, editors, media executives, and academics.\n\nTopics: AI content detection, synthetic media and deepfakes, journalist safety, subscription fatigue, and ethics of AI-assisted reporting.\n\nFeatured speaker: Reuters Editor-in-Chief on building trust in the age of synthetic media.",                          'image' => 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800', 'date' => '2026-08-05', 'end_date' => '2026-08-06', 'location' => 'New York, USA',          'organizer' => 'International Press Institute', 'access' => 'free', 'tags' => ['media', 'journalism', 'AI', 'news']],
             ['title' => 'Biotech Investment Congress',         'description' => 'Connecting biopharma executives, genomics researchers, and life science investors at the frontier of medicine.',  'content' => "Biotech Investment Congress 2026 is the primary deal-making forum for the life sciences industry, hosting 900 attendees.\n\nFocus areas: longevity and aging biology, gene therapy delivery, AI drug discovery platforms, cell therapy manufacturing, and regulatory strategy.\n\nThe Congress has historically generated over \$2 billion in partnership announcements annually.",    'image' => 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800', 'date' => '2026-11-24', 'end_date' => '2026-11-26', 'location' => 'Boston, USA',            'organizer' => 'BioPharma Connect',            'access' => 'paid', 'tags' => ['biotech', 'investment', 'pharma', 'genomics']],
             ['title' => 'Web3 & Decentralized Finance Forum',  'description' => 'The serious side of crypto and blockchain: enterprise adoption, regulatory frameworks, institutional DeFi.',      'content' => "Web3 & DeFi Forum 2026 focuses on institutional adoption, regulatory clarity, and real-world blockchain use cases.\n\nSessions: tokenized real-world assets, CBDC interoperability standards, DeFi risk management for institutional portfolios, and DAOs across jurisdictions.\n\nFeatured: Fidelity Digital Assets, BlackRock's tokenization team, and ECB digital euro representatives.",  'image' => 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800', 'date' => '2026-07-10', 'end_date' => '2026-07-11', 'location' => 'Lisbon, Portugal',       'organizer' => 'CryptoFin Alliance',           'access' => 'paid', 'tags' => ['web3', 'DeFi', 'blockchain', 'crypto']],
             ['title' => 'Women in Tech Leadership Summit',     'description' => 'Celebrating and empowering women shaping the future of technology across all levels and disciplines.',            'content' => "Women in Tech Leadership Summit returns for its 9th year with 2,000 attendees.\n\nNew for 2026: a dedicated engineering leaders track, a startup pitch competition for female-founded companies, and 200 mentorship pairings.\n\nKeynote: GitHub CEO on building engineering cultures that retain diverse talent.",                                                             'image' => 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800', 'date' => '2026-06-11', 'end_date' => '2026-06-12', 'location' => 'London, UK',             'organizer' => 'TechDiversity Foundation',     'access' => 'free', 'tags' => ['women in tech', 'diversity', 'leadership', 'technology']],
-            ['title' => 'Energy Transition Summit',            'description' => 'Flagship forum for utilities, energy ministers, and cleantech companies driving the global shift from fossil fuels.','content' => "Energy Transition Summit 2026 convenes 1,500 participants from 70 countries including G20 energy ministers.\n\nCritical discussions: offshore wind supply chain, nuclear renaissance policy, green hydrogen cost trajectory, grid stability with high renewables penetration, and energy poverty.\n\nPrevious Summits have generated over \$80 billion in cumulative investment commitments.",    'image' => 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800', 'date' => '2026-09-29', 'end_date' => '2026-10-01', 'location' => 'Copenhagen, Denmark',   'organizer' => 'Clean Energy Council',         'access' => 'paid', 'tags' => ['energy', 'climate', 'renewables', 'transition']],
+            ['title' => 'Energy Transition Summit',            'description' => 'Flagship forum for utilities, energy ministers, and cleantech companies driving the global shift from fossil fuels.', 'content' => "Energy Transition Summit 2026 convenes 1,500 participants from 70 countries including G20 energy ministers.\n\nCritical discussions: offshore wind supply chain, nuclear renaissance policy, green hydrogen cost trajectory, grid stability with high renewables penetration, and energy poverty.\n\nPrevious Summits have generated over \$80 billion in cumulative investment commitments.",    'image' => 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800', 'date' => '2026-09-29', 'end_date' => '2026-10-01', 'location' => 'Copenhagen, Denmark',   'organizer' => 'Clean Energy Council',         'access' => 'paid', 'tags' => ['energy', 'climate', 'renewables', 'transition']],
             ['title' => 'E-Sports World Championship 2026',   'description' => 'The largest competitive gaming event of the year with $10 million total prize pool.',                            'content' => "E-Sports World Championship 2026 features five titles across seven days: League of Legends, Valorant, CS2, Dota 2, and Rocket League.\n\nCombined prize pool: \$10 million, with the LoL championship carrying a \$4 million first prize.\n\nExpected: 65,000 in-venue attendees and 80 million online viewers — comparable to the Super Bowl.",                                  'image' => 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800', 'date' => '2026-08-12', 'end_date' => '2026-08-18', 'location' => 'Seoul, South Korea',    'organizer' => 'Esports World Federation',    'access' => 'paid', 'tags' => ['esports', 'gaming', 'championship', 'Korea']],
             ['title' => 'Global Mental Health Conference',     'description' => 'Breaking the stigma, advancing treatment, and addressing the global mental health crisis.',                       'content' => "Global Mental Health Conference 2026 convenes psychiatrists, psychologists, patient advocates, and policymakers.\n\nKey themes: adolescent mental health and social media, AI-assisted therapy tools, ketamine and psychedelic-assisted therapies, and workplace mental health policy.\n\nFeatures 80 peer-reviewed paper presentations and 40 clinical skills workshops.",                  'image' => 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800', 'date' => '2026-10-14', 'end_date' => '2026-10-17', 'location' => 'Toronto, Canada',        'organizer' => 'World Psychiatric Association', 'access' => 'free', 'tags' => ['mental health', 'psychiatry', 'healthcare', 'wellbeing']],
             ['title' => 'Autonomous Vehicles Conference 2026', 'description' => 'The industry\'s definitive forum on self-driving technology, regulation, and the road to mass deployment.',       'content' => "AV Conference 2026 convenes automotive engineers, software teams, regulators, urban planners, and investors.\n\nFocused sessions: Level 4 robotaxi economics, LIDAR vs camera debates, insurance frameworks, cybersecurity of connected vehicles, and EVs intersecting with autonomy.\n\nVehicle demonstrations from Waymo, Cruise, and WeRide on a closed course throughout the event.", 'image' => 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800', 'date' => '2026-08-26', 'end_date' => '2026-08-27', 'location' => 'Detroit, USA',           'organizer' => 'Autonomous Mobility Institute', 'access' => 'paid', 'tags' => ['autonomous vehicles', 'self-driving', 'Waymo', 'automotive']],
@@ -711,7 +736,7 @@ class Pulse360CmsSeeder extends Seeder
             if (! $exists) {
                 DB::table('subscription_access_rules')->insert(array_merge($rule, [
                     'project_id' => $this->projectId,
-                    'is_active'  => true,
+                    'is_active' => true,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]));
@@ -735,7 +760,7 @@ class Pulse360CmsSeeder extends Seeder
             if (! $exists) {
                 DB::table('subscription_feature_rules')->insert(array_merge($rule, [
                     'project_id' => $this->projectId,
-                    'is_active'  => true,
+                    'is_active' => true,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]));
@@ -756,31 +781,33 @@ class Pulse360CmsSeeder extends Seeder
                 ->where('content_id', $article['id'])
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
-            $requiresSub     = in_array($article['access'], ['pro', 'premium']);
+            $requiresSub = in_array($article['access'], ['pro', 'premium']);
             $requiredFeature = match ($article['access']) {
-                'pro'     => 'pro_articles',
+                'pro' => 'pro_articles',
                 'premium' => 'premium_articles',
-                default   => null,
+                default => null,
             };
 
             $metaId = DB::table('content_access_metadata')->insertGetId([
-                'project_id'            => $this->projectId,
-                'content_type'          => 'article',
-                'content_id'            => $article['id'],
+                'project_id' => $this->projectId,
+                'content_type' => 'article',
+                'content_id' => $article['id'],
                 'requires_subscription' => $requiresSub,
-                'is_active'             => true,
-                'created_at'            => now(),
-                'updated_at'            => now(),
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             if ($requiredFeature) {
                 DB::table('content_access_features')->insert([
                     'content_access_metadata_id' => $metaId,
-                    'feature_key'                => $requiredFeature,
-                    'created_at'                 => now(),
-                    'updated_at'                 => now(),
+                    'feature_key' => $requiredFeature,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -825,26 +852,28 @@ class Pulse360CmsSeeder extends Seeder
             ->where('plan_id', $planId)
             ->exists();
 
-        if ($exists) return;
+        if ($exists) {
+            return;
+        }
 
         $startsAt = now()->addDays($startDaysFromNow);
-        $endsAt   = (clone $startsAt)->addDays($durationDays + abs($startDaysFromNow));
+        $endsAt = (clone $startsAt)->addDays($durationDays + abs($startDaysFromNow));
 
         DB::table('subscriptions')->insert([
-            'user_id'              => $userId,
-            'project_id'           => $this->projectId,
-            'plan_id'              => $planId,
-            'payment_id'           => null,
-            'status'               => $status,
-            'starts_at'            => $startsAt,
-            'ends_at'              => $endsAt,
+            'user_id' => $userId,
+            'project_id' => $this->projectId,
+            'plan_id' => $planId,
+            'payment_id' => null,
+            'status' => $status,
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
             'current_period_start' => $status === 'active' ? now()->startOfMonth() : null,
-            'current_period_end'   => $status === 'active' ? now()->endOfMonth()   : null,
-            'cancelled_at'         => $cancelled ? now()->subDays(rand(1, 10)) : null,
-            'auto_renew'           => ! $cancelled,
-            'metadata'             => json_encode(['source' => 'seeder']),
-            'created_at'           => $startsAt,
-            'updated_at'           => now(),
+            'current_period_end' => $status === 'active' ? now()->endOfMonth() : null,
+            'cancelled_at' => $cancelled ? now()->subDays(rand(1, 10)) : null,
+            'auto_renew' => ! $cancelled,
+            'metadata' => json_encode(['source' => 'seeder']),
+            'created_at' => $startsAt,
+            'updated_at' => now(),
         ]);
     }
 
@@ -854,8 +883,20 @@ class Pulse360CmsSeeder extends Seeder
 
     private function seedSearchIndices(): void
     {
-        // نفس المُطبِّع المُستخدَم وقت البحث — بدونه لا يُطابق FULLTEXT شيئاً
-        $searchTextBuilder = new SearchTextBuilder();
+        /*
+         | نفس دالّة التطبيع المُستخدَمة وقت البحث.
+         |
+         | الأعمدة المطويّة هي ما يُطابَق عليه فعلاً؛ صفٌّ يُدرَج بلا
+         | طيّها لا يظهر في أي نتيجة مهما كان محتواه.
+         */
+        $fold = static fn (string $title, string $body, array $meta): array => [
+            'title_fold' => TextFolder::fold($title),
+            'content_fold' => TextFolder::fold($body),
+            'meta_fold' => TextFolder::fold(implode(' ', array_map('strval', $meta))),
+            'title_terms' => count(Segmenter::tokenize(TextFolder::fold($title))),
+            'content_terms' => count(Segmenter::tokenize(TextFolder::fold($body))),
+            'meta_terms' => count(Segmenter::tokenize(TextFolder::fold(implode(' ', array_map('strval', $meta))))),
+        ];
 
         foreach ($this->articleEntries as $article) {
             $exists = DB::table('search_indices')
@@ -863,39 +904,37 @@ class Pulse360CmsSeeder extends Seeder
                 ->where('language', 'en')
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
-            $title   = $this->getFieldValue($article['id'], $this->articleTypeId, 'title');
+            $title = $this->getFieldValue($article['id'], $this->articleTypeId, 'title');
             $summary = $this->getFieldValue($article['id'], $this->articleTypeId, 'summary');
             $daysOld = rand(1, 180);
 
             DB::table('search_indices')->insert([
-                'entry_id'          => $article['id'],
-                'data_type_id'      => $this->articleTypeId,
-                'project_id'        => $this->projectId,
-                'language'          => 'en',
-                'title'             => $title,
-                'content'           => $summary,
-                'meta'              => json_encode(['access' => $article['access']]),
-                'search_text'       => $searchTextBuilder->build(
-                    $title,
-                    $summary,
-                    ['access' => $article['access']],
-                ) ?: null,
-                'status'            => 'published',
-                'published_at'      => now()->subDays($daysOld),
-                'click_count'       => rand(10, 2000),
-                'view_count'        => rand(100, 20000),
-                'popularity_score'  => round(rand(10, 999) / 10, 4),
+                'entry_id' => $article['id'],
+                'data_type_id' => $this->articleTypeId,
+                'project_id' => $this->projectId,
+                'language' => 'en',
+                'title' => $title,
+                'content' => $summary,
+                'meta' => json_encode(['access' => $article['access']]),
+                ...$fold($title, $summary, ['access' => $article['access']]),
+                'status' => 'published',
+                'published_at' => now()->subDays($daysOld),
+                'click_count' => rand(10, 2000),
+                'view_count' => rand(100, 20000),
+                'popularity_score' => round(rand(10, 999) / 10, 4),
                 'title_has_numbers' => $title && preg_match('/[0-9]/', $title) ? 1 : 0,
-                'title_word_count'  => $title ? str_word_count($title) : 0,
-                'title_length'      => $title ? strlen($title) : 0,
-                'primary_keyword'   => $title ? strtolower(strtok($title, ' ')) : '',
-                'ctr_score'         => round(rand(5, 300) / 100, 4),
-                'freshness_score'   => round(1.0 / ($daysOld + 1), 4),
-                'data_type_slug'    => 'article',
-                'created_at'        => now()->subDays($daysOld),
-                'updated_at'        => now(),
+                'title_word_count' => $title ? str_word_count($title) : 0,
+                'title_length' => $title ? strlen($title) : 0,
+                'primary_keyword' => $title ? strtolower(strtok($title, ' ')) : '',
+                'ctr_score' => round(rand(5, 300) / 100, 4),
+                'freshness_score' => round(1.0 / ($daysOld + 1), 4),
+                'data_type_slug' => 'article',
+                'created_at' => now()->subDays($daysOld),
+                'updated_at' => now(),
             ]);
         }
 
@@ -905,39 +944,37 @@ class Pulse360CmsSeeder extends Seeder
                 ->where('language', 'en')
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
-            $title   = $this->getFieldValue($event['id'], $this->eventTypeId, 'title');
-            $desc    = $this->getFieldValue($event['id'], $this->eventTypeId, 'description');
+            $title = $this->getFieldValue($event['id'], $this->eventTypeId, 'title');
+            $desc = $this->getFieldValue($event['id'], $this->eventTypeId, 'description');
             $daysOld = rand(1, 30);
 
             DB::table('search_indices')->insert([
-                'entry_id'          => $event['id'],
-                'data_type_id'      => $this->eventTypeId,
-                'project_id'        => $this->projectId,
-                'language'          => 'en',
-                'title'             => $title,
-                'content'           => $desc,
-                'meta'              => json_encode(['type' => 'event']),
-                'search_text'       => $searchTextBuilder->build(
-                    $title,
-                    $desc,
-                    ['type' => 'event'],
-                ) ?: null,
-                'status'            => 'published',
-                'published_at'      => now()->subDays($daysOld),
-                'click_count'       => rand(50, 5000),
-                'view_count'        => rand(500, 50000),
-                'popularity_score'  => round(rand(50, 999) / 10, 4),
+                'entry_id' => $event['id'],
+                'data_type_id' => $this->eventTypeId,
+                'project_id' => $this->projectId,
+                'language' => 'en',
+                'title' => $title,
+                'content' => $desc,
+                'meta' => json_encode(['type' => 'event']),
+                ...$fold($title, $desc, ['type' => 'event']),
+                'status' => 'published',
+                'published_at' => now()->subDays($daysOld),
+                'click_count' => rand(50, 5000),
+                'view_count' => rand(500, 50000),
+                'popularity_score' => round(rand(50, 999) / 10, 4),
                 'title_has_numbers' => 0,
-                'title_word_count'  => $title ? str_word_count($title) : 0,
-                'title_length'      => $title ? strlen($title) : 0,
-                'primary_keyword'   => $title ? strtolower(strtok($title, ' ')) : '',
-                'ctr_score'         => round(rand(10, 500) / 100, 4),
-                'freshness_score'   => round(1.0 / ($daysOld + 1), 4),
-                'data_type_slug'    => 'event',
-                'created_at'        => now()->subDays($daysOld),
-                'updated_at'        => now(),
+                'title_word_count' => $title ? str_word_count($title) : 0,
+                'title_length' => $title ? strlen($title) : 0,
+                'primary_keyword' => $title ? strtolower(strtok($title, ' ')) : '',
+                'ctr_score' => round(rand(10, 500) / 100, 4),
+                'freshness_score' => round(1.0 / ($daysOld + 1), 4),
+                'data_type_slug' => 'event',
+                'created_at' => now()->subDays($daysOld),
+                'updated_at' => now(),
             ]);
         }
     }
@@ -970,24 +1007,26 @@ class Pulse360CmsSeeder extends Seeder
                 ->where('language', 'en')
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
             DB::table('popular_searches')->insert([
-                'project_id'         => $this->projectId,
-                'keyword'            => $keyword,
+                'project_id' => $this->projectId,
+                'keyword' => $keyword,
                 'normalized_keyword' => $normalized,
-                'language'           => 'en',
-                'count_24h'          => rand(20, 500),
-                'count_7d'           => rand(100, 2000),
-                'count_30d'          => rand(500, 8000),
-                'count_all_time'     => rand(2000, 50000),
-                'click_count'        => rand(100, 10000),
-                'trending_score'     => round(rand(10, 5000) / 10, 4),
-                'alltime_score'      => round(rand(100, 10000) / 10, 4),
-                'last_searched_at'   => now()->subMinutes(rand(1, 10080)),
-                'last_computed_at'   => now(),
-                'created_at'         => now()->subDays(rand(1, 180)),
-                'updated_at'         => now(),
+                'language' => 'en',
+                'count_24h' => rand(20, 500),
+                'count_7d' => rand(100, 2000),
+                'count_30d' => rand(500, 8000),
+                'count_all_time' => rand(2000, 50000),
+                'click_count' => rand(100, 10000),
+                'trending_score' => round(rand(10, 5000) / 10, 4),
+                'alltime_score' => round(rand(100, 10000) / 10, 4),
+                'last_searched_at' => now()->subMinutes(rand(1, 10080)),
+                'last_computed_at' => now(),
+                'created_at' => now()->subDays(rand(1, 180)),
+                'updated_at' => now(),
             ]);
         }
 
@@ -1005,22 +1044,24 @@ class Pulse360CmsSeeder extends Seeder
                 ->where('word_b', $pair[1])
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
             DB::table('synonym_suggestions')->insert([
-                'project_id'         => $this->projectId,
-                'word_a'             => $pair[0],
-                'word_b'             => $pair[1],
-                'language'           => 'en',
-                'jaccard_score'      => round(rand(30, 90) / 100, 6),
+                'project_id' => $this->projectId,
+                'word_a' => $pair[0],
+                'word_b' => $pair[1],
+                'language' => 'en',
+                'jaccard_score' => round(rand(30, 90) / 100, 6),
                 'cooccurrence_count' => rand(50, 1000),
-                'confidence_score'   => round(rand(40, 950) / 10, 4),
-                'word_a_count'       => rand(100, 5000),
-                'word_b_count'       => rand(100, 5000),
-                'status'             => 'approved',
-                'last_computed_at'   => now(),
-                'created_at'         => now(),
-                'updated_at'         => now(),
+                'confidence_score' => round(rand(40, 950) / 10, 4),
+                'word_a_count' => rand(100, 5000),
+                'word_b_count' => rand(100, 5000),
+                'status' => 'approved',
+                'last_computed_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }
@@ -1037,19 +1078,21 @@ class Pulse360CmsSeeder extends Seeder
                 ->whereNull('language')
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
             $title = $this->getFieldValue($article['id'], $this->articleTypeId, 'title');
 
             DB::table('seo_entries')->insert([
-                'data_entry_id'    => $article['id'],
-                'language'         => null,
-                'meta_title'       => $title ? substr($title, 0, 55) . ' | Pulse360' : 'Pulse360',
+                'data_entry_id' => $article['id'],
+                'language' => null,
+                'meta_title' => $title ? substr($title, 0, 55).' | Pulse360' : 'Pulse360',
                 'meta_description' => $this->getFieldValue($article['id'], $this->articleTypeId, 'summary'),
-                'slug'             => $article['slug'],
-                'canonical_url'    => 'https://pulse360.com/article/' . $article['slug'],
-                'created_at'       => now(),
-                'updated_at'       => now(),
+                'slug' => $article['slug'],
+                'canonical_url' => 'https://pulse360.com/article/'.$article['slug'],
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
@@ -1059,19 +1102,21 @@ class Pulse360CmsSeeder extends Seeder
                 ->whereNull('language')
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
             $title = $this->getFieldValue($event['id'], $this->eventTypeId, 'title');
 
             DB::table('seo_entries')->insert([
-                'data_entry_id'    => $event['id'],
-                'language'         => null,
-                'meta_title'       => $title ? substr($title, 0, 50) . ' | Pulse360 Events' : 'Pulse360 Events',
+                'data_entry_id' => $event['id'],
+                'language' => null,
+                'meta_title' => $title ? substr($title, 0, 50).' | Pulse360 Events' : 'Pulse360 Events',
                 'meta_description' => $this->getFieldValue($event['id'], $this->eventTypeId, 'description'),
-                'slug'             => $event['slug'],
-                'canonical_url'    => 'https://pulse360.com/event/' . $event['slug'],
-                'created_at'       => now(),
-                'updated_at'       => now(),
+                'slug' => $event['slug'],
+                'canonical_url' => 'https://pulse360.com/event/'.$event['slug'],
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }
@@ -1083,13 +1128,13 @@ class Pulse360CmsSeeder extends Seeder
     private function createEntry(int $typeId, string $slug, ?Carbon $publishedAt = null): int
     {
         return DB::table('data_entries')->insertGetId([
-            'project_id'   => $this->projectId,
+            'project_id' => $this->projectId,
             'data_type_id' => $typeId,
-            'slug'         => $slug,
-            'status'       => 'published',
+            'slug' => $slug,
+            'status' => 'published',
             'published_at' => $publishedAt ?? now(),
-            'created_at'   => $publishedAt ?? now(),
-            'updated_at'   => now(),
+            'created_at' => $publishedAt ?? now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -1102,7 +1147,9 @@ class Pulse360CmsSeeder extends Seeder
                     ->where('name', $fieldName)
                     ->value('id');
 
-            if (! $fieldId) continue;
+            if (! $fieldId) {
+                continue;
+            }
 
             $this->fields[$typeId][$fieldName] = $fieldId;
 
@@ -1114,12 +1161,12 @@ class Pulse360CmsSeeder extends Seeder
 
             if (! $exists) {
                 DB::table('data_entry_values')->insert([
-                    'data_entry_id'      => $entryId,
+                    'data_entry_id' => $entryId,
                     'data_type_field_id' => $fieldId,
-                    'language'           => null,
-                    'value'              => $value,
-                    'created_at'         => now(),
-                    'updated_at'         => now(),
+                    'language' => null,
+                    'value' => $value,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -1133,7 +1180,9 @@ class Pulse360CmsSeeder extends Seeder
                 ->where('name', $fieldName)
                 ->value('id');
 
-        if (! $fieldId) return null;
+        if (! $fieldId) {
+            return null;
+        }
 
         return DB::table('data_entry_values')
             ->where('data_entry_id', $entryId)
@@ -1153,12 +1202,12 @@ class Pulse360CmsSeeder extends Seeder
         echo "╠══════════════════════════════════════════════╣\n";
         echo "║ Service:        CMS\n";
         echo "║ Project ID:     {$this->projectId}\n";
-        echo "║ Users:          " . count($this->userIds)         . "\n";
-        echo "║ Categories:     " . count($this->categoryEntries) . "\n";
-        echo "║ Articles:       " . count($this->articleEntries)  . "\n";
-        echo "║ Events (CMS):   " . count($this->eventEntries)    . "\n";
-        echo "║ Premium users:  " . count($this->premiumUserIds)  . "\n";
-        echo "║ Pro users:      " . count($this->proUserIds)      . "\n";
+        echo '║ Users:          '.count($this->userIds)."\n";
+        echo '║ Categories:     '.count($this->categoryEntries)."\n";
+        echo '║ Articles:       '.count($this->articleEntries)."\n";
+        echo '║ Events (CMS):   '.count($this->eventEntries)."\n";
+        echo '║ Premium users:  '.count($this->premiumUserIds)."\n";
+        echo '║ Pro users:      '.count($this->proUserIds)."\n";
         echo "╠══════════════════════════════════════════════╣\n";
         echo "║ TEST CREDENTIALS  (password: password)\n";
         echo "║  Admin:    admin@pulse360.com\n";

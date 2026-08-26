@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Search\Repositories\Eloquent\EloquentUserBehaviorRepository;
+use App\Domains\Search\Support\Text\TextFolder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -10,11 +11,17 @@ const PROJECT = 1;
 const USER = 7;
 
 beforeEach(function () {
-    $this->repository = new EloquentUserBehaviorRepository();
+    $this->repository = new EloquentUserBehaviorRepository;
 });
 
 function seedIndexRow(int $entryId, string $language, string $title, ?string $content = null): void
 {
+    /*
+     | يُملأ العمود المطويّ إلى جانب الخام.
+     |
+     | التفضيلات تُقرأ من title_fold لا من title: هو ما يُطابَق عليه في
+     | المُسجِّل، وصفٌّ بلا طيّ لا يُنتج أي إشارة تخصيص.
+     */
     DB::table('search_indices')->insert([
         'entry_id' => $entryId,
         'data_type_id' => 1,
@@ -22,6 +29,8 @@ function seedIndexRow(int $entryId, string $language, string $title, ?string $co
         'language' => $language,
         'title' => $title,
         'content' => $content,
+        'title_fold' => TextFolder::fold($title),
+        'content_fold' => $content === null ? null : TextFolder::fold($content),
         'status' => 'published',
         'created_at' => now(),
         'updated_at' => now(),
@@ -65,8 +74,10 @@ test('النقرة الواحدة تُنتج نصاً واحداً لا نصاً
 
     // قبل الإصلاح: صفّان → المصطلح يُحتسب مرتين من نقرة واحدة فيتجاوز
     // MIN_TERM_SIGNAL، مع تسرّب مفردات اللغة الأخرى.
+    //
+    // النصّ يعود مطويّاً لأنه يُطابَق على العمود المطويّ نفسه.
     expect($texts)->toHaveCount(1)
-        ->and($texts[0])->toBe('آيفون 15 برو ماكس');
+        ->and($texts[0])->toBe(TextFolder::fold('آيفون 15 برو ماكس'));
 });
 
 test('لا نتعلّم مفردات لغة أخرى من بحث بالعربية', function () {
@@ -92,13 +103,21 @@ test('النقر المباشر بلا سجل بحث يُقبل ويُلتقط �
     expect($texts)->toHaveCount(1);
 });
 
-test('النص يجمع العنوان والمحتوى ويتجاهل الفارغ', function () {
+test('النص يقتصر على العنوان ويستبعد المتن', function () {
+    /*
+     | كان النصّ يضمّ المتن إلى العنوان. والمتن نثرٌ عام تتقاطع مفرداته
+     | بين أغلب المستندات، فتتقارب ملفات كل المستخدمين مهما تباعدت
+     | اهتماماتهم — وقد قِيس ذلك: مستخدمان متعاكسا الذوق نالا المضاعِف
+     | الأقصى نفسه في كل استعلام.
+     |
+     | العنوان وحده هو ما يصف المستند، وهو ما يُطابَق عليه في المُسجِّل.
+     */
     seedIndexRow(13, 'ar', 'ماكبوك برو', 'شريحة M3 Pro للمطورين');
 
     seedClick(entryId: 13, searchLogId: seedSearchLog('ماكبوك', 'ar'));
 
     expect($this->repository->getClickedEntryTexts(PROJECT, USER)[0])
-        ->toBe('ماكبوك برو شريحة M3 Pro للمطورين');
+        ->toBe(TextFolder::fold('ماكبوك برو'));
 });
 
 test('نقرات الجلسة تُقرأ بنفس المنطق', function () {

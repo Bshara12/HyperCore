@@ -44,10 +44,10 @@ trait NegationExtractionTrait
      *   → include = ''
      *   → exclude = afterWords[0..3]
      *
-     * @param  string   $beforeText  النص قبل الـ pattern
-     * @param  string[] $afterWords  الكلمات بعد الـ pattern (مُقسَّمة مسبقاً)
+     * @param  string  $beforeText  النص قبل الـ pattern
+     * @param  string[]  $afterWords  الكلمات بعد الـ pattern (مُقسَّمة مسبقاً)
      * @return array{0: string, 1: string[], 2: bool}
-     *         [includeText, excludeWords, hadNegation=true]
+     *                                                [includeText, excludeWords, hadNegation=true]
      */
     protected function applyNegationCases(string $beforeText, array $afterWords): array
     {
@@ -61,8 +61,8 @@ trait NegationExtractionTrait
         }
 
         // ── CASE B or C ───────────────────────────────────────────────
-        $productWords = array_values(array_filter($afterWords, fn($w) => ! is_numeric($w)));
-        $numberWords  = array_values(array_filter($afterWords, fn($w) => is_numeric($w)));
+        $productWords = array_values(array_filter($afterWords, fn ($w) => ! is_numeric($w)));
+        $numberWords = array_values(array_filter($afterWords, fn ($w) => is_numeric($w)));
 
         if (! empty($numberWords) && ! empty($productWords)) {
             // CASE B: منتج + رقم → include=منتج، exclude=رقم
@@ -87,9 +87,9 @@ trait NegationExtractionTrait
      * يغطي: spaces, commas, periods, dashes, Arabic punctuation, etc.
      * لا يعتمد على space فقط — أي non-alphanumeric = boundary.
      *
-     * @param string $text      النص الكامل
-     * @param int    $pos       موضع بداية الـ token
-     * @param int    $tokenLen  طول الـ token بالـ chars
+     * @param  string  $text  النص الكامل
+     * @param  int  $pos  موضع بداية الـ token
+     * @param  int  $tokenLen  طول الـ token بالـ chars
      */
     protected function isWordBoundary(string $text, int $pos, int $tokenLen): bool
     {
@@ -121,10 +121,15 @@ trait NegationExtractionTrait
      */
     protected function isAlphanumericChar(string $char): bool
     {
-        if (empty($char)) return false;
-        if (ctype_alnum($char)) return true;
+        if (empty($char)) {
+            return false;
+        }
+        if (ctype_alnum($char)) {
+            return true;
+        }
 
         $code = mb_ord($char, 'UTF-8');
+
         return $code >= 0x0600 && $code <= 0x06FF;
     }
 }

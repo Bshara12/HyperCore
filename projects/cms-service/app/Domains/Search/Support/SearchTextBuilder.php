@@ -67,7 +67,7 @@ final class SearchTextBuilder
 
         return $crossLanguage === []
             ? $normalized
-            : $normalized . ' ' . implode(' ', $crossLanguage);
+            : $normalized.' '.implode(' ', $crossLanguage);
     }
 
     /**

@@ -1,6 +1,5 @@
 <?php
 
-use App\Domains\Search\Support\SearchTextBuilder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +42,16 @@ return new class extends Migration
             DB::statement('ALTER TABLE search_indices ADD FULLTEXT fulltext_search_text (search_text)');
         }
 
-        $this->backfillSearchText();
+        /*
+         | لا يُملأ search_text هنا بعد اليوم.
+         |
+         | العمود يُسقطه ترحيل لاحق حين حلّت محلّه أعمدة مطويّة منفصلة
+         | لكل حقل (title_fold / content_fold / meta_fold)، فملؤه على
+         | قاعدة جديدة عملٌ يُلقى فوراً.
+         |
+         | ويبقى الترحيل نفسه قائماً لا محذوفاً: قواعد قائمة طبّقته
+         | سلفاً، وحذفه يترك عمودها بلا تاريخ يفسّره ولا ترحيل يُسقطه.
+         */
         $this->backfillDataTypeSlug();
     }
 
@@ -67,43 +75,6 @@ return new class extends Migration
         ) !== [];
     }
 
-    /**
-     * إعادة بناء search_text لكل الصفوف الموجودة.
-     * لا يمكن عملها بـ SQL خالص: التطبيع العربي وإضافة المصطلحات
-     * عبر-اللغوية منطق PHP (نفس المنطق المُستخدَم وقت الفهرسة).
-     */
-    private function backfillSearchText(): void
-    {
-        $builder = new SearchTextBuilder();
-        $lastId = 0;
-
-        while (true) {
-            $rows = DB::table('search_indices')
-                ->select('id', 'title', 'content', 'meta')
-                ->where('id', '>', $lastId)
-                ->orderBy('id')
-                ->limit(self::CHUNK)
-                ->get();
-
-            if ($rows->isEmpty()) {
-                break;
-            }
-
-            foreach ($rows as $row) {
-                $lastId = (int) $row->id;
-
-                DB::table('search_indices')
-                    ->where('id', $row->id)
-                    ->update(['search_text' => $builder->buildFromRow($row) ?: null]);
-            }
-        }
-    }
-
-    /**
-     * تعبئة data_type_slug — كان NULL دائماً لأن كل مسارات الفهرسة
-     * (upsert / reindex / seeder) لم تكن تكتبه، ما يجعل أي فلترة
-     * بالـ intent تُصفّر النتائج.
-     */
     private function backfillDataTypeSlug(): void
     {
         if (! Schema::hasTable('data_types') || ! Schema::hasColumn('search_indices', 'data_type_slug')) {

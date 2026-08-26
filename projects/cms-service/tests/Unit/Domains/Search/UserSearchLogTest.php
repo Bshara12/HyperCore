@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Domains\Search;
 
-use App\Domains\Search\Models\UserSearchLog;
 use App\Domains\Search\Models\UserClickLog;
+use App\Domains\Search\Models\UserSearchLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // uses(RefreshDatabase::class);

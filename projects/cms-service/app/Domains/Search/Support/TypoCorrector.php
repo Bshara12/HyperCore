@@ -112,7 +112,6 @@ final class TypoCorrector
 
     // Known words set للـ O(1) lookup في Tier 2
 
-    
     // private static ?array $knownWordsSet = null;
 
     // ─────────────────────────────────────────────────────────────────

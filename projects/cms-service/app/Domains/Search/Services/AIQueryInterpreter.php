@@ -36,32 +36,34 @@ use Illuminate\Support\Facades\Log;
  */
 final class AIQueryInterpreter
 {
-    private const CACHE_TTL   = 3600;
+    private const CACHE_TTL = 3600;
+
     private const API_TIMEOUT = 10;
-    private const API_URL     = 'https://openrouter.ai/api/v1/chat/completions';
+
+    private const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
     // ─── kept identical to AIQueryEnhancer for cache reuse ───────────
     private const CACHE_KEY_PREFIX = 'ai_enhance:';
 
     private const AR_PRODUCT_MAP = [
-        'ايفون'   => 'iphone',    'آيفون'   => 'iphone',
-        'أيفون'   => 'iphone',    'سامسونج' => 'samsung',
-        'سامسونغ' => 'samsung',   'لابتوب'  => 'laptop',
-        'جوال'    => 'phone',     'هاتف'    => 'phone',
-        'موبايل'  => 'mobile',    'تابلت'   => 'tablet',
-        'شاشة'    => 'screen',    'كاميرا'  => 'camera',
-        'سعر'     => 'price',     'شراء'    => 'buy',
-        'رخيص'    => 'cheap',     'ارخص'    => 'cheap',
-        'أرخص'    => 'cheap',     'غالي'    => 'expensive',
-        'ساعة'    => 'watch',     'سماعات'  => 'headphones',
-        'حاسوب'   => 'computer',  'ماك'     => 'mac',
-        'بيكسل'   => 'pixel',     'نوكيا'   => 'nokia',
-        'جوجل'    => 'google',    'ابل'     => 'apple',
-        'أبل'     => 'apple',     'هواوي'   => 'huawei',
-        'شاومي'   => 'xiaomi',    'اوبو'    => 'oppo',
-        'تلفزيون' => 'tv',        'تلفاز'   => 'tv',
-        'شاحن'    => 'charger',   'بطارية'  => 'battery',
-        'كفر'     => 'case',      'غطاء'    => 'cover',
+        'ايفون' => 'iphone',    'آيفون' => 'iphone',
+        'أيفون' => 'iphone',    'سامسونج' => 'samsung',
+        'سامسونغ' => 'samsung',   'لابتوب' => 'laptop',
+        'جوال' => 'phone',     'هاتف' => 'phone',
+        'موبايل' => 'mobile',    'تابلت' => 'tablet',
+        'شاشة' => 'screen',    'كاميرا' => 'camera',
+        'سعر' => 'price',     'شراء' => 'buy',
+        'رخيص' => 'cheap',     'ارخص' => 'cheap',
+        'أرخص' => 'cheap',     'غالي' => 'expensive',
+        'ساعة' => 'watch',     'سماعات' => 'headphones',
+        'حاسوب' => 'computer',  'ماك' => 'mac',
+        'بيكسل' => 'pixel',     'نوكيا' => 'nokia',
+        'جوجل' => 'google',    'ابل' => 'apple',
+        'أبل' => 'apple',     'هواوي' => 'huawei',
+        'شاومي' => 'xiaomi',    'اوبو' => 'oppo',
+        'تلفزيون' => 'tv',        'تلفاز' => 'tv',
+        'شاحن' => 'charger',   'بطارية' => 'battery',
+        'كفر' => 'case',      'غطاء' => 'cover',
     ];
 
     private const AR_NEGATION_PATTERNS = [
@@ -80,16 +82,16 @@ final class AIQueryInterpreter
     ];
 
     private const TYPO_DICTIONARY = [
-        'iphoen'  => 'iphone',  'ipone'   => 'iphone',
-        'iphon'   => 'iphone',  'samsng'  => 'samsung',
-        'samsong' => 'samsung', 'labtop'  => 'laptop',
-        'laptp'   => 'laptop',  'googel'  => 'google',
-        'macbok'  => 'macbook', 'androd'  => 'android',
-        'phoen'   => 'phone',   'fone'    => 'phone',
-        'cheep'   => 'cheap',   'prie'    => 'price',
-        'tabelt'  => 'tablet',  'galxy'   => 'galaxy',
-        'nokea'   => 'nokia',   'pixle'   => 'pixel',
-        'huaewi'  => 'huawei',  'xiomi'   => 'xiaomi',
+        'iphoen' => 'iphone',  'ipone' => 'iphone',
+        'iphon' => 'iphone',  'samsng' => 'samsung',
+        'samsong' => 'samsung', 'labtop' => 'laptop',
+        'laptp' => 'laptop',  'googel' => 'google',
+        'macbok' => 'macbook', 'androd' => 'android',
+        'phoen' => 'phone',   'fone' => 'phone',
+        'cheep' => 'cheap',   'prie' => 'price',
+        'tabelt' => 'tablet',  'galxy' => 'galaxy',
+        'nokea' => 'nokia',   'pixle' => 'pixel',
+        'huaewi' => 'huawei',  'xiomi' => 'xiaomi',
     ];
 
     // ─────────────────────────────────────────────────────────────────
@@ -107,7 +109,7 @@ final class AIQueryInterpreter
         }
 
         $cacheKey = $this->cacheKey($query, $language);
-        $cached   = Cache::get($cacheKey);
+        $cached = Cache::get($cacheKey);
 
         if ($cached !== null) {
             return array_merge($cached, ['source' => 'cache']);
@@ -116,18 +118,21 @@ final class AIQueryInterpreter
         if ($this->isGibberish($query)) {
             $result = $this->emptyResult($query, 0.04, 'gibberish');
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return $result;
         }
 
         if ($this->isArabic($query)) {
             $result = $this->processArabicLocally($query);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return array_merge($result, ['source' => 'arabic_local']);
         }
 
         try {
             $result = $this->callAPI($query, $language);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return array_merge($result, ['source' => 'api']);
         } catch (\Throwable $e) {
             Log::warning('AIQueryInterpreter: API failed, local fallback', [
@@ -136,6 +141,7 @@ final class AIQueryInterpreter
             ]);
             $result = $this->processEnglishLocally($query);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return array_merge($result, ['source' => 'local_fallback']);
         }
     }
@@ -156,21 +162,21 @@ final class AIQueryInterpreter
     private function callAPI(string $query, string $language): array
     {
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . config('services.openrouter.key'),
-            'Content-Type'  => 'application/json',
+            'Authorization' => 'Bearer '.config('services.openrouter.key'),
+            'Content-Type' => 'application/json',
         ])
-        ->timeout(self::API_TIMEOUT)
-        ->post(self::API_URL, [
-            'model'      => config('services.openrouter.model', 'mistralai/mistral-7b-instruct'),
-            'max_tokens' => 400,
-            'messages'   => [
-                ['role' => 'system', 'content' => $this->systemPrompt()],
-                ['role' => 'user',   'content' => $this->userPrompt($query, $language)],
-            ],
-        ]);
+            ->timeout(self::API_TIMEOUT)
+            ->post(self::API_URL, [
+                'model' => config('services.openrouter.model', 'mistralai/mistral-7b-instruct'),
+                'max_tokens' => 400,
+                'messages' => [
+                    ['role' => 'system', 'content' => $this->systemPrompt()],
+                    ['role' => 'user',   'content' => $this->userPrompt($query, $language)],
+                ],
+            ]);
 
         if (! $response->successful()) {
-            throw new \RuntimeException('API error: ' . $response->status());
+            throw new \RuntimeException('API error: '.$response->status());
         }
 
         $content = $response->json('choices.0.message.content');
@@ -210,8 +216,8 @@ SYSTEM;
     private function userPrompt(string $query, string $language): string
     {
         $lang = match ($language) {
-            'ar'    => 'Arabic',
-            'fr'    => 'French',
+            'ar' => 'Arabic',
+            'fr' => 'French',
             default => 'English',
         };
 
@@ -243,33 +249,34 @@ PROMPT;
 
         if (json_last_error() !== JSON_ERROR_NONE || ! is_array($parsed)) {
             Log::warning('AIQueryInterpreter: JSON parse failed', ['raw' => substr($content, 0, 200)]);
+
             return $this->processEnglishLocally($originalQuery);
         }
 
-        $include    = $this->sanitizeArray($parsed['include']          ?? []);
-        $exclude    = $this->sanitizeArray($parsed['exclude']          ?? []);
-        $expanded   = $this->sanitizeArray($parsed['expandedKeywords'] ?? []);
-        $corrected  = trim($parsed['correctedQuery'] ?? '');
-        $intent     = $this->sanitizeIntent($parsed['intent'] ?? 'general');
+        $include = $this->sanitizeArray($parsed['include'] ?? []);
+        $exclude = $this->sanitizeArray($parsed['exclude'] ?? []);
+        $expanded = $this->sanitizeArray($parsed['expandedKeywords'] ?? []);
+        $corrected = trim($parsed['correctedQuery'] ?? '');
+        $intent = $this->sanitizeIntent($parsed['intent'] ?? 'general');
         $confidence = min(1.0, max(0.0, (float) ($parsed['confidence'] ?? 0.5)));
 
         if (empty($include) && ! empty($corrected)) {
             $include = array_values(array_filter(
                 explode(' ', $corrected),
-                fn($w) => mb_strlen(trim($w), 'UTF-8') >= 2
+                fn ($w) => mb_strlen(trim($w), 'UTF-8') >= 2
             ));
         }
 
         $finalCorrected = ! empty($include) ? implode(' ', $include) : $corrected;
 
         return [
-            'correctedQuery'   => $finalCorrected,  // ← AIQueryEnhancer key
-            'include'          => $include,
-            'exclude'          => $exclude,
+            'correctedQuery' => $finalCorrected,  // ← AIQueryEnhancer key
+            'include' => $include,
+            'exclude' => $exclude,
             'expandedKeywords' => $expanded,         // ← AIQueryEnhancer key
-            'intent'           => $intent,
-            'confidence'       => $confidence,
-            'originalQuery'    => $originalQuery,
+            'intent' => $intent,
+            'confidence' => $confidence,
+            'originalQuery' => $originalQuery,
         ];
     }
 
@@ -280,23 +287,27 @@ PROMPT;
     private function processArabicLocally(string $query): array
     {
         $normalized = $this->normalizeArabic($query);
-        $exclude    = [];
-        $cleanText  = $normalized;
+        $exclude = [];
+        $cleanText = $normalized;
 
         $patterns = self::AR_NEGATION_PATTERNS;
-        usort($patterns, fn($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
+        usort($patterns, fn ($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
 
         foreach ($patterns as $pattern) {
             $pos = mb_strpos($cleanText, $pattern, 0, 'UTF-8');
-            if ($pos === false) continue;
+            if ($pos === false) {
+                continue;
+            }
 
             $afterOffset = $pos + mb_strlen($pattern, 'UTF-8');
-            $afterText   = trim(mb_substr($cleanText, $afterOffset, null, 'UTF-8'));
-            $afterWords  = $this->splitWords($afterText);
+            $afterText = trim(mb_substr($cleanText, $afterOffset, null, 'UTF-8'));
+            $afterWords = $this->splitWords($afterText);
 
             foreach (array_slice($afterWords, 0, 3) as $word) {
                 $word = trim($word);
-                if (in_array($word, self::AR_FILLER_WORDS, true)) continue;
+                if (in_array($word, self::AR_FILLER_WORDS, true)) {
+                    continue;
+                }
                 $exclude[] = is_numeric($word) ? $word : (self::AR_PRODUCT_MAP[$word] ?? $word);
             }
 
@@ -304,13 +315,17 @@ PROMPT;
             break;
         }
 
-        $include  = [];
-        $fillers  = array_flip(self::AR_FILLER_WORDS);
+        $include = [];
+        $fillers = array_flip(self::AR_FILLER_WORDS);
         foreach ($this->splitWords($cleanText) as $word) {
             $word = trim($word);
-            if (mb_strlen($word, 'UTF-8') < 2 || isset($fillers[$word])) continue;
+            if (mb_strlen($word, 'UTF-8') < 2 || isset($fillers[$word])) {
+                continue;
+            }
             $translated = self::AR_PRODUCT_MAP[$word] ?? $word;
-            if ($translated) $include[] = $translated;
+            if ($translated) {
+                $include[] = $translated;
+            }
         }
 
         $include = array_values(array_unique($include));
@@ -321,13 +336,13 @@ PROMPT;
         }
 
         return [
-            'correctedQuery'   => implode(' ', $include),
-            'include'          => $include,
-            'exclude'          => $exclude,
+            'correctedQuery' => implode(' ', $include),
+            'include' => $include,
+            'exclude' => $exclude,
             'expandedKeywords' => [],
-            'intent'           => $this->detectArabicIntent($normalized),
-            'confidence'       => ! empty($exclude) ? 0.87 : 0.72,
-            'originalQuery'    => $query,
+            'intent' => $this->detectArabicIntent($normalized),
+            'confidence' => ! empty($exclude) ? 0.87 : 0.72,
+            'originalQuery' => $query,
         ];
     }
 
@@ -337,24 +352,29 @@ PROMPT;
 
     private function processEnglishLocally(string $query): array
     {
-        $words     = preg_split('/\s+/', mb_strtolower(trim($query), 'UTF-8'));
+        $words = preg_split('/\s+/', mb_strtolower(trim($query), 'UTF-8'));
         $corrected = [];
-        $hadFix    = false;
+        $hadFix = false;
 
         foreach ($words as $word) {
             $word = preg_replace('/[^a-z0-9]/i', '', $word);
-            if (mb_strlen($word) < 2) continue;
+            if (mb_strlen($word) < 2) {
+                continue;
+            }
 
             if (isset(self::TYPO_DICTIONARY[$word])) {
                 $fixed = self::TYPO_DICTIONARY[$word];
-                if ($fixed !== $word) $hadFix = true;
+                if ($fixed !== $word) {
+                    $hadFix = true;
+                }
                 $corrected[] = $fixed;
+
                 continue;
             }
 
             $best = $this->levenshteinCorrect($word);
             if ($best !== null && $best !== $word) {
-                $hadFix      = true;
+                $hadFix = true;
                 $corrected[] = $best;
             } else {
                 $corrected[] = $word;
@@ -368,28 +388,30 @@ PROMPT;
         }
 
         return [
-            'correctedQuery'   => implode(' ', $corrected),
-            'include'          => $corrected,
-            'exclude'          => [],
+            'correctedQuery' => implode(' ', $corrected),
+            'include' => $corrected,
+            'exclude' => [],
             'expandedKeywords' => [],
-            'intent'           => 'general',
-            'confidence'       => $hadFix ? 0.82 : 0.60,
-            'originalQuery'    => $query,
+            'intent' => 'general',
+            'confidence' => $hadFix ? 0.82 : 0.60,
+            'originalQuery' => $query,
         ];
     }
 
     private function levenshteinCorrect(string $word): ?string
     {
-        $wordLen    = strlen($word);
-        $bestMatch  = null;
-        $bestDist   = PHP_INT_MAX;
+        $wordLen = strlen($word);
+        $bestMatch = null;
+        $bestDist = PHP_INT_MAX;
         $maxAllowed = $wordLen <= 5 ? 2 : ($wordLen <= 8 ? 3 : 4);
 
         foreach (self::TYPO_DICTIONARY as $dictWord => $correction) {
-            if (abs(strlen($dictWord) - $wordLen) > $maxAllowed) continue;
+            if (abs(strlen($dictWord) - $wordLen) > $maxAllowed) {
+                continue;
+            }
             $dist = levenshtein($word, $dictWord);
             if ($dist < $bestDist && $dist <= $maxAllowed) {
-                $bestDist  = $dist;
+                $bestDist = $dist;
                 $bestMatch = $correction;
             }
         }
@@ -420,37 +442,56 @@ PROMPT;
         $text = str_replace(['أ', 'إ', 'آ', 'ٱ'], 'ا', $text);
         $text = preg_replace('/[\x{064B}-\x{065F}\x{0670}]/u', '', $text);
         $text = str_replace('ـ', '', $text);
+
         return mb_strtolower(trim($text), 'UTF-8');
     }
 
     private function splitWords(string $text): array
     {
-        if (empty(trim($text))) return [];
+        if (empty(trim($text))) {
+            return [];
+        }
+
         return array_values(array_filter(
             preg_split('/[\s,،.]+/u', $text, -1, PREG_SPLIT_NO_EMPTY),
-            fn($w) => mb_strlen(trim($w), 'UTF-8') >= 1
+            fn ($w) => mb_strlen(trim($w), 'UTF-8') >= 1
         ));
     }
 
     private function detectArabicIntent(string $text): string
     {
-        $buy    = ['شراء', 'اشتري', 'سعر', 'أسعار', 'رخيص', 'ارخص', 'ثمن', 'عرض', 'خصم'];
+        $buy = ['شراء', 'اشتري', 'سعر', 'أسعار', 'رخيص', 'ارخص', 'ثمن', 'عرض', 'خصم'];
         $repair = ['إصلاح', 'تصليح', 'صيانة', 'حجز', 'موعد', 'خدمة', 'تركيب'];
-        $learn  = ['شرح', 'دليل', 'كيف', 'مراجعة', 'تعلم', 'أخبار'];
+        $learn = ['شرح', 'دليل', 'كيف', 'مراجعة', 'تعلم', 'أخبار'];
 
-        foreach ($buy    as $s) { if (str_contains($text, $s)) return 'buy';    }
-        foreach ($repair as $s) { if (str_contains($text, $s)) return 'repair'; }
-        foreach ($learn  as $s) { if (str_contains($text, $s)) return 'learn';  }
+        foreach ($buy as $s) {
+            if (str_contains($text, $s)) {
+                return 'buy';
+            }
+        }
+        foreach ($repair as $s) {
+            if (str_contains($text, $s)) {
+                return 'repair';
+            }
+        }
+        foreach ($learn as $s) {
+            if (str_contains($text, $s)) {
+                return 'learn';
+            }
+        }
 
         return 'general';
     }
 
     private function sanitizeArray(mixed $input): array
     {
-        if (! is_array($input)) return [];
+        if (! is_array($input)) {
+            return [];
+        }
+
         return array_values(array_filter(
-            array_map(fn($v) => is_string($v) ? trim($v) : null, $input),
-            fn($v) => $v !== null && mb_strlen($v, 'UTF-8') >= 1
+            array_map(fn ($v) => is_string($v) ? trim($v) : null, $input),
+            fn ($v) => $v !== null && mb_strlen($v, 'UTF-8') >= 1
         ));
     }
 
@@ -463,19 +504,19 @@ PROMPT;
     private function emptyResult(string $query, float $confidence, string $source): array
     {
         return [
-            'correctedQuery'   => '',
-            'include'          => [],
-            'exclude'          => [],
+            'correctedQuery' => '',
+            'include' => [],
+            'exclude' => [],
             'expandedKeywords' => [],
-            'intent'           => 'general',
-            'confidence'       => $confidence,
-            'originalQuery'    => $query,
-            'source'           => $source,
+            'intent' => 'general',
+            'confidence' => $confidence,
+            'originalQuery' => $query,
+            'source' => $source,
         ];
     }
 
     private function cacheKey(string $query, string $language): string
     {
-        return self::CACHE_KEY_PREFIX . md5(mb_strtolower(trim($query), 'UTF-8') . ':' . $language);
+        return self::CACHE_KEY_PREFIX.md5(mb_strtolower(trim($query), 'UTF-8').':'.$language);
     }
 }

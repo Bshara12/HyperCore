@@ -38,63 +38,63 @@ class AIQueryEnhancer
 
     // ─── قاموس تصحيح الأخطاء الإملائية (لـ local fallback) ──────────────
     private const TYPO_DICTIONARY = [
-        'iphoen'   => 'iphone',   'ipone'    => 'iphone',
-        'iphon'    => 'iphone',   'iphne'    => 'iphone',
-        'ifone'    => 'iphone',   'samsng'   => 'samsung',
-        'samsong'  => 'samsung',  'sasmung'  => 'samsung',
-        'smasung'  => 'samsung',  'samsnug'  => 'samsung',
-        'samsumg'  => 'samsung',  'googel'   => 'google',
-        'gogle'    => 'google',   'laptp'    => 'laptop',
-        'labtop'   => 'laptop',   'leptop'   => 'laptop',
-        'laptob'   => 'laptop',   'latpop'   => 'laptop',
-        'lpatop'   => 'laptop',   'macbok'   => 'macbook',
-        'makbook'  => 'macbook',  'macbbok'  => 'macbook',
-        'androd'   => 'android',  'androied' => 'android',
-        'androdi'  => 'android',  'andriod'  => 'android',
-        'prie'     => 'price',    'prise'    => 'price',
-        'prcie'    => 'price',    'rpice'    => 'price',
-        'cheep'    => 'cheap',    'chep'     => 'cheap',
-        'chap'     => 'cheap',    'chepa'    => 'cheap',
-        'phoen'    => 'phone',    'fone'     => 'phone',
-        'phon'     => 'phone',    'pone'     => 'phone',
-        'tabelt'   => 'tablet',   'tabet'    => 'tablet',
-        'tablat'   => 'tablet',   'galxy'    => 'galaxy',
-        'gallaxy'  => 'galaxy',   'galaxi'   => 'galaxy',
-        'nokea'    => 'nokia',    'nokiya'   => 'nokia',
-        'pixle'    => 'pixel',    'pxiel'    => 'pixel',
-        'wireles'  => 'wireless', 'bluetoth' => 'bluetooth',
-        'chager'   => 'charger',  'chargr'   => 'charger',
-        'baterry'  => 'battery',  'batery'   => 'battery',
-        'camra'    => 'camera',   'camear'   => 'camera',
-        'screeen'  => 'screen',   'scren'    => 'screen',
-        'headfone' => 'headphone','earphon'  => 'earphone',
-        'hedphone' => 'headphone','wirless'  => 'wireless',
+        'iphoen' => 'iphone',   'ipone' => 'iphone',
+        'iphon' => 'iphone',   'iphne' => 'iphone',
+        'ifone' => 'iphone',   'samsng' => 'samsung',
+        'samsong' => 'samsung',  'sasmung' => 'samsung',
+        'smasung' => 'samsung',  'samsnug' => 'samsung',
+        'samsumg' => 'samsung',  'googel' => 'google',
+        'gogle' => 'google',   'laptp' => 'laptop',
+        'labtop' => 'laptop',   'leptop' => 'laptop',
+        'laptob' => 'laptop',   'latpop' => 'laptop',
+        'lpatop' => 'laptop',   'macbok' => 'macbook',
+        'makbook' => 'macbook',  'macbbok' => 'macbook',
+        'androd' => 'android',  'androied' => 'android',
+        'androdi' => 'android',  'andriod' => 'android',
+        'prie' => 'price',    'prise' => 'price',
+        'prcie' => 'price',    'rpice' => 'price',
+        'cheep' => 'cheap',    'chep' => 'cheap',
+        'chap' => 'cheap',    'chepa' => 'cheap',
+        'phoen' => 'phone',    'fone' => 'phone',
+        'phon' => 'phone',    'pone' => 'phone',
+        'tabelt' => 'tablet',   'tabet' => 'tablet',
+        'tablat' => 'tablet',   'galxy' => 'galaxy',
+        'gallaxy' => 'galaxy',   'galaxi' => 'galaxy',
+        'nokea' => 'nokia',    'nokiya' => 'nokia',
+        'pixle' => 'pixel',    'pxiel' => 'pixel',
+        'wireles' => 'wireless', 'bluetoth' => 'bluetooth',
+        'chager' => 'charger',  'chargr' => 'charger',
+        'baterry' => 'battery',  'batery' => 'battery',
+        'camra' => 'camera',   'camear' => 'camera',
+        'screeen' => 'screen',   'scren' => 'screen',
+        'headfone' => 'headphone', 'earphon' => 'earphone',
+        'hedphone' => 'headphone', 'wirless' => 'wireless',
     ];
 
     // ─── ترجمة AR → EN ────────────────────────────────────────────────────
     private const AR_PRODUCT_MAP = [
-        'ايفون'   => 'iphone',    'آيفون'   => 'iphone',
-        'أيفون'   => 'iphone',    'سامسونج' => 'samsung',
-        'سامسونغ' => 'samsung',   'لابتوب'  => 'laptop',
-        'جوال'    => 'phone',     'هاتف'    => 'phone',
-        'موبايل'  => 'mobile',    'تابلت'   => 'tablet',
-        'شاشة'    => 'screen',    'كاميرا'  => 'camera',
-        'سعر'     => 'price',     'شراء'    => 'buy',
-        'رخيص'    => 'cheap',     'ارخص'    => 'cheap',
-        'أرخص'    => 'cheap',     'غالي'    => 'expensive',
-        'ساعة'    => 'watch',     'سماعات'  => 'headphones',
-        'حاسوب'   => 'computer',  'ماك'     => 'mac',
-        'بيكسل'   => 'pixel',     'نوكيا'   => 'nokia',
-        'جوجل'    => 'google',    'ابل'     => 'apple',
-        'أبل'     => 'apple',     'هواوي'   => 'huawei',
-        'شاومي'   => 'xiaomi',    'اوبو'    => 'oppo',
-        'تلفزيون' => 'tv',        'تلفاز'   => 'tv',
-        'شاحن'    => 'charger',   'بطارية'  => 'battery',
-        'كفر'     => 'case',      'غطاء'    => 'cover',
+        'ايفون' => 'iphone',    'آيفون' => 'iphone',
+        'أيفون' => 'iphone',    'سامسونج' => 'samsung',
+        'سامسونغ' => 'samsung',   'لابتوب' => 'laptop',
+        'جوال' => 'phone',     'هاتف' => 'phone',
+        'موبايل' => 'mobile',    'تابلت' => 'tablet',
+        'شاشة' => 'screen',    'كاميرا' => 'camera',
+        'سعر' => 'price',     'شراء' => 'buy',
+        'رخيص' => 'cheap',     'ارخص' => 'cheap',
+        'أرخص' => 'cheap',     'غالي' => 'expensive',
+        'ساعة' => 'watch',     'سماعات' => 'headphones',
+        'حاسوب' => 'computer',  'ماك' => 'mac',
+        'بيكسل' => 'pixel',     'نوكيا' => 'nokia',
+        'جوجل' => 'google',    'ابل' => 'apple',
+        'أبل' => 'apple',     'هواوي' => 'huawei',
+        'شاومي' => 'xiaomi',    'اوبو' => 'oppo',
+        'تلفزيون' => 'tv',        'تلفاز' => 'tv',
+        'شاحن' => 'charger',   'بطارية' => 'battery',
+        'كفر' => 'case',      'غطاء' => 'cover',
         // intent
-        'مونتاج'  => 'video editing', 'تصوير'  => 'photography',
-        'جامعة'   => 'student',       'برمجة'  => 'programming',
-        'العاب'   => 'gaming',        'الألعاب'=> 'gaming',
+        'مونتاج' => 'video editing', 'تصوير' => 'photography',
+        'جامعة' => 'student',       'برمجة' => 'programming',
+        'العاب' => 'gaming',        'الألعاب' => 'gaming',
     ];
 
     private const AR_NEGATION_PATTERNS = [
@@ -118,7 +118,7 @@ class AIQueryEnhancer
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * @param AIProviderInterface[] $providers
+     * @param  AIProviderInterface[]  $providers
      */
     public function __construct(
         private ?array $providers = null
@@ -141,11 +141,11 @@ class AIQueryEnhancer
         $openrouterEnabled = ! empty(config('services.openrouter.key'));
 
         if ($geminiEnabled) {
-            $providers[] = new GeminiProvider();
+            $providers[] = new GeminiProvider;
         }
 
         if ($openrouterEnabled) {
-            $providers[] = new OpenRouterProvider();
+            $providers[] = new OpenRouterProvider;
         }
 
         return $providers;
@@ -164,10 +164,11 @@ class AIQueryEnhancer
         }
 
         $cacheKey = $this->buildCacheKey($query, $language);
-        $cached   = Cache::get($cacheKey);
+        $cached = Cache::get($cacheKey);
 
         if ($cached !== null) {
             Log::debug('AIQueryEnhancer: cache hit', ['query' => $query]);
+
             return array_merge($cached, ['source' => 'cache']);
         }
 
@@ -176,6 +177,7 @@ class AIQueryEnhancer
             Log::debug('AIQueryEnhancer: gibberish, skipping API', ['query' => $query]);
             $result = $this->emptyResult($query, 0.04, 'gibberish');
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return $result;
         }
 
@@ -184,6 +186,7 @@ class AIQueryEnhancer
         if ($this->isArabic($query) && empty(config('services.gemini.key')) && empty(config('services.openrouter.key'))) {
             $result = $this->processArabicLocally($query);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return array_merge($result, ['source' => 'arabic_local']);
         }
 
@@ -198,10 +201,10 @@ class AIQueryEnhancer
             Cache::put($cacheKey, $result, self::CACHE_TTL);
 
             Log::info('AIQueryEnhancer: AI provider succeeded', [
-                'original'   => $query,
+                'original' => $query,
                 'normalized' => $aiResult['normalized_query'],
                 'confidence' => $aiResult['confidence'],
-                'provider'   => $aiResult['_provider'] ?? 'unknown',
+                'provider' => $aiResult['_provider'] ?? 'unknown',
             ]);
 
             return array_merge($result, ['source' => $aiResult['_provider'] ?? 'api']);
@@ -211,11 +214,13 @@ class AIQueryEnhancer
         if ($this->isArabic($query)) {
             $result = $this->processArabicLocally($query);
             Cache::put($cacheKey, $result, self::CACHE_TTL);
+
             return array_merge($result, ['source' => 'arabic_local']);
         }
 
         $result = $this->processEnglishLocally($query);
         Cache::put($cacheKey, $result, self::CACHE_TTL);
+
         return array_merge($result, ['source' => 'local_fallback']);
     }
 
@@ -238,10 +243,11 @@ class AIQueryEnhancer
                 // confidence check — تجاهل الـ response إذا منخفضة جداً
                 if (($result['confidence'] ?? 0.0) < 0.50) {
                     Log::info('AIQueryEnhancer: provider low confidence, trying next', [
-                        'provider'   => $provider->name(),
+                        'provider' => $provider->name(),
                         'confidence' => $result['confidence'],
-                        'query'      => $query,
+                        'query' => $query,
                     ]);
+
                     continue;
                 }
 
@@ -250,10 +256,12 @@ class AIQueryEnhancer
                     Log::info('AIQueryEnhancer: provider returned empty query', [
                         'provider' => $provider->name(),
                     ]);
+
                     continue;
                 }
 
                 $result['_provider'] = $provider->name();
+
                 return $result;
 
             } catch (\Throwable $e) {
@@ -261,6 +269,7 @@ class AIQueryEnhancer
                     'error' => $e->getMessage(),
                     'query' => $query,
                 ]);
+
                 // انتقل للـ provider التالي
                 continue;
             }
@@ -291,13 +300,13 @@ class AIQueryEnhancer
         ));
 
         return [
-            'correctedQuery'   => $normalized,
-            'include'          => $includeTerms,
-            'exclude'          => [], // الـ providers الجدد لا يتعاملون مع exclude (هذا دور ArabicNormalizer)
+            'correctedQuery' => $normalized,
+            'include' => $includeTerms,
+            'exclude' => [], // الـ providers الجدد لا يتعاملون مع exclude (هذا دور ArabicNormalizer)
             'expandedKeywords' => [],
-            'intent'           => 'general',
-            'confidence'       => $confidence,
-            'originalQuery'    => $originalQuery,
+            'intent' => 'general',
+            'confidence' => $confidence,
+            'originalQuery' => $originalQuery,
         ];
     }
 
@@ -309,7 +318,7 @@ class AIQueryEnhancer
     {
         $normalized = $this->normalizeArabicChars($query);
 
-        $exclude   = [];
+        $exclude = [];
         $cleanText = $normalized;
 
         $patterns = self::AR_NEGATION_PATTERNS;
@@ -322,8 +331,8 @@ class AIQueryEnhancer
             }
 
             $afterOffset = $pos + mb_strlen($pattern, 'UTF-8');
-            $afterText   = trim(mb_substr($cleanText, $afterOffset, null, 'UTF-8'));
-            $afterWords  = $this->splitArabicWords($afterText);
+            $afterText = trim(mb_substr($cleanText, $afterOffset, null, 'UTF-8'));
+            $afterWords = $this->splitArabicWords($afterText);
 
             foreach (array_slice($afterWords, 0, 3) as $word) {
                 $word = trim($word);
@@ -341,9 +350,9 @@ class AIQueryEnhancer
             break;
         }
 
-        $include  = [];
-        $fillers  = array_flip(self::AR_FILLER_WORDS);
-        $words    = $this->splitArabicWords($cleanText);
+        $include = [];
+        $fillers = array_flip(self::AR_FILLER_WORDS);
+        $words = $this->splitArabicWords($cleanText);
 
         foreach ($words as $word) {
             $word = trim($word);
@@ -367,13 +376,13 @@ class AIQueryEnhancer
         }
 
         return [
-            'correctedQuery'   => implode(' ', $include),
-            'include'          => $include,
-            'exclude'          => $exclude,
+            'correctedQuery' => implode(' ', $include),
+            'include' => $include,
+            'exclude' => $exclude,
             'expandedKeywords' => [],
-            'intent'           => $this->detectArabicIntent($normalized),
-            'confidence'       => ! empty($exclude) ? 0.87 : 0.72,
-            'originalQuery'    => $query,
+            'intent' => $this->detectArabicIntent($normalized),
+            'confidence' => ! empty($exclude) ? 0.87 : 0.72,
+            'originalQuery' => $query,
         ];
     }
 
@@ -383,9 +392,9 @@ class AIQueryEnhancer
 
     private function processEnglishLocally(string $query): array
     {
-        $words     = preg_split('/\s+/', mb_strtolower(trim($query), 'UTF-8'));
+        $words = preg_split('/\s+/', mb_strtolower(trim($query), 'UTF-8'));
         $corrected = [];
-        $hadFix    = false;
+        $hadFix = false;
 
         foreach ($words as $word) {
             $word = preg_replace('/[^a-z0-9]/i', '', $word);
@@ -398,11 +407,12 @@ class AIQueryEnhancer
                     $hadFix = true;
                 }
                 $corrected[] = $fixed;
+
                 continue;
             }
             $best = $this->levenshteinCorrect($word);
             if ($best !== null && $best !== $word) {
-                $hadFix      = true;
+                $hadFix = true;
                 $corrected[] = $best;
             } else {
                 $corrected[] = $word;
@@ -416,21 +426,21 @@ class AIQueryEnhancer
         }
 
         return [
-            'correctedQuery'   => implode(' ', $corrected),
-            'include'          => $corrected,
-            'exclude'          => [],
+            'correctedQuery' => implode(' ', $corrected),
+            'include' => $corrected,
+            'exclude' => [],
             'expandedKeywords' => [],
-            'intent'           => 'general',
-            'confidence'       => $hadFix ? 0.82 : 0.60,
-            'originalQuery'    => $query,
+            'intent' => 'general',
+            'confidence' => $hadFix ? 0.82 : 0.60,
+            'originalQuery' => $query,
         ];
     }
 
     private function levenshteinCorrect(string $word): ?string
     {
-        $wordLen    = strlen($word);
-        $bestMatch  = null;
-        $bestDist   = PHP_INT_MAX;
+        $wordLen = strlen($word);
+        $bestMatch = null;
+        $bestDist = PHP_INT_MAX;
         $maxAllowed = $wordLen <= 5 ? 2 : ($wordLen <= 8 ? 3 : 4);
 
         foreach (self::TYPO_DICTIONARY as $dictWord => $correction) {
@@ -439,7 +449,7 @@ class AIQueryEnhancer
             }
             $dist = levenshtein($word, $dictWord);
             if ($dist < $bestDist && $dist <= $maxAllowed) {
-                $bestDist  = $dist;
+                $bestDist = $dist;
                 $bestMatch = $correction;
             }
         }
@@ -463,7 +473,7 @@ class AIQueryEnhancer
         }
 
         $letters = preg_replace('/[^a-z]/i', '', $text);
-        $len     = strlen($letters);
+        $len = strlen($letters);
 
         if ($len < 4) {
             return false;
@@ -483,7 +493,7 @@ class AIQueryEnhancer
     public function isArabic(string $text): bool
     {
         $arabicChars = preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
-        $totalChars  = mb_strlen(preg_replace('/\s+/', '', $text), 'UTF-8');
+        $totalChars = mb_strlen(preg_replace('/\s+/', '', $text), 'UTF-8');
 
         return $totalChars > 0 && ($arabicChars / $totalChars) > 0.25;
     }
@@ -513,18 +523,24 @@ class AIQueryEnhancer
 
     private function detectArabicIntent(string $text): string
     {
-        $buySignals    = ['شراء', 'اشتري', 'سعر', 'أسعار', 'رخيص', 'ارخص', 'ثمن', 'عرض', 'خصم'];
+        $buySignals = ['شراء', 'اشتري', 'سعر', 'أسعار', 'رخيص', 'ارخص', 'ثمن', 'عرض', 'خصم'];
         $repairSignals = ['إصلاح', 'تصليح', 'صيانة', 'حجز', 'موعد', 'خدمة', 'تركيب'];
-        $learnSignals  = ['شرح', 'دليل', 'كيف', 'مراجعة', 'تعلم', 'أخبار'];
+        $learnSignals = ['شرح', 'دليل', 'كيف', 'مراجعة', 'تعلم', 'أخبار'];
 
         foreach ($buySignals as $s) {
-            if (str_contains($text, $s)) return 'buy';
+            if (str_contains($text, $s)) {
+                return 'buy';
+            }
         }
         foreach ($repairSignals as $s) {
-            if (str_contains($text, $s)) return 'repair';
+            if (str_contains($text, $s)) {
+                return 'repair';
+            }
         }
         foreach ($learnSignals as $s) {
-            if (str_contains($text, $s)) return 'learn';
+            if (str_contains($text, $s)) {
+                return 'learn';
+            }
         }
 
         return 'general';
@@ -533,19 +549,19 @@ class AIQueryEnhancer
     private function emptyResult(string $query, float $confidence, string $source): array
     {
         return [
-            'correctedQuery'   => '',
-            'include'          => [],
-            'exclude'          => [],
+            'correctedQuery' => '',
+            'include' => [],
+            'exclude' => [],
             'expandedKeywords' => [],
-            'intent'           => 'general',
-            'confidence'       => $confidence,
-            'originalQuery'    => $query,
-            'source'           => $source,
+            'intent' => 'general',
+            'confidence' => $confidence,
+            'originalQuery' => $query,
+            'source' => $source,
         ];
     }
 
     private function buildCacheKey(string $query, string $language): string
     {
-        return 'ai_enhance:' . md5(mb_strtolower(trim($query), 'UTF-8') . ':' . $language);
+        return 'ai_enhance:'.md5(mb_strtolower(trim($query), 'UTF-8').':'.$language);
     }
 }

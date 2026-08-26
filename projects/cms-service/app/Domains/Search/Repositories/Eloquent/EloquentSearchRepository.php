@@ -28,9 +28,9 @@ class EloquentSearchRepository implements SearchRepositoryInterface
         'product' => ['products', 'product', 'items', 'goods'],
         'article' => ['articles', 'article', 'posts', 'blog', 'news'],
         'service' => ['services', 'service', 'booking', 'appointments'],
-        'buy'     => ['products', 'product', 'items', 'goods'],
-        'repair'  => ['services', 'service', 'booking', 'appointments'],
-        'learn'   => ['articles', 'article', 'posts', 'blog', 'news'],
+        'buy' => ['products', 'product', 'items', 'goods'],
+        'repair' => ['services', 'service', 'booking', 'appointments'],
+        'learn' => ['articles', 'article', 'posts', 'blog', 'news'],
         'compare' => ['articles', 'article', 'posts', 'blog', 'products', 'product'],
     ];
 
@@ -149,7 +149,7 @@ class EloquentSearchRepository implements SearchRepositoryInterface
             // الاستثناء يُطبَّق على العمود المُطبَّع أيضاً، وإلا فإن
             // "بدون كفر" لا يستثني عنواناً مكتوباً فيه "كَفَر" بالتشكيل.
             $fragment = $fragment->andNotLikeAll(
-                'si.' . self::MATCH_COLUMN,
+                'si.'.self::MATCH_COLUMN,
                 array_map([ArabicTextNormalizer::class, 'normalizeToken'], $excludeTerms)
             );
         }
@@ -290,7 +290,7 @@ class EloquentSearchRepository implements SearchRepositoryInterface
             ->and('si.status = ?', ['published'])
             ->andIf($dto->dataTypeSlug !== null, 'si.data_type_slug = ?', [$dto->dataTypeSlug ?? ''])
             ->andNotLikeAll(
-                'si.' . self::MATCH_COLUMN,
+                'si.'.self::MATCH_COLUMN,
                 array_map([ArabicTextNormalizer::class, 'normalizeToken'], $excludeTerms)
             );
 
