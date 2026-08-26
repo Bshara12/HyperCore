@@ -19,9 +19,8 @@ namespace App\Domains\Search\Services\AI;
 interface AIProviderInterface
 {
     /**
-     * @param  string  $query     الـ query الأصلية من المستخدم
+     * @param  string  $query  الـ query الأصلية من المستخدم
      * @param  string  $language  'en' | 'ar' | 'mixed'
-     *
      * @return array{
      *   normalized_query: string,
      *   confidence:       float,

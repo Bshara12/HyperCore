@@ -5,13 +5,13 @@ namespace App\Domains\Search\DTOs;
 class UserPreferenceDTO
 {
     /**
-     * @param  array<int, float>     $affinities      [data_type_id => affinity]
-     *                                                 إشارة ثانوية ضعيفة (secondary/weak signal).
+     * @param  array<int, float>  $affinities  [data_type_id => affinity]
+     *                                         إشارة ثانوية ضعيفة (secondary/weak signal).
      * @param  array<string, float>  $termAffinities  [normalized_term => affinity]
-     *                                                 الإشارة الأساسية للشخصنة (primary signal)،
-     *                                                 مبنية من نفس النص المفهرَس فعلياً في محرك
-     *                                                 البحث (title+content)، محدودة بأعلى VOCAB_CAP
-     *                                                 كلمة (انظر UserPreferenceAnalyzer).
+     *                                                الإشارة الأساسية للشخصنة (primary signal)،
+     *                                                مبنية من نفس النص المفهرَس فعلياً في محرك
+     *                                                البحث (title+content)، محدودة بأعلى VOCAB_CAP
+     *                                                كلمة (انظر UserPreferenceAnalyzer).
      */
     public function __construct(
         public readonly array $affinities,
@@ -24,6 +24,7 @@ class UserPreferenceDTO
     {
         return new self(
             affinities: [],
+
             termAffinities: [],
             totalClicks: 0,
             hasHistory: false,

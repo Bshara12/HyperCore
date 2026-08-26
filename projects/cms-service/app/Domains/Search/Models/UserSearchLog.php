@@ -13,27 +13,28 @@ use Illuminate\Database\Eloquent\Model;
  */
 class UserSearchLog extends Model
 {
-  use HasFactory;
-  public $timestamps = false;
+    use HasFactory;
 
-  protected $fillable = [
-    'user_id',
-    'project_id',
-    'keyword',
-    'language',
-    'detected_intent',
-    'intent_confidence',
-    'results_count',
-    'session_id',
-    'searched_at',
-  ];
+    public $timestamps = false;
 
-  protected $casts = [
-    'searched_at' => 'datetime',
-  ];
+    protected $fillable = [
+        'user_id',
+        'project_id',
+        'keyword',
+        'language',
+        'detected_intent',
+        'intent_confidence',
+        'results_count',
+        'session_id',
+        'searched_at',
+    ];
 
-  public function clicks()
-  {
-    return $this->hasMany(UserClickLog::class, 'search_log_id');
-  }
+    protected $casts = [
+        'searched_at' => 'datetime',
+    ];
+
+    public function clicks()
+    {
+        return $this->hasMany(UserClickLog::class, 'search_log_id');
+    }
 }

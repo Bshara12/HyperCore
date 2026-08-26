@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Domains\Search\Actions\ReindexSearchAction;
-use App\Domains\Search\Support\SearchTextBuilder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -12,8 +11,7 @@ class SearchReindexCommand extends Command
 {
   protected $signature = 'search:reindex
                             {--force : Skip confirmation prompt}
-                            {--chunk= : Override default chunk size (default: 100)}
-                            {--refresh-text : Only rebuild the normalized search_text column in place (no truncate)}';
+                            {--chunk= : Override default chunk size (default: 100)}';
 
   protected $description = 'Rebuild the entire search index from published data entries';
 
@@ -32,13 +30,6 @@ class SearchReindexCommand extends Command
     // ─── تحقق من الـ DB connection ───────────────────────────────
     if (! $this->checkDatabaseConnection()) {
       return self::FAILURE;
-    }
-
-    // ─── إعادة بناء العمود المُطبَّع فقط (بدون حذف الفهرس) ────────
-    // مطلوبة بعد أي تعديل على ArabicTextNormalizer أو TransliterationMap،
-    // لأن search_text نصٌّ مُخزَّن لا يُحتسب وقت البحث.
-    if ($this->option('refresh-text')) {
-      return $this->refreshSearchText();
     }
 
     // ─── تأكيد قبل التنفيذ ───────────────────────────────────────
@@ -109,73 +100,6 @@ class SearchReindexCommand extends Command
 
       return self::FAILURE;
     }
-  }
-
-  /**
-   * إعادة حساب search_text (والـ data_type_slug إن كان NULL) لكل صف
-   * موجود، بدون المسّ بـ title/content — عملية آمنة وقابلة للتكرار.
-   */
-  private function refreshSearchText(): int
-  {
-    $total = DB::table('search_indices')->count();
-
-    if ($total === 0) {
-      $this->warn('search_indices is empty — nothing to refresh.');
-
-      return self::SUCCESS;
-    }
-
-    $this->info("Rebuilding normalized search_text for {$total} rows...");
-
-    $progressBar = $this->output->createProgressBar($total);
-    $progressBar->start();
-
-    $startTime = microtime(true);
-    $updated = 0;
-    $lastId = 0;
-    $slugs = DB::table('data_types')->pluck('slug', 'id');
-    $searchTextBuilder = new SearchTextBuilder();
-
-    try {
-      while (true) {
-        $rows = DB::table('search_indices')
-          ->select('id', 'data_type_id', 'data_type_slug', 'title', 'content', 'meta')
-          ->where('id', '>', $lastId)
-          ->orderBy('id')
-          ->limit(500)
-          ->get();
-
-        if ($rows->isEmpty()) {
-          break;
-        }
-
-        foreach ($rows as $row) {
-          $lastId = (int) $row->id;
-
-          DB::table('search_indices')
-            ->where('id', $row->id)
-            ->update([
-              'search_text' => $searchTextBuilder->buildFromRow($row) ?: null,
-              'data_type_slug' => $row->data_type_slug ?? ($slugs[$row->data_type_id] ?? null),
-            ]);
-
-          $updated++;
-          $progressBar->advance();
-        }
-      }
-    } catch (Throwable $e) {
-      $progressBar->finish();
-      $this->error('');
-      $this->error('Refresh failed: ' . $e->getMessage());
-
-      return self::FAILURE;
-    }
-
-    $progressBar->finish();
-    $this->info('');
-    $this->info("✓ Refreshed {$updated} rows in " . round(microtime(true) - $startTime, 2) . 's.');
-
-    return self::SUCCESS;
   }
 
   // ─────────────────────────────────────────────────────────────────

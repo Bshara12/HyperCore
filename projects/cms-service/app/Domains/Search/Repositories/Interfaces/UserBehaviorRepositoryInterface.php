@@ -51,4 +51,24 @@ interface UserBehaviorRepositoryInterface
         int $days = 30,
         int $limit = 100
     ): array;
+
+    /**
+     * مصطلحات بحث المستخدم الأخيرة، بأعمارها بالأيام.
+     *
+     * العمر يُعاد كعدد موجب صريح لا كفارق تواريخ يحسبه المستهلك.
+     *
+     * السبب أن الإصدار السابق كان يستدعي now()->diffInDays($past) في
+     * طبقة الترتيب ويفترض قيمة موجبة، بينما تعيدها Carbon 3 موقَّعةً —
+     * فكانت سالبة، فينقلب الاضمحلال الأسّي نموّاً ويصير أقدمُ اهتمامات
+     * المستخدم أثقلَها وزناً. إعادة العمر جاهزاً من هنا تمنع تكرار
+     * الافتراض نفسه في كل موضع يستهلك التاريخ.
+     *
+     * @return array<int, array{term: string, age_days: float}>
+     */
+    public function getRecentSearchTerms(
+        int $projectId,
+        int $userId,
+        int $days = 30,
+        int $limit = 10
+    ): array;
 }

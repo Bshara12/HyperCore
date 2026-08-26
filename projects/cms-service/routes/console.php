@@ -1,6 +1,6 @@
 <?php
 
-use App\Domains\Subscription\Services\UsageResetService;
+use App\Jobs\RebuildSearchCorpusStatsJob;
 use App\Jobs\UpdatePopularityScoreJob;
 use App\Jobs\UpdateSearchSignalsJob;
 use Illuminate\Console\Scheduling\Schedule;
@@ -18,6 +18,26 @@ app()->booted(function () {
         ->withoutOverlapping()
         ->runInBackground()
         ->appendOutputTo(storage_path('logs/search-reindex.log'));
+});
+
+/*
+| احصاءات المتن - مقام IDF في BM25.
+|
+| تُجدول بعد اعادة الفهرسة لا قبلها: حسابها يقرأ الفهرس، فحسابها على
+| فهرس قديم يعني ترتيباً مبنياً على احصاءات لا تصف المحتوى الحالي.
+|
+| والساعة الفاصلة هامش لا موعد: اعادة الفهرسة تتفاوت مدّتها بحجم
+| المحتوى، و withoutOverlapping يحمي من التداخل ان طالت.
+*/
+app()->booted(function () {
+    app(Schedule::class)
+        ->call(function () {
+            RebuildSearchCorpusStatsJob::dispatch()
+                ->onQueue('search-maintenance');
+        })
+        ->name('rebuild-search-corpus-stats')
+        ->dailyAt('03:00')
+        ->withoutOverlapping();
 });
 
 app()->booted(function () {
@@ -65,25 +85,15 @@ app()->booted(function () {
             )
         );
 });
-app()->booted(function () {
-
-    app(Schedule::class)
-        ->call(function () {
-
-            app(UsageResetService::class)
-                ->handle();
-        })
-        ->name('reset-subscription-usages')
-        ->hourly()
-        ->withoutOverlapping();
-});
-
+// Usage reset runs once per hour. It used to be registered twice — as a
+// closure and again as the console command — which reset every usage row twice.
 app()->booted(function () {
 
     app(Schedule::class)
         ->command(
             'subscriptions:reset-usages'
         )
+        ->name('reset-subscription-usages')
         ->hourly()
         ->withoutOverlapping()
         ->runInBackground();

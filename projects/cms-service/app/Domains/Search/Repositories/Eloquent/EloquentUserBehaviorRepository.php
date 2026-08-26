@@ -7,6 +7,9 @@ use App\Domains\Search\DTOs\LogSearchDTO;
 use App\Domains\Search\Models\UserClickLog;
 use App\Domains\Search\Models\UserSearchLog;
 use App\Domains\Search\Repositories\Interfaces\UserBehaviorRepositoryInterface;
+use App\Domains\Search\Support\Text\Segmenter;
+use App\Domains\Search\Support\Text\TextFolder;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
@@ -74,18 +77,42 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
         return $rows->pluck('click_count', 'data_type_id')->toArray();
     }
 
+    /**
+     * نصّ المداخل المنقور عليها — العناوين وحدها.
+     *
+     * ─── لماذا العنوان دون المتن ───────────────────────────────────
+     *
+     * كان الاستعلام يضمّ content_fold إلى title_fold، فيُبنى ملفُ
+     * تفضيل المستخدم من آلاف كلمات المتن. والمتن نثرٌ عام: كلماته
+     * مشتركة بين كل المستندات تقريباً، فتتقارب ملفات كل المستخدمين
+     * مهما تباعدت اهتماماتهم.
+     *
+     * وقد ظهر الأثر في القياس: مستخدمان بذوقين متعاكسين تماماً —
+     * أحدهما ينقر الهواتف والآخر أدوات المطبخ — حصلا على المضاعِف
+     * الأقصى نفسه في كل استعلام، لأن مفردات متن منتجاتهما تتقاطع في
+     * كلمات عامة كثيرة.
+     *
+     * العنوان وحده هو ما يصف المستند فعلاً، وهو أيضاً ما يُطابَق عليه
+     * في PersonalizationScorer — فتوحيد الطرفين شرط لعمل الإشارة.
+     */
     public function getClickedEntryTexts(
         int $projectId,
         int $userId,
         int $days = 30,
         int $limit = 100
     ): array {
-        return $this->clickedEntryTexts(
-            fn ($query) => $query->where('ucl.user_id', $userId),
-            $projectId,
-            $days,
-            $limit
-        );
+        return DB::table('user_click_logs as ucl')
+            ->join('search_indices as si', 'si.entry_id', '=', 'ucl.entry_id')
+            ->where('ucl.project_id', $projectId)
+            ->where('ucl.user_id', $userId)
+            ->where('ucl.clicked_at', '>=', now()->subDays($days))
+            ->orderByDesc('ucl.clicked_at')
+            ->limit($limit)
+            ->selectRaw('si.title_fold as indexed_text')
+            ->pluck('indexed_text')
+            ->filter()
+            ->values()
+            ->toArray();
     }
 
     public function getClickedEntryTextsForSession(
@@ -94,75 +121,68 @@ class EloquentUserBehaviorRepository implements UserBehaviorRepositoryInterface
         int $days = 30,
         int $limit = 100
     ): array {
-        return $this->clickedEntryTexts(
-            fn ($query) => $query->where('ucl.session_id', $sessionId),
-            $projectId,
-            $days,
-            $limit
-        );
-    }
-
-    /**
-     * نصوص المدخلات التي نقر عليها المستخدم — أساس الـ termAffinities.
-     *
-     * تفصيلان مهمّان:
-     *
-     * 1. **صف واحد لكل نقرة**: الـ JOIN على entry_id وحده يُرجع صفاً لكل
-     *    لغة مفهرسة. في مشروع ثنائي اللغة كانت النقرة الواحدة تُنتج نصّين،
-     *    فيُحتسب المصطلح مرتين ويتجاوز MIN_TERM_SIGNAL (= نقرتان) من
-     *    نقرة واحدة، وتُملأ حصة VOCAB_CAP بكلمات اللغة الأخرى.
-     *
-     * 2. **لغة النقرة**: تُستنتج من سجل البحث المرتبط (search_log_id).
-     *    من بحث بالعربية لا يجوز أن نتعلّم مفردات إنجليزية.
-     *    النقرات بلا سجل بحث (نقر مباشر) تُقبل بأي لغة ثم تُلتقط
-     *    صفاً واحداً فقط.
-     *
-     * @param  \Closure(\Illuminate\Database\Query\Builder): mixed  $scope
-     * @return string[]
-     */
-    private function clickedEntryTexts(
-        \Closure $scope,
-        int $projectId,
-        int $days,
-        int $limit
-    ): array {
-        $query = DB::table('user_click_logs as ucl')
-            ->leftJoin('user_search_logs as usl', 'usl.id', '=', 'ucl.search_log_id')
+        return DB::table('user_click_logs as ucl')
             ->join('search_indices as si', 'si.entry_id', '=', 'ucl.entry_id')
             ->where('ucl.project_id', $projectId)
+            ->where('ucl.session_id', $sessionId)
             ->where('ucl.clicked_at', '>=', now()->subDays($days))
-            ->where(function ($q) {
-                $q->whereNull('usl.language')
-                    ->orWhereColumn('si.language', '=', 'usl.language');
-            });
-
-        $scope($query);
-
-        // الـ limit يُطبَّق على صفوف الـ JOIN، فنجلب فائضاً ثم نُوحّد
-        // النقرات ونقتطع — وإلا رجعنا بعدد نقرات أقل من المطلوب.
-        $rows = $query
             ->orderByDesc('ucl.clicked_at')
-            ->limit($limit * 3)
-            ->select('ucl.id as click_id', 'si.title', 'si.content')
+            ->limit($limit)
+            ->selectRaw('si.title_fold as indexed_text')
+            ->pluck('indexed_text')
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    public function getRecentSearchTerms(
+        int $projectId,
+        int $userId,
+        int $days = 30,
+        int $limit = 10
+    ): array {
+        $rows = DB::table('user_search_logs')
+            ->select('keyword', DB::raw('MAX(searched_at) as last_searched'))
+            ->where('project_id', $projectId)
+            ->where('user_id', $userId)
+            ->where('searched_at', '>=', now()->subDays($days))
+            ->whereNotNull('keyword')
+            ->groupBy('keyword')
+            ->orderByDesc('last_searched')
+            ->limit($limit)
             ->get();
 
-        $texts = [];
+        $now = now();
+        $terms = [];
 
         foreach ($rows as $row) {
-            if (isset($texts[$row->click_id])) {
-                continue;
-            }
+            $lastSearched = Carbon::parse((string) $row->last_searched);
 
-            $text = trim(implode(' ', array_filter([
-                (string) ($row->title ?? ''),
-                (string) ($row->content ?? ''),
-            ], fn ($part) => trim($part) !== '')));
+            /*
+             | العمر بالقيمة المطلقة صراحةً.
+             |
+             | diffInDays في Carbon 3 موقَّعة، وسجلّ في الماضي يعطي
+             | قيمة سالبة. abs() هنا تجعل العقد صريحاً: هذه الدالة
+             | تعيد عمراً، والعمر لا يكون سالباً.
+             */
+            $ageDays = abs($lastSearched->diffInDays($now, false));
 
-            if ($text !== '') {
-                $texts[$row->click_id] = $text;
+            foreach (Segmenter::tokenize(TextFolder::fold((string) $row->keyword)) as $token) {
+                if (mb_strlen($token, 'UTF-8') < 2 || is_numeric($token)) {
+                    continue;
+                }
+
+                // الورود الأحدث لمصطلح يغلب الأقدم.
+                $terms[$token] = min($terms[$token] ?? PHP_FLOAT_MAX, (float) $ageDays);
             }
         }
 
-        return array_slice(array_values($texts), 0, $limit);
+        asort($terms);
+
+        return array_map(
+            static fn (string $term, float $age): array => ['term' => $term, 'age_days' => $age],
+            array_keys($terms),
+            array_values($terms)
+        );
     }
 }

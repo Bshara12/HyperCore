@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Domains\Search\Support\SearchTextBuilder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,7 +18,11 @@ class SearchIndex extends Model
         'title',
         'content',
         'meta',
-        'search_text',
+        'title_fold',
+        'content_fold',
+        'meta_fold',
+        'ngram_text',
+        'script',
         'data_type_slug',
         'status',
         'published_at',
@@ -29,33 +32,6 @@ class SearchIndex extends Model
         'meta' => 'array',
         'published_at' => 'datetime',
     ];
-
-    /**
-     * شبكة أمان: أي حفظ عبر Eloquent (factories, upsert, tinker) يُعيد
-     * بناء search_text من title/content/meta تلقائياً.
-     *
-     * المسارات التي تكتب بـ DB::table()->insert() (reindex/seeder)
-     * تبنيه صريحاً — لأن الـ query builder لا يُشغّل أحداث الموديل.
-     */
-    protected static function booted(): void
-    {
-        static::saving(function (self $index): void {
-            // مُرِّر صريحاً من مسار الفهرسة → لا نُعيد بناءه
-            if ($index->isDirty('search_text') && filled($index->search_text)) {
-                return;
-            }
-
-            if (filled($index->search_text) && ! $index->isDirty(['title', 'content', 'meta'])) {
-                return;
-            }
-
-            $index->search_text = (new SearchTextBuilder())->build(
-                $index->title,
-                $index->content,
-                $index->getAttributes()['meta'] ?? null,
-            ) ?: null;
-        });
-    }
 
     // ─── Scope: فلترة حسب المشروع واللغة ───────────────────────────────
     public function scopeForProject($query, int $projectId): mixed

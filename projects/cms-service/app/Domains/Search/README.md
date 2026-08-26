@@ -1,1254 +1,236 @@
-# HyperCore Search Engine - توثيق كامل
+# نطاق البحث
 
-> نظام بحث متكامل مبني داخل منصة HyperCore باستخدام Laravel و MySQL FULLTEXT
-
----
-
-## فهرس المحتويات
-
-1. [نظرة عامة](#نظرة-عامة)
-2. [البنية المعمارية](#البنية-المعمارية)
-3. [هيكل الملفات](#هيكل-الملفات)
-4. [قاعدة البيانات](#قاعدة-البيانات)
-5. [الخطوة 1 - نظام الفهرسة](#الخطوة-1---نظام-الفهرسة)
-6. [الخطوة 2 - ربط الفهرسة بدورة حياة CMS](#الخطوة-2---ربط-الفهرسة-بدورة-حياة-cms)
-7. [الخطوة 3 - البحث الفعلي](#الخطوة-3---البحث-الفعلي)
-8. [الخطوة 4 - إصلاح FULLTEXT](#الخطوة-4---إصلاح-fulltext)
-9. [الخطوة 5 - معالجة الكلمات](#الخطوة-5---معالجة-الكلمات)
-10. [الخطوة 6 - Query Relaxation](#الخطوة-6---query-relaxation)
-11. [الخطوة 7 - Snippet و Highlighting](#الخطوة-7---snippet-و-highlighting)
-12. [الخطوة 8 - Advanced Ranking](#الخطوة-8---advanced-ranking)
-13. [الخطوة 9 - أمر إعادة الفهرسة](#الخطوة-9---أمر-إعادة-الفهرسة)
-14. [الخطوة 10 - Progressive Relaxation](#الخطوة-10---progressive-relaxation)
-15. [الخطوة 11 - Synonym Expansion](#الخطوة-11---synonym-expansion)
-16. [الخطوة 12 - Intent Detection](#الخطوة-12---intent-detection)
-17. [الخطوة 13 - إصلاح البحث العربي](#الخطوة-13---إصلاح-البحث-العربي-analyzer-symmetry)
-18. [تدفق البيانات الكامل](#تدفق-البيانات-الكامل)
-19. [كيفية الاختبار](#كيفية-الاختبار)
-20. [الـ API Reference](#الـ-api-reference)
+محرّك استرجاع معلومات مبنيّ على MySQL 8 وحده — بلا خدمات خارجية ولا
+كونتينرات إضافية.
 
 ---
 
-## نظرة عامة
+## الطبقات
 
-نظام بحث متكامل مشابه لـ Google (مُبسَّط) مدمج مع نظام CMS الديناميكي في HyperCore.
+```
+نصّ المستخدم
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 1. الطبقة النصّية        Support/Text/                       │
+│    UnicodeScript   كشف نظام الكتابة (29 script)             │
+│    TextFolder      تطبيع محايد لغوياً — الدالة الرسمية       │
+│    Segmenter       تقسيم واعٍ بالـ script (كلمات أو n-grams) │
+└─────────────────────────────────────────────────────────────┘
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. طبقة الفهم           Support/Query/                       │
+│    QueryAnalyzer   ينتج QueryPlan: مصطلحات + شروط + نيّة     │
+│    Extractors/     زمن، أرقام، سمات، نفي                     │
+│    Lexicon/        موارد لغوية لكل script + مرادفات المشروع  │
+└─────────────────────────────────────────────────────────────┘
+     │  QueryPlan  ← العقد الفاصل بين الفهم والتنفيذ
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. طبقة الاسترجاع       Support/Retrieval/                   │
+│    BooleanQueryBuilder   خطة → تعبير BOOLEAN MODE            │
+│    CandidateWindow       كم صفّاً نسحب ومن أين نقتطع          │
+└─────────────────────────────────────────────────────────────┘
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 4. طبقة الترتيب         Support/Ranking/                     │
+│    Bm25fScorer           الصلة النصّية بأوزان الحقول          │
+│    SignalScorer          سلوك + حداثة + شروط مرجِّحة + نيّة   │
+│    PersonalizationScorer مضاعِف محدود بسقف                    │
+└─────────────────────────────────────────────────────────────┘
+     │
+     ▼
+   نتائج
+```
 
-### الميزات الرئيسية
+**الدرجة النهائية:**
 
-| الميزة | الوصف |
-|---|---|
-| **MySQL FULLTEXT** | بحث نصي سريع بدون Elasticsearch |
-| **Automatic Indexing** | الفهرسة تلقائياً عند إنشاء/تعديل DataEntry |
-| **Keyword Processing** | تنظيف الكلمات وحذف stop words |
-| **Progressive Relaxation** | 4 مراحل من الصارم للمرن |
-| **Synonym Expansion** | توسيع البحث بالمرادفات |
-| **Intent Detection** | كشف نية المستخدم (product/article/service) |
-| **Smart Ranking** | 5 عوامل تؤثر في ترتيب النتائج |
-| **Highlighting** | تمييز الكلمات في النتائج |
-| **Smart Snippets** | مقتطفات نصية متمركزة حول الكلمة |
-| **Bulk Reindex** | إعادة بناء الفهرس كاملاً بأمر واحد |
+```
+النهائية = (BM25F + تجاور العبارة + الإشارات) × (1 + التخصيص المحدود)
+```
+
+الجمع قبل الضرب مقصود: التخصيص يضاعف ما تجمّع من دليل موضوعي ولا يضيف
+دليلاً من عنده. مستند بلا صلة يبقى بلا صلة مهما وافق ذوق المستخدم.
 
 ---
 
-## البنية المعمارية
+## دعم اللغات
 
-```
-API Request
-    │
-    ▼
-SearchController          ← HTTP layer فقط
-    │
-    ▼
-SearchRequest             ← Validation
-    │
-    ▼
-SearchService             ← Orchestration
-    │
-    ▼
-SearchEntriesAction       ← Business Logic
-    │
-    ├── KeywordProcessor      → تنظيف + stop words + توسيع مرادفات + كشف نية
-    │       ├── SynonymProvider   → قاموس المرادفات
-    │       └── IntentDetector    → كشف نية المستخدم
-    │
-    └── SearchRepository      → SQL + Ranking
-            │
-            ▼
-        search_index table    ← MySQL FULLTEXT
-```
+### ما يعمل بلا أي إعداد
 
-### القاعدة الثابتة
+كل لغة في العالم تحصل على: تطبيع Unicode، تقسيم واعٍ بالـ script،
+BM25F، استخراج السنوات والأرقام، والفلاتر البنيوية.
 
-```
-API → Controller → Request → Service → Action → Repository
-```
-
-- **Controllers**: HTTP فقط، لا منطق
-- **Requests**: Validation فقط
-- **Services**: تنسيق بين Actions
-- **Actions**: منطق عمل محدد الهدف
-- **Repositories**: قواعد بيانات فقط، لا منطق
-- **DTOs**: نقل البيانات بين الطبقات
-
----
-
-## هيكل الملفات
-
-```
-app/
-├── Console/
-│   └── Commands/
-│       └── SearchReindexCommand.php
-│
-├── Domains/
-│   └── Search/
-│       ├── Actions/
-│       │   ├── IndexDataEntryAction.php
-│       │   ├── SearchEntriesAction.php
-│       │   └── ReindexSearchAction.php
-│       │
-│       ├── DTOs/
-│       │   ├── IndexEntryDTO.php
-│       │   ├── SearchQueryDTO.php
-│       │   ├── SearchResultDTO.php
-│       │   └── SearchResultItemDTO.php
-│       │
-│       ├── Events/
-│       │   └── DataEntrySavedEvent.php
-│       │
-│       ├── Http/
-│       │   ├── Controllers/
-│       │   │   └── SearchController.php
-│       │   └── Requests/
-│       │       └── SearchRequest.php
-│       │
-│       ├── Listeners/
-│       │   └── IndexDataEntryListener.php
-│       │
-│       ├── Models/
-│       │   └── SearchIndex.php
-│       │
-│       ├── Repositories/
-│       │   ├── Interfaces/
-│       │   │   ├── SearchIndexRepositoryInterface.php
-│       │   │   └── SearchRepositoryInterface.php
-│       │   └── Eloquent/
-│       │       ├── EloquentSearchIndexRepository.php
-│       │       └── EloquentSearchRepository.php
-│       │
-│       ├── Services/
-│       │   └── SearchService.php
-│       │
-│       └── Support/
-│           ├── EntryFieldsExtractor.php
-│           ├── IntentDetector.php
-│           ├── KeywordProcessor.php
-│           ├── ProcessedKeyword.php
-│           └── SynonymProvider.php
-│
-├── Providers/
-│   ├── EventServiceProvider.php
-│   └── SearchServiceProvider.php
-│
-database/
-├── migrations/
-│   └── 2026_04_22_000001_create_search_index_table.php
-└── seeders/
-    └── SearchIndexSeeder.php
-```
-
----
-
-## قاعدة البيانات
-
-### جدول `search_index`
-
-```sql
-CREATE TABLE search_index (
-    id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
-    -- المصدر
-    entry_id      BIGINT UNSIGNED NOT NULL,
-    data_type_id  BIGINT UNSIGNED NOT NULL,
-    project_id    BIGINT UNSIGNED NOT NULL,
-
-    -- بيانات الفهرسة
-    language      VARCHAR(10)  DEFAULT 'en',
-    title         VARCHAR(255) NULL,       -- أعلى وزن في الـ ranking
-    content       LONGTEXT     NULL,       -- وزن متوسط
-    meta          LONGTEXT     NULL,       -- JSON - أدنى وزن
-
-    -- بيانات مساعدة
-    status        VARCHAR(20)  DEFAULT 'published',
-    published_at  TIMESTAMP    NULL,
-
-    created_at    TIMESTAMP    NULL,
-    updated_at    TIMESTAMP    NULL,
-
-    -- Constraints
-    UNIQUE KEY search_index_entry_lang_unique (entry_id, language),
-
-    -- Indexes
-    INDEX search_project_type_lang_idx (project_id, data_type_id, language),
-    INDEX search_project_status_lang_idx (project_id, status, language),
-
-    -- FULLTEXT Index (الأساس)
-    FULLTEXT KEY fulltext_title_content (title, content)
-);
-```
-
-### القاعدة المهمة - FULLTEXT Index
-
-```
-MATCH() يجب أن يستخدم نفس أعمدة الـ FULLTEXT index تماماً
-
-✅ صحيح:  MATCH(title, content) AGAINST(?)
-❌ خاطئ:  MATCH(title) AGAINST(?)
-          MATCH(content) AGAINST(?)
-```
-
-### العلاقة مع جداول CMS
-
-```
-data_entries (id)    ──→  search_index (entry_id)
-data_types (id)      ──→  search_index (data_type_id)
-projects (id)        ──→  search_index (project_id)
-
-سجل واحد في search_index = entry واحد × لغة واحدة
-entry_id=1, language='en'  →  سجل واحد
-entry_id=1, language='ar'  →  سجل ثانٍ
-```
-
----
-
-## الخطوة 1 - نظام الفهرسة
-
-### الهدف
-تحويل DataEntries إلى سجلات قابلة للبحث في `search_index`.
-
-### المكونات
-
-#### `IndexEntryDTO`
-```php
-new IndexEntryDTO(
-    entryId:     1,
-    dataTypeId:  1,
-    projectId:   1,
-    language:    'en',
-    title:       'iPhone 15 Pro',
-    content:     'Best smartphone with...',
-    meta:        ['tags' => 'iphone, apple'],
-    status:      'published',
-    publishedAt: '2026-01-01 00:00:00',
-);
-```
-
-#### `EntryFieldsExtractor`
-يحلل `entry->values` ويصنف الحقول:
-
-| نوع الحقل | يذهب إلى |
-|---|---|
-| `text`, `string`, `title` | `title` |
-| `textarea`, `richtext`, `wysiwyg` | `content` |
-| باقي الأنواع | `meta` |
-
-#### `IndexDataEntryAction`
-```
-entry
-  → loadMissing(['values', 'values.field', 'project'])
-  → resolveSupportedLanguages()   ← من project->supported_languages
-  → لكل لغة: extractor->extract() + repository->upsert()
-```
-
-#### `EloquentSearchIndexRepository`
-```php
-// updateOrCreate بناءً على (entry_id + language)
-SearchIndex::updateOrCreate(
-    ['entry_id' => $dto->entryId, 'language' => $dto->language],
-    [/* باقي البيانات */]
-);
-```
-
----
-
-## الخطوة 2 - ربط الفهرسة بدورة حياة CMS
-
-### الهدف
-الفهرسة تعمل تلقائياً بدون استدعاء يدوي.
-
-### تدفق الأحداث
-
-```
-DataEntryService::create() / update()
-    │
-    └── event(new DataEntrySavedEvent($entry))
-                │
-                ▼ Queue: search-indexing
-    IndexDataEntryListener::handle()
-                │
-                ├── تحقق: status = 'published'?
-                │     لا  → تجاهل (draft/scheduled)
-                │     نعم → تابع
-                │
-                └── IndexDataEntryAction::execute($entry)
-```
-
-### إعدادات الـ Listener
-
-```php
-class IndexDataEntryListener implements ShouldQueue
-{
-    public string $queue = 'search-indexing';  // queue منفصل
-    public int    $tries = 3;                   // 3 محاولات
-    public int    $backoff = 10;                // 10 ثانية بين المحاولات
-}
-```
-
-### تشغيل الـ Queue
-
-```bash
-# تشغيل queue worker
-php artisan queue:work --queue=search-indexing
-
-# للتطوير: تنفيذ فوري بدون queue
-# في .env
-QUEUE_CONNECTION=sync
-```
-
----
-
-## الخطوة 3 - البحث الفعلي
-
-### الـ API Endpoint
-
-```
-GET /api/search
-Headers: X-Project-Id, Authorization
-Query Params: q, lang, data_type_slug, page, per_page
-```
-
-### مثال Request/Response
-
-```http
-GET /api/search?q=laravel&lang=en&page=1&per_page=10
-X-Project-Id: 1
-Authorization: Bearer token
-```
-
-```json
-{
-  "keyword": "laravel",
-  "meta": {
-    "total": 5,
-    "page": 1,
-    "per_page": 10,
-    "last_page": 1
-  },
-  "results": [
-    {
-      "entry_id": 1,
-      "data_type_id": 2,
-      "project_id": 1,
-      "language": "en",
-      "title": "**Laravel** Framework Tutorial",
-      "snippet": "...Learn **Laravel** from scratch with this guide...",
-      "status": "published",
-      "score": 7.25,
-      "published_at": "2026-01-01 00:00:00"
-    }
-  ]
-}
-```
-
-### DTOs البحث
-
-```
-SearchQueryDTO   → مدخلات البحث
-      ↓
-SearchEntriesAction
-      ↓
-SearchResultDTO  → النتيجة الكاملة
-  └── SearchResultItemDTO[]  → كل نتيجة
-```
-
----
-
-## الخطوة 4 - إصلاح FULLTEXT
-
-### المشاكل التي تم إصلاحها
-
-| المشكلة | السبب | الحل |
+| نظام الكتابة | التقسيم | الفهرس |
 |---|---|---|
-| Error 1191 | `MATCH(title)` لا يجد index | استخدام `MATCH(title, content)` دائماً |
-| اسم الجدول | `search_indices` خاطئ | `search_index` الصحيح |
-| Score = 0 | BOOLEAN MODE لا يُنتج scores | NATURAL LANGUAGE في SELECT، BOOLEAN في WHERE |
-| Ranking مكسور | نفس مشكلة المشكلة 1 | `LOCATE()` كـ title bonus بديلاً |
+| لاتيني، عربي، كيريلي، يوناني، عبري، هندي، كوري… | على حدود الكلمات | `ft_fold` |
+| صيني، ياباني، تايلندي، خميري، لاوي، بورمي، تبتي | n-grams بحجم 2 | `ft_ngram` |
 
-### الاستراتيجية النهائية
+الاختيار تلقائي عبر `UnicodeScript::needsNgram()` — لا وسم لغة من العميل
+ولا إعداد.
+
+### التطبيع
+
+`TextFolder::fold()` هي **الدالة الرسمية الوحيدة**، وتُستدعى على جانبَي
+الفهرسة والاستعلام. أي نصّ لا يمرّ بها هو خطأ.
+
+```
+ＩＰＨＯＮＥ ١٥  →  iphone 15      (طيّ العرض + توحيد الأرقام)
+قَهْوَة        →  قهوه           (حذف التشكيل + توحيد التاء المربوطة)
+café          →  cafe            (حذف العلامات اللاتينية)
+کتاب          →  كتاب            (توحيد الحروف الفارسية)
+カタカナ       →  かたかな         (طيّ الكانا)
+٢٠٢٠ / ۲۰۲۰   →  2020            (أرقام Unicode كلها)
+हिन्दी          →  हिन्दी           (الحركات الهندية تبقى — حروف كاملة المعنى)
+```
+
+### إضافة لغة
+
+ملف واحد. لا تسجيل ولا تعديل كود:
+
+```
+resources/search/lexicon/{script}.php     مثل cyrl.php، hani.php، deva.php
+```
+
+يضيف الملف: كلمات الوقف، كلمات الحشو، دوالّ النفي والزمن والنطاق،
+والترجمة الصوتية، والسمات، وإشارات النية. لغةٌ بنفس الـ script الموجود
+تُضاف بإضافة مفاتيحها إلى الملف نفسه.
+
+---
+
+## الفهم البنيوي
+
+الإشارة الغامضة تصير **ترجيحاً**، والقاطعة تصير **فلتراً**:
+
+```
+"ايفون 2020"           السنة قد تكون موديلاً  → ثقة 0.45 → ترجيح
+"ايفون نزل بال 2020"   "نزل" لا تحتمل غيره     → ثقة 0.90 → فلتر
+"iphone 2018-2020"     الواصل قاطع            → ثقة 0.90 → فلتر
+"iphone from last year" زمن نسبي صريح          → ثقة 0.95 → فلتر
+```
+
+بلا هذا التمييز يكون أمامنا خياران سيّئان: إقصاء نتائج صحيحة عند كل رقم،
+أو تجاهل الأرقام فلا يُفهم الاستعلام أصلاً.
+
+**لماذا لا embeddings؟** لأن "نزل بال 2020" شرطٌ لا تشابه. التضمينات تضع
+2020 و2021 في جوارٍ متقارب لأنهما متشابهتان لغوياً، فتُرجع آيفون 2021 ضمن
+النتائج الأولى. الشرط البنيوي على سمة مفهرسة يجيب بدقّة وبزمن ثابت وبلا
+خدمة إضافية.
+
+---
+
+## المخطّط
+
+| الجدول | الغرض |
+|---|---|
+| `search_indices` | المستندات: نصّ أصلي + نصّ مطبَّع + نصّ ngram + أطوال |
+| `search_index_attributes` | السمات البنيوية (EAV مفهرس) — سنة، سعر، لون… |
+| `search_corpus_stats` | عدد المستندات والأطوال الوسطى لكل (مشروع، لغة) |
+| `search_term_stats` | التكرار المستندي لكل مصطلح — مقام IDF |
+| `search_query_plans` | خطط الاستعلام المفسَّرة — ذاكرة الاحتياطي الذكي |
+
+**فهرسان نصّيان** على `search_indices`:
 
 ```sql
--- WHERE: BOOLEAN MODE للفلترة الدقيقة
-WHERE MATCH(title, content) AGAINST('+laravel*' IN BOOLEAN MODE)
-
--- SELECT: NATURAL LANGUAGE للـ scoring الحقيقي
-MATCH(title, content) AGAINST('+laravel*' IN NATURAL LANGUAGE MODE)
-* (1 + (2 * (LOCATE('laravel', title) > 0)))
+FULLTEXT ft_fold  (title_fold, content_fold, meta_fold)   -- parser افتراضي
+FULLTEXT ft_ngram (ngram_text) WITH PARSER ngram          -- للغات بلا مسافات
 ```
 
----
+الـ parser خاصية للفهرس لا للاستعلام، فلا يمكن لفهرس واحد أن يقسّم
+الإنجليزية بالكلمات والصينية بالـ n-grams.
 
-## الخطوة 5 - معالجة الكلمات
+### إعدادات الخادم (إلزامية)
 
-### `KeywordProcessor::process()`
-
-```
-"i need laravel framework tutorial"
-         │
-         ▼
-1. cleanInput()        → "i need laravel framework tutorial"
-2. tokenize()          → ["i","need","laravel","framework","tutorial"]
-3. removeStopWords()   → ["laravel","framework","tutorial"]
-                           (حُذف: i, need)
-4. buildBooleanQuery() → "+laravel* +framework* +tutorial*"
-```
-
-### Stop Words
-
-قائمة تشمل كلمات شائعة في:
-- **الإنجليزية**: i, me, the, a, an, is, are, have, do, will, ...
-- **العربية**: في، من، إلى، على، عن، هذا، هو، هي، ...
-
-### الحد الأدنى لطول الكلمة
-```php
-private const MIN_WORD_LENGTH = 2;  // كلمات أقل من حرفين تُحذف
-private const MAX_WORDS       = 10; // أقصى عدد كلمات للبحث
-```
-
----
-
-## الخطوة 6 - Query Relaxation
-
-### المشكلة
-`"+best* +php* +laravel* +tutorial*"` → لا نتائج لأن AND logic صارم جداً.
-
-### الحل - Importance-Based Relaxation
-
-```
-أطول كلمة = الأكثر تحديداً = required
-باقي الكلمات = optional
-
-"best php laravel tutorial"
-→ cleanWords: ["php", "laravel", "tutorial"]  (حُذفت best كـ stop word)
-→ أطول كلمة: "tutorial" (8 أحرف)
-→ query: "+tutorial* php* laravel*"
-```
-
-### متى يتغير السلوك
-
-| عدد الكلمات | السلوك |
-|---|---|
-| 1 كلمة | `word*` |
-| 2 كلمتان | `+word1* +word2*` (كلاهما required) |
-| 3+ كلمات | أطول كلمة required، الباقي optional |
-
----
-
-## الخطوة 7 - Snippet و Highlighting
-
-### Snippet الذكي
-
-```
-بدل: أول 160 حرف عشوائي
-
-الجديد:
-1. ابحث عن أول كلمة مطابقة في المحتوى
-2. خذ 60 حرف قبلها و 100 حرف بعدها
-3. أضف "..." للإشارة للاقتطاع
-
-مثال:
-"...web development. **Laravel** is a PHP framework used for..."
-```
-
-### Highlighting
-
-```
-Input:  "Laravel is a great PHP framework"
-Words:  ["laravel", "php"]
-Output: "**Laravel** is a great **PHP** framework"
-
-الخصائص:
-- Case insensitive
-- يحافظ على الحالة الأصلية
-- يُرتب من الأطول للأقصر لتجنب التداخل
-- آمن ضد double highlighting
-```
-
----
-
-## الخطوة 8 - Advanced Ranking
-
-### 5 عوامل تؤثر في الـ Score
-
-```
-weighted_score = A + B + C + D_title + D_content + E + F(intent)
-
-A: FULLTEXT base score × 3
-   "الصلة العامة بالنص"
-
-B: Title existence boost (+2.0)
-   "هل الكلمة موجودة في العنوان؟"
-
-C: Exact LIKE boost (+1.5)
-   "هل العنوان يحتوي الكلمة بالضبط؟"
-   title LIKE '%keyword%'
-
-D: Position boost (0 → 0.5)
-   "كلما بكرت الكلمة → score أعلى"
-   1 / (LOCATE(keyword, title) + 1)
-
-E: Frequency boost (×0.1/ظهور)
-   "كلما تكررت الكلمة → score أعلى قليلاً"
-   CHAR_LENGTH - CHAR_LENGTH(REPLACE) / CHAR_LENGTH(keyword)
-
-F: Intent boost (+0 → +2.5)
-   "هل الـ data_type يتطابق مع نية المستخدم؟"
-   confidence × 2.5
-```
-
-### مثال عملي
-
-```
-keyword = "laravel"
-Entry A: title = "Laravel Framework Tutorial"  → score: 7.00 ✅
-Entry B: title = "PHP Web Development"         → score: 1.94
-Entry C: title = "Laravel"                     → score: 6.95 ✅
-```
-
----
-
-## الخطوة 9 - أمر إعادة الفهرسة
-
-### الاستخدام
-
-```bash
-# مع تأكيد
-php artisan search:reindex
-
-# بدون تأكيد (للـ CI/CD)
-php artisan search:reindex --force
-
-# مع تفاصيل الأخطاء
-php artisan search:reindex --force -v
-```
-
-### Output المتوقع
-
-```
-╔══════════════════════════════════════╗
-║      Search Index Rebuilder          ║
-╚══════════════════════════════════════╝
-
- 950/950 [============================] 100%
-
-✓ Reindex completed successfully.
-
-+---------------------------+-----------------+
-| Metric                    | Value           |
-+---------------------------+-----------------+
-| Total entries processed   | 950             |
-| Successfully indexed      | 920             |
-| Skipped (no content)      | 30              |
-| Time elapsed              | 4.82s           |
-| Throughput                | 197 entries/sec |
-+---------------------------+-----------------+
-```
-
-### كـ Scheduled Job
-
-```php
-// كل يوم الساعة 2 صباحاً
-Schedule::command('search:reindex --force')
-    ->dailyAt('02:00')
-    ->withoutOverlapping()
-    ->runInBackground();
-```
-
-### الأداء
-
-```
-chunk(100) → كل 100 entry = bulk insert واحد
-بدلاً من: 1 query × 1000 entry = 1000 queries
-الجديد:   1 query × 10 chunks  = 10 queries
-```
-
----
-
-## الخطوة 10 - Progressive Relaxation
-
-### المراحل الأربع
-
-```
-Input: ["iphone", "15", "pro"]
-
-Step 0 - STRICT:       "+iphone* +15* +pro*"
-                        كل الكلمات مطلوبة (AND)
-
-Step 1 - SEMI-STRICT:  "+iphone* 15* pro*"
-                        الأولى مطلوبة، الباقي اختياري
-
-Step 2 - LOOSE:        "iphone* 15* pro*"
-                        كل الكلمات اختيارية (OR)
-
-Step 3 - FALLBACK:     "iphone*"
-                        الكلمة الأولى فقط
-```
-
-### المنطق
-
-```php
-foreach ($processed->relaxedQueries as $step => $query) {
-    $result = $this->executeSearch($dto, $processed, $query);
-
-    if ($result['total'] > 0) {
-        // وجدنا نتائج → توقف هنا
-        return $result;
-    }
-    // لم نجد → جرّب المرحلة التالية
-}
-```
-
-### حالات خاصة
-
-| عدد الكلمات | عدد المراحل | السبب |
-|---|---|---|
-| 1 كلمة | 1 مرحلة | لا تحسين ممكن |
-| 2 كلمتان | 3 مراحل | STRICT = SEMI-STRICT محذوف |
-| 3+ كلمات | 4 مراحل | الحالة الطبيعية |
-
----
-
-## الخطوة 11 - Synonym Expansion
-
-### المفهوم
-
-```
-"جوال سامسونج"
-      │
-      ▼
-expandedGroups:
-  [
-    ["جوال", "هاتف", "موبايل"],  ← جوال + مرادفاته
-    ["سامسونج"],                  ← لا مرادفات
-  ]
-      │
-      ▼
-relaxedQueries:
-  Step 0: "+(جوال* هاتف* موبايل*) +سامسونج*"
-  Step 1: "+(جوال* هاتف* موبايل*) سامسونج*"
-  Step 2: "(جوال* هاتف* موبايل*) سامسونج*"
-  Step 3: "(جوال* هاتف* موبايل*)"
-```
-
-### بناء الـ Group Term
-
-```
-كلمة واحدة بدون مرادفات:
-  required=true  → "+word*"
-  required=false → "word*"
-
-مجموعة بمرادفات:
-  required=true  → "+(word* syn1* syn2*)"
-  required=false → "(word* syn1* syn2*)"
-
-عبارة متعددة الكلمات:
-  "apple phone"  → '"apple phone"'  ← phrase في MySQL
-```
-
-### الحد الأقصى للمرادفات
-```php
-private const MAX_SYNONYMS_PER_WORD = 2;
-// لتجنب queries ضخمة تُبطئ MySQL
-```
-
-### إضافة مرادفات جديدة
-
-```php
-// في SynonymProvider::SYNONYM_MAP
-'laptop'     => ['notebook', 'computer'],
-'notebook'   => ['laptop', 'computer'],
-// يجب أن يكون ثنائي الاتجاه
-```
-
----
-
-## الخطوة 12 - Intent Detection
-
-### أنواع النية
-
-| النية | مثال كلمات | مثال query |
-|---|---|---|
-| `product` | buy, price, cheap, شراء، سعر | "iphone price" |
-| `article` | how, tutorial, guide, شرح، دليل | "laravel tutorial" |
-| `service` | repair, booking, appointment, حجز، إصلاح | "phone repair" |
-| `general` | لا إشارات واضحة | "laravel framework" |
-
-### حساب الـ Confidence
-
-```
-Input: ["phone", "repair", "booking"]
-
-phone   → product: +1.5 (من الـ signals)
-repair  → service: +2.0
-booking → service: +2.0
-
-rawScores:  { product: 1.5, article: 0, service: 4.0 }
-totalScore: 5.5
-normalized: { product: 0.27, article: 0, service: 0.73 }
-
-winner:     "service"
-confidence: 0.73  > threshold (0.3) ✅
-```
-
-### تأثير النية على الـ Ranking
-
-```sql
--- إذا intent = "product" و confidence = 0.8
-CASE
-    WHEN dt.slug IN ('products', 'items', 'goods')
-    THEN 0.8 * 2.5   -- = +2.0 boost
-    ELSE 0
-END
-
--- إذا intent = "general"
--- لا boost → النتائج تُرتب بالـ FULLTEXT فقط
-```
-
-### الـ INTENT_DATA_TYPE_MAP
-
-```php
-// يجب تعديله حسب slugs مشروعك الفعلية
-private const INTENT_DATA_TYPE_MAP = [
-    'product' => ['products', 'product', 'items', 'goods', 'منتجات'],
-    'article' => ['articles', 'article', 'posts', 'blog', 'news', 'مقالات'],
-    'service' => ['services', 'service', 'booking', 'appointments', 'خدمات'],
-];
-```
-
-
----
-
-## الخطوة 13 - إصلاح البحث العربي (Analyzer Symmetry)
-
-### الأعراض المُبلَّغة
-
-```
-GET /api/search?q=اي&lang=ar     → total = 4
-GET /api/search?q=ايف&lang=ar    → total = 0
-GET /api/search?q=ايفون&lang=ar  → total = 0
-```
-
-الـ endpoint واللغة والـ project id والـ token كلها صحيحة — المشكلة كانت
-في طبقة الـ IR نفسها.
-
-### الأسباب الجذرية (ثلاثة، كلٌّ منها كافٍ لتصفير النتائج)
-
-**1. عدم تناظر المُحلِّل (asymmetric analyzer)**
-
-الفهرس كان على `(title, content)` الخامّين. عنوان مثل
-`آيفون 15 برو ماكس` يُخزَّن كما هو، فيُنتج الـ tokenizer الرمز `آيفون`،
-بينما `ArabicQueryNormalizer` كان يُطبِّع الـ query إلى `ايفون`
-(ألف بلا مدّة) → لا تطابق ممكن، أياً كان الـ tokenizer.
-
-هذا يُفسّر التفاوت الغريب: `اي` كانت تُطابق كلمات عربية أخرى تبدأ بـ
-`اي` في نصوص أخرى، أما `ايف`/`ايفون` فلا يوجد لها أي رمز مُطابق
-في الفهرس لأن الرمز المُخزَّن يبدأ بـ `آ` لا `ا`.
-
-**2. ترجمة استبدالية داخل فهرس مُقيَّد باللغة**
-
-`ArabicQueryNormalizer` كان يستبدل `ايفون` بـ `iphone`، ثم
-`EloquentSearchRepository` يُقيّد الاستعلام بـ `si.language = 'ar'`.
-صفوف اللغة العربية لا تحتوي كلمة `iphone` اللاتينية → صفر نتائج دائماً.
-
-**3. الـ meta خارج الفهرس**
-
-الوسوم تُخزَّن في `meta` (`tags = "ايفون، ابل، جوال، سعر، شراء"`)
-ولم تكن جزءاً من الـ FULLTEXT index إطلاقاً، رغم أنها أدقّ حقل للبحث.
-
-### الحل
-
-**عمود `search_text` مُطبَّع + FULLTEXT خاص به**
-
-```
-title + content + meta
-        │
-        ▼
-ArabicTextNormalizer::normalize()     ← نفس الدالة على الجانبين
-        │  (آ أ إ ٱ → ا ، ى ئ → ي ، ة → ه ، إزالة تشكيل/تطويل ، ١٥ → 15)
-        ▼
-+ TransliterationMap::expandTokens()  ← ايفون ⇄ iphone (إضافة لا استبدال)
-        │
-        ▼
-search_text  ──── FULLTEXT fulltext_search_text
-```
-
-- `title`/`content` تبقى خامّة كما كتبها المستخدم (للعرض والـ highlighting).
-- `search_text` هو ما يُطابقه `MATCH ... AGAINST` فقط.
-- الترجمة صارت **إضافية**: الـ query `ايفون` يصير
-  `ايفون* (iphone*)` — مجموعة OR واحدة، فيُطابق الشكلين
-  دون أي fallback من `ar` إلى `en` على العميل.
-
-### الملفات
-
-| الملف | الدور |
-|---|---|
-| `Support/ArabicTextNormalizer.php` | المُطبِّع الموحَّد (index + query) — مصدر واحد للحقيقة |
-| `Support/TransliterationMap.php` | جسر عربي ⇄ إنجليزي ثنائي الاتجاه |
-| `Support/SearchTextBuilder.php` | يبني `search_text` من title+content+meta |
-| `Support/KeywordProcessor.php` | مجموعة OR واحدة لكل كلمة (كانت AND) |
-| `Support/ArabicQueryNormalizer.php` | لم يعد يستبدل العربي بالإنجليزي |
-| `Support/SearchResultRanker.php` | يُطبّع النص قبل حساب boosts العنوان |
-| `Repositories/.../EloquentSearchRepository.php` | `MATCH(si.search_text)` + تطبيع الـ boolean query |
-| `Actions/SearchEntriesAction.php` | highlighting/snippets متسامحة بالتشكيل |
-
-### إصلاحات مصاحبة
-
-1. **`data_type_slug` كان NULL دائماً** — لم يكتبه أي مسار فهرسة
-   (upsert / reindex / seeder). صار يُكتب في الثلاثة + backfill في الـ migration.
-   وفلترة الـ intent صارت NULL-safe.
-
-2. **خريطة الـ intent في الـ repository كانت dead code** — مفاتيحها
-   `product/article/service` بينما `IntentDetector` يُرجع
-   `buy/repair/compare/learn`. أُضيفت المفاتيح الحقيقية.
-
-3. **مرادفات الـ DB كانت تُقلّل النتائج** — كانت تُسطَّح ثم تُمرَّر لـ
-   `expandWords()` فتصير كل مرادف *مجموعة إجبارية منفصلة*
-   (`+(ايفون) +(جوال)` = AND). صارت كلها في مجموعة OR واحدة.
-
-4. **`meta` كان يُشفَّر مرتين** في `upsert` (json_encode يدوي + cast `array`).
-
-### الشخصنة (Personalization)
-
-مسار الشخصنة يعتمد على **تطابق تام للرموز** بين طرفين:
-
-```
-user_click_logs ──► getClickedEntryTexts ──► KeywordTokenizer ──► termAffinities
-                                                                        │
-search_indices.title/content ──► KeywordTokenizer ──► rowTokens ──► isset()?
-```
-
-لذلك `KeywordTokenizer` صار يُطبِّع رموزه عبر `ArabicTextNormalizer`.
-قبل ذلك كانت المفاتيح خامّة (`آيفون`) والرموز مُطبَّعة (`ايفون`)، فكل
-كلمة تحمل همزة أو مدّة أو تاء مربوطة تُسقط من الشخصنة **صامتاً** —
-بلا خطأ ولا لوج. نفس التطبيع طُبِّق على مفاتيح `SynonymExpander`
-المقروءة من `synonym_suggestions`.
-
-وأُصلح خللان في مصدر البيانات (`getClickedEntryTexts`):
-
-| الخلل | الأثر |
-|---|---|
-| الـ JOIN على `entry_id` وحده | النقرة الواحدة تُنتج صفاً لكل لغة مفهرسة → المصطلح يُحتسب مرتين فيتجاوز `MIN_TERM_SIGNAL` (نقرتان) من نقرة واحدة |
-| لا فلترة بلغة النقرة | بحث بالعربية كان يُعلّم النظام مفردات إنجليزية، وتُملأ حصة `VOCAB_CAP = 20` بكلمات اللغة الأخرى |
-
-اللغة تُستنتج الآن من `user_search_logs.language` عبر `search_log_id`،
-والنقرات بلا سجل بحث تُقبل بأي لغة لكن بصف واحد فقط.
-
-> مفاتيح الـ cache رُقِّمت إلى `v2` (`user_preference:v2:*` و
-> `synonym_map:v2:*`) لأن شكل الرموز المُخزَّنة تغيّر؛ بدون الترقيم
-> تبقى التفضيلات القديمة غير مُطابقة حتى انتهاء الـ TTL.
-
-**حدود معروفة:** `SearchController::resolveSessionId` يقرأ الـ session
-من حِمْل الـ auth فقط، أي أن الزائر غير المُسجَّل لا يحصل على شخصنة
-جلسة إطلاقاً رغم وجود مسار `analyzeForSession` كاملاً.
-
-### خطوات النشر (مهم)
-
-```bash
-# 1. الـ migration: يُضيف search_text + الفهرس، ويُعيد بناء الصفوف الموجودة
-php artisan migrate
-
-# 2. (اختياري) إعادة بناء الفهرس من المصدر
-php artisan search:reindex --force
-
-# 3. أو إعادة بناء العمود المُطبَّع فقط — بدون حذف الفهرس
-php artisan search:reindex --refresh-text
-```
-
-> `search_text` نصٌّ **مُخزَّن** لا يُحتسب وقت البحث. أي تعديل على
-> `ArabicTextNormalizer` أو `TransliterationMap` يتطلب
-> `search:reindex --refresh-text` وإلا بقي الفهرس على التطبيع القديم.
-
-### التحقق
-
-```bash
-php artisan test --filter=ArabicTextNormalizer
-php artisan test --filter=ArabicSearchIndexing
-```
-
-```sql
--- الصفوف العربية يجب أن تحتوي الشكل المُطبَّع + المقابل اللاتيني
-SELECT entry_id, LEFT(search_text, 120)
-FROM search_indices
-WHERE language = 'ar' AND search_text LIKE '%ايفون%';
-
--- لا يجب أن يبقى أي صف بـ search_text = NULL
-SELECT COUNT(*) FROM search_indices WHERE search_text IS NULL;
-```
-
-### ملاحظة تشغيلية
-
-`innodb_ft_min_token_size` الافتراضي = 3، أي أن الكلمات العربية من
-حرفين لا تُفهرس كرموز مستقلة (تُطابقها فقط استعلامات الـ prefix
-مثل `اي*`). لخفضه إلى 2 يجب تعديل `my.cnf` وإعادة بناء الفهرس:
+في `mysql/cms/master.cnf` — وهي شروط صحّة لا ضبط أداء:
 
 ```ini
-[mysqld]
-innodb_ft_min_token_size = 2
+innodb_ft_min_token_size=2      # الافتراضي 3 يُسقط "s9" و"m3" والعربي القصير
+innodb_ngram_token_size=2       # يجب أن يساوي search.indexing.ngram_token_size
+innodb_ft_enable_stopword=OFF   # القائمة المدمجة إنجليزية وتُطبَّق على كل اللغات
 ```
+
+تغيير أيّها يستوجب `php artisan search:reindex --force`.
 
 ---
 
-## تدفق البيانات الكامل
+## الذكاء الاصطناعي
 
-```
-المستخدم يكتب: "i need iphone repair price"
-                          │
-                          ▼
-              SearchController::__invoke()
-                    │ X-Project-Id: 1
-                    │ keyword: "i need iphone repair price"
-                          │
-                          ▼
-              SearchRequest::keyword()  →  "i need iphone repair price"
-                          │
-                          ▼
-              SearchService::search(SearchQueryDTO)
-                          │
-                          ▼
-              SearchEntriesAction::execute()
-                          │
-                          ├─► KeywordProcessor::process()
-                          │         │
-                          │    cleanInput()    → "i need iphone repair price"
-                          │    tokenize()      → ["i","need","iphone","repair","price"]
-                          │    stopWords()     → ["iphone","repair","price"]
-                          │         │
-                          │    IntentDetector::detect(["iphone","repair","price"])
-                          │         repair → service: +2.0
-                          │         price  → product: +2.0
-                          │         → intent: mixed, product wins? service wins?
-                          │         → product: 2.0/4.0 = 0.5
-                          │         → service: 2.0/4.0 = 0.5
-                          │         → DRAW → product يفوز (أعلى alphabetically)
-                          │         → confidence: 0.5 > threshold ✅
-                          │         │
-                          │    SynonymProvider::expandWords()
-                          │         iphone → ["iphone","apple phone","ios phone"]
-                          │         repair → ["repair","fix","maintenance"]? (إذا أضفته)
-                          │         price  → ["price","cost","rate"]? (إذا أضفته)
-                          │         │
-                          │    buildRelaxedQueries()
-                          │         Step 0: '+(iphone* "apple phone" "ios phone") +repair* +price*'
-                          │         Step 1: '+(iphone* "apple phone" "ios phone") repair* price*'
-                          │         Step 2: '(iphone* "apple phone" "ios phone") repair* price*'
-                          │         Step 3: '(iphone* "apple phone" "ios phone")'
-                          │         │
-                          │    ProcessedKeyword {
-                          │        booleanQuery:   Step 0,
-                          │        relaxedQueries: [Step 0..3],
-                          │        intent:         {intent: 'product', confidence: 0.5},
-                          │        cleanWords:     ["iphone","repair","price"],
-                          │        primaryWord:    "iphone",
-                          │    }
-                          │
-                          └─► SearchRepository::search()
-                                    │
-                              foreach relaxedQueries:
-                                    │
-                              Step 0 → executeSearch()
-                                    │   → total = 0 (صارم جداً) ❌
-                                    │
-                              Step 1 → executeSearch()
-                                    │   → total = 3 ✅ توقف!
-                                    │
-                              SQL:
-                              SELECT ...,
-                                (FULLTEXT_score × 3)
-                                + (title_exists ? 2.0 : 0)
-                                + (title_like ? 1.5 : 0)
-                                + (1/position_title)
-                                + (1/position_content × 0.5)
-                                + (frequency × 0.1)
-                                + (product_intent ? 0.5×2.5 : 0)
-                              AS weighted_score
-                              FROM search_index si
-                              LEFT JOIN data_types dt ON dt.id = si.data_type_id
-                              WHERE si.project_id = 1
-                                AND si.language = 'en'
-                                AND si.status = 'published'
-                                AND MATCH(title,content)
-                                    AGAINST('+(iphone* ...) repair* price*' IN BOOLEAN MODE)
-                              ORDER BY weighted_score DESC
-                                    │
-                                    ▼
-                              النتائج:
-                              1. iPhone Screen Repair Service    score: 9.2  (service)
-                              2. iPhone 15 Pro Max - Price       score: 8.1  (product+intent)
-                              3. iPhone Repair Cost Guide        score: 6.5  (article)
-                                    │
-                                    ▼
-                          SearchEntriesAction::mapToDTO()
-                              title:   "**iPhone** Screen Repair **Service**"
-                              snippet: "...Book an appointment for **iPhone** repair..."
-                                    │
-                                    ▼
-                          SearchResultDTO → SearchController → JSON Response
-```
+**يُستدعى عند صفر نتائج فقط.** لا لأن الاستعلام عربي، ولا لأنه جملة.
+
+أربع ضمانات:
+
+1. **مخرَج مقولب** — النموذج يملأ `QueryPlan`، ولا يكتب نصّ استعلام. كل
+   مصطلح يمرّ بالتطبيع والتقسيم، فيستحيل وصول محرف نحوي إلى BOOLEAN MODE.
+2. **ذاكرة دائمة** — كل استعلام مميّز يكلّف استدعاءً واحداً على الأكثر
+   (`search_query_plans`).
+3. **قاطع دارة** — بعد 3 إخفاقات يتوقّف الاتصال 5 دقائق.
+4. **مهلة صارمة** — 3 ثوانٍ للسلسلة كلها، لا لكل مزوّد.
+
+الشروط البنيوية تبقى دائماً من المحلّل المحلّي: السماح للنموذج بتوليد
+شروط تُقصي نتائج يعني إعطاءه سلطة إخفاء المحتوى بلا تحقّق.
 
 ---
 
-## كيفية الاختبار
-
-### 1. تشغيل الـ Migration والـ Seeder
+## التشغيل
 
 ```bash
-php artisan migrate
-php artisan db:seed --class=SearchIndexSeeder
+php artisan search:reindex --force      # إعادة بناء الفهرس (يومياً 02:00)
+php artisan search:update-signals       # الشعبية والحداثة (كل ساعة)
+php artisan queue:work --queue=search-maintenance,search-indexing,search-tracking
 ```
 
-### 2. التحقق من البيانات
+إحصاءات المتن (`RebuildSearchCorpusStatsJob`) مجدولة يومياً 03:00 — **بعد**
+إعادة الفهرسة، لأنها تقرأ الفهرس.
 
-```sql
-SELECT data_type_id, language, COUNT(*) as total
-FROM search_index
-GROUP BY data_type_id, language;
+### التشخيص
 
--- تحقق من FULLTEXT index
-SHOW CREATE TABLE search_index;
--- يجب أن ترى: FULLTEXT KEY `fulltext_title_content` (`title`,`content`)
+```
+POST /api/admin/search/debug     تفكيك بحث: تطبيع، تقسيم، خطة، SQL، درجات
+POST /api/admin/search/terms     وزن IDF لكل مصطلح في هذا المتن
+GET  /api/admin/search/problems  استعلامات بلا نتائج + مرشّحو المعجم
 ```
 
-### 3. اختبار في Tinker
-
-```bash
-php artisan tinker
-```
-
-```php
-// اختبار كامل
-$dto = new \App\Domains\Search\DTOs\SearchQueryDTO(
-    keyword:   'iphone repair',
-    projectId: 1,
-    language:  'en',
-    page:      1,
-    perPage:   10,
-);
-
-$action = app(\App\Domains\Search\Actions\SearchEntriesAction::class);
-$result = $action->execute($dto);
-
-foreach ($result->items as $item) {
-    echo $item->title . ' [score: ' . $item->score . ']' . PHP_EOL;
-    echo $item->snippet . PHP_EOL;
-    echo '---' . PHP_EOL;
-}
-```
-
-### 4. اختبارات موجهة
-
-#### اختبار Intent Detection
-
-```php
-$detector = app(\App\Domains\Search\Support\IntentDetector::class);
-
-// يجب أن يكتشف product
-$r = $detector->detect(['iphone', 'price', 'cheap']);
-assert($r['intent'] === 'product');
-
-// يجب أن يكتشف article
-$r = $detector->detect(['laravel', 'tutorial', 'شرح']);
-assert($r['intent'] === 'article');
-
-// يجب أن يكتشف service
-$r = $detector->detect(['phone', 'repair', 'booking']);
-assert($r['intent'] === 'service');
-
-// يجب أن يكون general
-$r = $detector->detect(['laravel', 'framework']);
-assert($r['intent'] === 'general');
-```
-
-#### اختبار Synonym Expansion
-
-```php
-$provider = app(\App\Domains\Search\Support\SynonymProvider::class);
-
-// يجب أن يرجع مرادفات
-assert($provider->getSynonyms('phone') === ['mobile', 'cellphone']);
-assert($provider->getSynonyms('جوال') === ['هاتف', 'موبايل']);
-assert($provider->getSynonyms('samsung') === []);
-```
-
-#### اختبار Progressive Relaxation
-
-```php
-$processor = app(\App\Domains\Search\Support\KeywordProcessor::class);
-
-// query صعب يجب أن يجد نتائج عبر relaxation
-$result = $processor->process('best iphone 15 pro max deals');
-assert(count($result->relaxedQueries) === 4);
-assert(str_contains($result->relaxedQueries[0], '+'));   // STRICT
-assert(!str_contains($result->relaxedQueries[2], '+'));  // LOOSE
-```
-
-#### اختبار draft لا يظهر
-
-```php
-$dto = new \App\Domains\Search\DTOs\SearchQueryDTO(
-    keyword: 'DRAFT upcoming',
-    projectId: 1, language: 'en', page: 1, perPage: 10
-);
-$result = app(\App\Domains\Search\Actions\SearchEntriesAction::class)->execute($dto);
-assert($result->total === 0);
-```
-
-### 5. اختبار عبر API
-
-```bash
-# بحث عادي
-curl -X GET "http://localhost/api/search?q=iphone&lang=en" \
-  -H "X-Project-Id: 1" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Accept: application/json"
-
-# بحث بنية product
-curl -X GET "http://localhost/api/search?q=iphone+price+cheap&lang=en" \
-  -H "X-Project-Id: 1" \
-  -H "Authorization: Bearer TOKEN"
-
-# بحث عربي
-curl -X GET "http://localhost/api/search?q=جوال+سامسونج&lang=ar" \
-  -H "X-Project-Id: 1" \
-  -H "Authorization: Bearer TOKEN"
-
-# بحث مع فلتر data_type
-curl -X GET "http://localhost/api/search?q=laravel&lang=en&data_type_slug=articles" \
-  -H "X-Project-Id: 1" \
-  -H "Authorization: Bearer TOKEN"
-```
-
-### 6. إعادة الفهرسة الكاملة
-
-```bash
-# بعد إضافة بيانات جديدة
-php artisan search:reindex --force
-```
+`lexicon_candidates` في `/problems` تكشف الاستعلامات التي عجز عنها المسار
+المحلّي وأنقذها النموذج — أكثرها إصابةً هي المرشّح الأول للنقل إلى
+`resources/search/lexicon/` فيُستغنى عن النموذج فيها نهائياً.
 
 ---
 
-## الـ API Reference
+## الضبط
 
-### `GET /api/search`
+كل المعاملات في `config/search.php` وقابلة للتغيير عبر `.env`:
 
-#### Headers
-
-| Header | Required | Description |
+| المفتاح | الافتراضي | الأثر |
 |---|---|---|
-| `X-Project-Id` | ✅ | معرف المشروع |
-| `Authorization` | ✅ | Bearer token |
-| `Accept` | - | application/json |
-
-#### Query Parameters
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `q` | string | **required** | كلمة البحث (min: 2, max: 200) |
-| `lang` | string | `en` | اللغة |
-| `data_type_slug` | string | null | فلتر نوع البيانات |
-| `page` | integer | `1` | رقم الصفحة |
-| `per_page` | integer | `15` | عدد النتائج (max: 50) |
-
-#### Response Schema
-
-```json
-{
-  "keyword": "string",
-  "meta": {
-    "total": "integer",
-    "page": "integer",
-    "per_page": "integer",
-    "last_page": "integer"
-  },
-  "results": [
-    {
-      "entry_id": "integer",
-      "data_type_id": "integer",
-      "project_id": "integer",
-      "language": "string",
-      "title": "string (with **highlights**)",
-      "snippet": "string (with **highlights**)",
-      "status": "string",
-      "score": "float",
-      "published_at": "datetime"
-    }
-  ]
-}
-```
-
-#### Response Codes
-
-| Code | Meaning |
-|---|---|
-| `200` | نجح البحث (حتى لو النتائج فارغة) |
-| `400` | X-Project-Id مفقود |
-| `401` | غير مصرح |
-| `422` | validation error (q مفقود أو قصير) |
+| `SEARCH_BM25_K1` | 1.2 | تشبّع تكرار الكلمة |
+| `SEARCH_BM25_B` | 0.75 | تطبيع طول المستند |
+| `SEARCH_WEIGHT_TITLE` | 5.0 | وزن مطابقة العنوان |
+| `SEARCH_WEIGHT_META` | 2.0 | وزن مطابقة الحقول المخصَّصة |
+| `SEARCH_FRESHNESS_HALF_LIFE` | 45 | يوماً حتى يفقد المحتوى نصف أفضلية حداثته |
+| `SEARCH_PERSONALIZATION_MAX_BOOST` | 0.25 | أقصى رفع نسبي من التخصيص |
+| `SEARCH_FILTER_CONFIDENCE` | 0.80 | عتبة تحوّل الترجيح إلى إقصاء |
+| `SEARCH_CANDIDATE_MULTIPLIER` | 4 | سعة نافذة إعادة الترتيب |
+| `AI_SEARCH_ENABLED` | false | الاحتياطي الذكي |
 
 ---
 
-## ملاحظات مهمة
+## قواعد لا تُخالَف
 
-### MySQL FULLTEXT
+1. **كل نصّ يمرّ بـ `TextFolder::fold()`** — على جانبَي الفهرسة والاستعلام.
+   مطابقة الصور المطبَّعة بغيرها لا تعمل، وتفشل بصمت.
 
-```
-1. FULLTEXT لا يعمل مع كلمات أقل من 4 أحرف (افتراضي)
-   الحل: أضف في my.cnf:
-   ft_min_word_len = 2
-   ثم: REPAIR TABLE search_index
+2. **صفّ الفهرس يُبنى في `SearchDocumentBuilder` وحده.** كان البناء مكرّراً
+   في مسارين فافترقا: كلاهما أهمل `data_type_slug`، فبقي NULL وصار كل بحث
+   مقيَّد بنوع محتوى يعيد صفر نتائج بلا خطأ.
 
-2. BOOLEAN MODE في WHERE = فلترة
-   NATURAL LANGUAGE MODE في SELECT = scoring
+3. **نافذة المرشَّحين تُشتقّ من الصفحة المطلوبة.** الثابت مع إزاحة صفر كان
+   يعيد صفحات فارغة بعد السابعة بينما يعلن `total` وجود مئات النتائج.
 
-3. الـ index مركّب (title, content) = لا يمكن MATCH(title) وحده
+4. **`ngram_token_size` في الضبط = `innodb_ngram_token_size` في الخادم.**
+   اختلافهما يعني البحث عن وحدات غير التي فُهرست — نتائج فارغة دائمة
+   للغات الآسيوية، بلا أي خطأ.
 
-4. InnoDB فقط يدعم FULLTEXT في MySQL 5.6+
-```
-
-### الأداء
-
-```
-1. chunk(100) في الـ Reindex = أداء ممتاز للبيانات الكبيرة
-
-2. LEFT JOIN مع data_types مطلوب للـ Intent boost
-   إذا لم تكن بحاجة لـ intent → يمكن حذف الـ JOIN
-
-3. search_index لا يدعم soft deletes
-   عند حذف entry → احذف سجله من search_index يدوياً
-   (سيُبنى في خطوة مستقبلية)
-
-4. Cache ممكن إضافته على مستوى SearchEntriesAction
-   لنتائج نفس الـ query
-```
-
-### الـ Queue
-
-```
-1. IndexDataEntryListener يعمل على Queue: search-indexing
-   إذا أوقفت الـ worker → الفهرسة لن تعمل
-
-2. للـ development: QUEUE_CONNECTION=sync في .env
-
-3. للـ production:
-   - استخدم Redis
-   - شغّل Supervisor لإدارة الـ workers
-   - راقب الـ failed_jobs table
-```
+5. **التخصيص مضاعِف محدود لا إضافة مفتوحة.** الإضافة المفتوحة تخلق فقاعة:
+   من نقر على الهواتف مرّة يراها في كل بحث لاحق مهما كان استعلامه.

@@ -6,8 +6,9 @@ use App\Domains\Search\DTOs\SynonymAnalysisResultDTO;
 use App\Domains\Search\DTOs\SynonymSuggestionDTO;
 use App\Domains\Search\Repositories\Interfaces\SynonymSuggestionRepositoryInterface;
 use App\Domains\Search\Support\CoOccurrenceAnalyzer;
-use App\Domains\Search\Support\KeywordTokenizer;
 use App\Domains\Search\Support\SynonymScorer;
+use App\Domains\Search\Support\Text\Segmenter;
+use App\Domains\Search\Support\Text\TextFolder;
 use Illuminate\Support\Facades\Log;
 
 class AnalyzeSynonymsAction
@@ -25,7 +26,6 @@ class AnalyzeSynonymsAction
 
     public function __construct(
         private SynonymSuggestionRepositoryInterface $repository,
-        private KeywordTokenizer $tokenizer,
         private CoOccurrenceAnalyzer $analyzer,
         private SynonymScorer $scorer,
     ) {}
@@ -64,7 +64,7 @@ class AnalyzeSynonymsAction
         Log::info('SynonymAnalysis: keywords fetched', ['count' => $keywordCount]);
 
         // ─── 2. Tokenize كل keyword ───────────────────────────────────
-        $tokenizedKeywords = $this->tokenizer->tokenizeAll($keywords);
+        $tokenizedKeywords = array_map(static fn (string $k): array => Segmenter::tokenize(TextFolder::fold($k)), $keywords);
 
         // تجاهل keywords ذات token واحد فقط (لا co-occurrence ممكن)
         $multiTokenKeywords = array_filter(
@@ -108,7 +108,7 @@ class AnalyzeSynonymsAction
 
             if ($coCount < self::MIN_COOCCURRENCE_COUNT) {
 
-              continue;
+                continue;
             }
 
             $pairsChecked++;

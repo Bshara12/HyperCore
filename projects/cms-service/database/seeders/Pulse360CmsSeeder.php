@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Search\Support\SearchTextBuilder;
+use App\Domains\Search\Support\Text\Segmenter;
+use App\Domains\Search\Support\Text\TextFolder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -854,8 +855,20 @@ class Pulse360CmsSeeder extends Seeder
 
     private function seedSearchIndices(): void
     {
-        // نفس المُطبِّع المُستخدَم وقت البحث — بدونه لا يُطابق FULLTEXT شيئاً
-        $searchTextBuilder = new SearchTextBuilder();
+        /*
+         | نفس دالّة التطبيع المُستخدَمة وقت البحث.
+         |
+         | الأعمدة المطويّة هي ما يُطابَق عليه فعلاً؛ صفٌّ يُدرَج بلا
+         | طيّها لا يظهر في أي نتيجة مهما كان محتواه.
+         */
+        $fold = static fn (string $title, string $body, array $meta): array => [
+            'title_fold'    => TextFolder::fold($title),
+            'content_fold'  => TextFolder::fold($body),
+            'meta_fold'     => TextFolder::fold(implode(' ', array_map('strval', $meta))),
+            'title_terms'   => count(Segmenter::tokenize(TextFolder::fold($title))),
+            'content_terms' => count(Segmenter::tokenize(TextFolder::fold($body))),
+            'meta_terms'    => count(Segmenter::tokenize(TextFolder::fold(implode(' ', array_map('strval', $meta))))),
+        ];
 
         foreach ($this->articleEntries as $article) {
             $exists = DB::table('search_indices')
@@ -877,11 +890,7 @@ class Pulse360CmsSeeder extends Seeder
                 'title'             => $title,
                 'content'           => $summary,
                 'meta'              => json_encode(['access' => $article['access']]),
-                'search_text'       => $searchTextBuilder->build(
-                    $title,
-                    $summary,
-                    ['access' => $article['access']],
-                ) ?: null,
+                ...$fold($title, $summary, ['access' => $article['access']]),
                 'status'            => 'published',
                 'published_at'      => now()->subDays($daysOld),
                 'click_count'       => rand(10, 2000),
@@ -919,11 +928,7 @@ class Pulse360CmsSeeder extends Seeder
                 'title'             => $title,
                 'content'           => $desc,
                 'meta'              => json_encode(['type' => 'event']),
-                'search_text'       => $searchTextBuilder->build(
-                    $title,
-                    $desc,
-                    ['type' => 'event'],
-                ) ?: null,
+                ...$fold($title, $desc, ['type' => 'event']),
                 'status'            => 'published',
                 'published_at'      => now()->subDays($daysOld),
                 'click_count'       => rand(50, 5000),

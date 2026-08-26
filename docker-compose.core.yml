@@ -35,9 +35,30 @@ services:
       MYSQL_DATABASE: cms_service
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_ROOT_HOST: "%"
+    # الاعدادات تُمرَّر كوسائط لا عبر ملف cnf.
+    #
+    # السبب ان mysql يرفض اي ملف اعدادات قابل للكتابة من الجميع ويتجاهله
+    # بصمت، وهو ما يقع مع اي bind mount من Windows. النتيجة ان master.cnf
+    # كان مُهمَلاً بالكامل: server-id و log-bin وكل اعدادات البحث النصي.
+    #
+    # التمرير كوسائط يتجاوز فحص الصلاحيات، فتُطبَّق الاعدادات على اي مضيف.
+    # يبقى mysql/cms/master.cnf مرجعاً موثَّقاً يشرح سبب كل قيمة.
+    #
+    # هذه شروط صحة لا ضبط اداء:
+    #   min_token_size=2      الافتراضي 3 يُسقط "s9" و"m3" والعربي القصير
+    #   ngram_token_size=2    يجب ان يساوي search.indexing.ngram_token_size
+    #   enable_stopword=OFF   القائمة المدمجة انجليزية وتُطبَّق على كل اللغات
+    #
+    # تغيير اي منها يستوجب: php artisan search:reindex --force
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --innodb-ft-min-token-size=2
+      - --ngram-token-size=2
+      - --innodb-ft-enable-stopword=OFF
     volumes:
       - cms_master_data:/var/lib/mysql
-      - ./mysql/cms/master.cnf:/etc/mysql/conf.d/master.cnf
+      - ./mysql/cms/master.cnf:/etc/mysql/conf.d/master.cnf:ro
     networks: [core]
 
   # cms-mysql-slave:

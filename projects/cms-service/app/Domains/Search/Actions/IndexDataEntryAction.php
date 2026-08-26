@@ -1,101 +1,88 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Search\Actions;
 
-use App\Domains\Search\DTOs\IndexEntryDTO;
 use App\Domains\Search\Repositories\Interfaces\SearchIndexRepositoryInterface;
-use App\Domains\Search\Support\EntryFieldsExtractor;
-use App\Domains\Search\Support\SearchTextBuilder;
+use App\Domains\Search\Support\Indexing\SearchDocumentBuilder;
 use App\Models\DataEntry;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * فهرسة مدخل واحد، لكل لغات مشروعه.
+ */
 class IndexDataEntryAction
 {
-  public function __construct(
-    private SearchIndexRepositoryInterface $repository,
-    private EntryFieldsExtractor $extractor,
-    private SearchTextBuilder $searchTextBuilder,
-  ) {}
+    public function __construct(
+        private readonly SearchIndexRepositoryInterface $repository,
+        private readonly SearchDocumentBuilder $builder,
+    ) {}
 
-  /**
-   * فهرسة DataEntry لكل اللغات المدعومة في المشروع
-   */
-  public function execute(DataEntry $entry): void
-  {
-    // تأكد من تحميل العلاقات المطلوبة
-    $entry->loadMissing(['values', 'values.field', 'project', 'dataType']);
+    public function execute(DataEntry $entry): void
+    {
+        $entry->loadMissing(['values', 'values.field', 'project', 'dataType']);
 
-    $project = $entry->project;
-    $supportedLanguages = $this->resolveSupportedLanguages($project);
+        /*
+         | slug نوع المحتوى يُقرأ هنا ويُمرَّر إلى البنّاء.
+         |
+         | هذا هو العمود الذي بقي NULL في كل صفوف الفهرس، فكان كل بحث
+         | مقيَّد بنوع محتوى — أو محمول على نيّة — يعيد صفر نتائج بصمت.
+         */
+        $dataType = $entry->dataType;
+        $dataTypeSlug = $dataType === null ? '' : (string) $dataType->slug;
 
-    foreach ($supportedLanguages as $language) {
-      $this->indexForLanguage($entry, $language);
-    }
-  }
+        if ($dataTypeSlug === '') {
+            Log::warning('IndexDataEntryAction: entry has no data type slug', [
+                'entry_id' => $entry->id,
+            ]);
+        }
 
-  /**
-   * فهرسة لغة واحدة محددة
-   */
-  private function indexForLanguage(DataEntry $entry, string $language): void
-  {
-    try {
-      $extracted = $this->extractor->extract($entry, $language);
-
-      // النص المُفهرس يُبنى بنفس التطبيع المُستخدَم على جانب الـ query
-      $searchText = $this->searchTextBuilder->build(
-        $extracted['title'],
-        $extracted['content'],
-        $extracted['meta'],
-      );
-
-      $dto = new IndexEntryDTO(
-        entryId: $entry->id,
-        dataTypeId: $entry->data_type_id,
-        projectId: $entry->project_id,
-        language: $language,
-        title: $extracted['title'],
-        content: $extracted['content'] ?: null,
-        meta: $extracted['meta'] ?: null,
-        status: $entry->status,
-        publishedAt: $entry->published_at?->toDateTimeString(),
-        searchText: $searchText ?: null,
-        dataTypeSlug: $entry->dataType?->slug,
-      );
-
-      $this->repository->upsert($dto);
-    } catch (\Throwable $e) {
-      // لا نوقف العملية الكاملة إذا فشلت لغة واحدة
-      Log::error('SearchIndex: failed to index entry', [
-        'entry_id' => $entry->id,
-        'language' => $language,
-        'error' => $e->getMessage(),
-      ]);
-    }
-  }
-
-  /**
-   * استخراج اللغات المدعومة من إعدادات المشروع
-   * الافتراضي: ['en']
-   */
-  // private function resolveSupportedLanguages(mixed $project): array
-  // {
-  //     $languages = $project?->supported_languages ?? null;
-
-  //     if (is_array($languages) && count($languages) > 0) {
-  //         return $languages;
-  //     }
-
-  //     return ['en'];
-  // }
-
-  private function resolveSupportedLanguages(?object $project): array
-  {
-    $languages = $project?->supported_languages;
-
-    if (is_array($languages) && count($languages) > 0) {
-      return $languages;
+        foreach ($this->supportedLanguages($entry) as $language) {
+            $this->indexLanguage($entry, $language, $dataTypeSlug);
+        }
     }
 
-    return ['en'];
-  }
+    // ─────────────────────────────────────────────────────────────────
+
+    private function indexLanguage(DataEntry $entry, string $language, string $dataTypeSlug): void
+    {
+        try {
+            $document = $this->builder->build($entry, $language, $dataTypeSlug);
+
+            /*
+             | المستند بلا نصّ لا يُفهرس، ويُحذف إن كان مفهرساً.
+             |
+             | الحذف ضروري لا احتياطي: مدخل أُفرغ محتواه بعد فهرسته
+             | كان سيبقى في الفهرس بنصّه القديم إلى الأبد، فيظهر في
+             | نتائج بحث عن كلمات لم تعد فيه.
+             */
+            if (! $document->isIndexable()) {
+                $this->repository->deleteByEntryAndLanguage((int) $entry->id, $language);
+
+                return;
+            }
+
+            $this->repository->upsert($document);
+        } catch (\Throwable $e) {
+            // فشل لغة لا يوقف بقية اللغات.
+            Log::error('IndexDataEntryAction: failed to index entry', [
+                'entry_id' => $entry->id,
+                'language' => $language,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * @return string[]
+     */
+    private function supportedLanguages(DataEntry $entry): array
+    {
+        $languages = $entry->project?->supported_languages;
+
+        return is_array($languages) && $languages !== []
+            ? array_values(array_unique(array_map('strval', $languages)))
+            : ['en'];
+    }
 }

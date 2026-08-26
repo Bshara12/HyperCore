@@ -14,6 +14,7 @@ use App\Http\Controllers\EntryVersionController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
+use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\PopularSearchController;
 use App\Http\Controllers\ProjectAccessController;
 use App\Http\Controllers\ProjectController;
@@ -92,14 +93,14 @@ Route::prefix('cms')->middleware(['resolve.project', 'auth.user', 'throttle:api.
     Route::get('/{collectionSlug}/entries', [DataCollectionController::class, 'getEntries'])->name('cms.collections.entries');
 
     Route::middleware('throttle:api.heavy')->group(function () {
-      Route::post('/', [DataCollectionController::class, 'store'])->name('cms.collections.store')->middleware('permission:cms.collection.create');
-      Route::patch('/{collectionSlug}', [DataCollectionController::class, 'update'])->name('cms.collections.update')->middleware('permission:cms.collection.update');
-      Route::delete('/{collectionSlug}', [DataCollectionController::class, 'destroy'])->name('cms.collections.destroy')->middleware('permission:cms.collection.delete');
+      Route::post('/', [DataCollectionController::class, 'store'])->name('cms.collections.store');
+      Route::patch('/{collectionSlug}', [DataCollectionController::class, 'update'])->name('cms.collections.update');
+      Route::delete('/{collectionSlug}', [DataCollectionController::class, 'destroy'])->name('cms.collections.destroy');
 
-      Route::post('/{collectionSlug}/insert', [DataCollectionController::class, 'addItems'])->name('cms.collections.items.insert')->middleware('permission:cms.collection.update');
-      Route::delete('/{collectionSlug}/items', [DataCollectionController::class, 'removeItems'])->name('cms.collections.items.remove')->middleware('permission:cms.collection.update');
-      Route::post('/{collectionSlug}/items/reorder', [DataCollectionController::class, 'reorderItems'])->name('cms.collections.items.reorder')->middleware('permission:cms.collection.update');
-      Route::patch('/{collectionSlug}/deactivate', [DataCollectionController::class, 'deactivate'])->name('cms.collections.deactivate')->middleware('permission:cms.collection.update');
+      Route::post('/{collectionSlug}/insert', [DataCollectionController::class, 'addItems'])->name('cms.collections.items.insert');
+      Route::delete('/{collectionSlug}/items', [DataCollectionController::class, 'removeItems'])->name('cms.collections.items.remove');
+      Route::post('/{collectionSlug}/items/reorder', [DataCollectionController::class, 'reorderItems'])->name('cms.collections.items.reorder');
+      Route::patch('/{collectionSlug}/deactivate', [DataCollectionController::class, 'deactivate'])->name('cms.collections.deactivate');
     });
   });
 });
@@ -129,18 +130,8 @@ Route::middleware(['auth.user', 'throttle:api.heavy'])->group(function () {
    * |--------------------------------------------------------------------------
    */
 Route::prefix('cms/analytics')->middleware(['auth.user', 'throttle:api.standard'])->group(function () {
-  // Platform-wide figures across every project — restricted to the platform
-  // operators. It used to answer any authenticated token, handing a plain user
-  // the total project, entry and rating counts of the whole installation.
-  Route::get('/admin', [CmsAnalyticsController::class, 'adminOverview'])
-    ->middleware('permission:analytics.platform')
-    ->name('cms.analytics.admin.overview');
-
-  // project.access ties the caller to the project named in the header; without
-  // it any valid token plus any X-Project-Key returned that project's analytics.
-  Route::get('/projectOwner', [CmsAnalyticsController::class, 'projectOverview'])
-    ->middleware(['resolve.project', 'project.access'])
-    ->name('cms.analytics.projects.overview');
+  Route::get('/admin', [CmsAnalyticsController::class, 'adminOverview'])->name('cms.analytics.admin.overview');
+  Route::get('/projectOwner', [CmsAnalyticsController::class, 'projectOverview'])->middleware('resolve.project')->name('cms.analytics.projects.overview');
 });
 
 /*
@@ -306,48 +297,44 @@ Route::prefix('admin/search')
     // TODO(admin): هاد كلو admin/debug endpoints، لازم permission middleware
     // مثلاً ->middleware('permission:search.admin') قبل ما يوصلها أي مستخدم auth عادي
     Route::post('/debug', [SearchAdminController::class, 'debug']);
+    Route::post('/terms', [SearchAdminController::class, 'terms']);
     Route::get('/logs', [SearchAdminController::class, 'logs']);
     Route::get('/problems', [SearchAdminController::class, 'problems']);
     Route::post('/ai/re-run', [SearchAdminController::class, 'aiReRun'])
       ->middleware('throttle:api.ai');
-    Route::post('/compare', [SearchAdminController::class, 'compare']);
     Route::get('/config', [SearchAdminController::class, 'getConfig']);
-    Route::post('/config', [SearchAdminController::class, 'setConfig']);
   });
 
 
 
-// Route::middleware(['auth.user'])->prefix('ai')->group(function () {
-//   Route::get('/conversations', [AiConversationController::class, 'index'])
-//     ->name('ai-conversations.index');
+Route::middleware(['auth.user'])->prefix('ai')->group(function () {
+  Route::get('/conversations', [AiConversationController::class, 'index'])
+    ->name('ai-conversations.index');
 
-//   Route::post('/conversations', [AiConversationController::class, 'store'])
-//     ->name('ai-conversations.store');
+  Route::post('/conversations', [AiConversationController::class, 'store'])
+    ->name('ai-conversations.store');
 
-//   Route::get('/conversations/{id}', [AiConversationController::class, 'show'])
-//     ->name('ai-conversations.show');
+  Route::get('/conversations/{id}', [AiConversationController::class, 'show'])
+    ->name('ai-conversations.show');
 
-//   Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy'])
-//     ->name('ai-conversations.destroy');
-// });
+  Route::delete('/conversations/{id}', [AiConversationController::class, 'destroy'])
+    ->name('ai-conversations.destroy');
+});
 
 
 
 Route::prefix('subscriptions')->group(function () {
-  Route::post('/plans', [PlanController::class, 'store']);
+
+  // Plan management is a write endpoint — it must be authenticated like the rest.
+  Route::post('/plans', [PlanController::class, 'store'])
+    ->middleware(['auth.user', 'throttle:api.heavy']);
 
   Route::get('/plans', [PlanController::class, 'index'])
-  ->middleware(['auth.user', 'throttle:api.standard']);
+    ->middleware(['auth.user', 'throttle:api.standard']);
 
-Route::get('/plans/{id}', [PlanController::class, 'show'])
-  ->middleware(['auth.user', 'throttle:api.standard']);
+  Route::get('/plans/{id}', [PlanController::class, 'show'])
+    ->middleware(['auth.user', 'throttle:api.standard']);
 });
-
-Route::post(
-  '/subscriptions',
-  [SubscriptionController::class, 'store']
-)->middleware('auth.user');
-
 
 Route::post('/subscriptions', [SubscriptionController::class, 'store'])
   ->middleware(['auth.user', 'throttle:api.heavy']);
@@ -362,11 +349,47 @@ Route::get(
 )->middleware(['auth.user', 'throttle:api.standard']);
 
 Route::post('/subscription-feature-rules', [SubscriptionFeatureRuleController::class, 'store'])
-  ->middleware(['throttle:api.heavy']);
+  ->middleware(['auth.user', 'throttle:api.heavy']);
+
+/*
+|--------------------------------------------------------------------------
+| Admin dashboard views — scoped to the project resolved from the
+| X-Project-Key / X-Project-Id header, not to the calling user.
+|--------------------------------------------------------------------------
+*/
+Route::get('/subscription-feature-rules', [SubscriptionFeatureRuleController::class, 'index'])
+  ->middleware(['resolve.project', 'auth.user', 'throttle:api.standard']);
+
+Route::get('/admin/subscriptions', [SubscriptionController::class, 'projectIndex'])
+  ->middleware(['resolve.project', 'auth.user', 'throttle:api.standard']);
+
+/*
+|--------------------------------------------------------------------------
+| Platform operator (hyper_core)
+|--------------------------------------------------------------------------
+| The only routes allowed to read across every tenant. Deliberately WITHOUT
+| resolve.project: the operator dashboard is not scoped to one project, so
+| requiring an X-Project-Key header here would be meaningless.
+|--------------------------------------------------------------------------
+*/
+Route::prefix('platform')
+  ->middleware(['auth.user', 'hypercore', 'throttle:api.standard'])
+  ->group(function () {
+
+    Route::get('/overview', [PlatformController::class, 'overview']);
+
+    Route::get('/health', [PlatformController::class, 'health']);
+
+    Route::get('/projects', [PlatformController::class, 'projects']);
+
+    Route::get('/logs', [PlatformController::class, 'logs']);
+
+    Route::get('/audit-logs', [PlatformController::class, 'auditLogs']);
+  });
 
 Route::post('/content-access', [ContentAccessController::class, 'store'])
   ->middleware(['auth.user', 'throttle:api.heavy']);
-Route::put('/content-access-metadata/{metadata}', [ContentAccessController::class, 'update'])
+Route::put('/content-access/{metadata}', [ContentAccessController::class, 'update'])
   ->middleware(['auth.user', 'throttle:api.heavy']);
 Route::delete('/content-access/{metadata}', [ContentAccessController::class, 'destroy'])
   ->middleware(['auth.user', 'throttle:api.heavy']);

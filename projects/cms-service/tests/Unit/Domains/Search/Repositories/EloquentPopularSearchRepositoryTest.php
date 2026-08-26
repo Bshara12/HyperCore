@@ -2,14 +2,14 @@
 
 use App\Domains\Search\DTOs\PopularSearchQueryDTO;
 use App\Domains\Search\Repositories\Eloquent\EloquentPopularSearchRepository;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 // تفعيل تنظيف قاعدة البيانات بعد كل اختبار لضمان الاستقلالية
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->repository = new EloquentPopularSearchRepository();
+    $this->repository = new EloquentPopularSearchRepository;
     $this->projectId = 1;
     $this->language = 'ar';
 });
@@ -17,14 +17,13 @@ beforeEach(function () {
 /**
  * ==============================================================================
  * 1. الحالات الدفاعية (Defensive Returns)
- * نستخدم runInSeparateProcess لنعزل الـ Mock تماماً عن بقية التستات، 
+ * نستخدم runInSeparateProcess لنعزل الـ Mock تماماً عن بقية التستات،
  * مما يتيح لنا محاكاة الدالة الستاتيك وإجبارها على إرجاع مصفوفة فارغة لتخطي الحلقة.
  * ==============================================================================
  */
-
 test('getTrending hits defensive return when chain is empty', function () {
     $dto = new PopularSearchQueryDTO($this->projectId, $this->language, 'non-existent-window', 'trending', 5);
-    
+
     $result = $this->repository->getTrending($dto);
 
     expect($result['rows'])->toBe([])
@@ -33,7 +32,7 @@ test('getTrending hits defensive return when chain is empty', function () {
 
 test('getPopular hits defensive return when chain is empty', function () {
     $dto = new PopularSearchQueryDTO($this->projectId, $this->language, 'non-existent-window', 'popular', 5);
-    
+
     $result = $this->repository->getPopular($dto);
 
     expect($result['rows'])->toBe([])
@@ -45,7 +44,6 @@ test('getPopular hits defensive return when chain is empty', function () {
  * 2. اختبارات السلوك الطبيعي للدالة getTrending
  * ==============================================================================
  */
-
 test('getTrending returns results directly if they meet the minimum', function () {
     // إدخال 3 سجلات لتحقيق شرط الحد الأدنى MINIMUM_RESULTS = 3
     DB::table('popular_searches')->insert([
@@ -81,7 +79,6 @@ test('getTrending applies fallback chain when results are fewer than minimum', f
  * 3. اختبارات السلوك الطبيعي للدالة getPopular
  * ==============================================================================
  */
-
 test('getPopular returns records sorted by alltime score', function () {
     DB::table('popular_searches')->insert([
         ['project_id' => 1, 'language' => 'ar', 'keyword' => 'low',  'normalized_keyword' => 'low',  'count_all_time' => 10, 'alltime_score' => 10],
@@ -116,7 +113,6 @@ test('getPopular returns last window result when chain is exhausted', function (
  * 4. اختبارات دالة إعادة الحساب (Recompute)
  * ==============================================================================
  */
-
 test('recompute returns zero status when search logs are empty', function () {
     $result = $this->repository->recompute($this->projectId, $this->language);
 
@@ -127,10 +123,10 @@ test('recompute returns zero status when search logs are empty', function () {
 test('recompute handles null last_searched_at correctly', function () {
     // إضافة قيمة افتراضية لـ searched_at لتجنب الـ Constraint Violation
     DB::table('user_search_logs')->insert([
-        'project_id' => 1, 
-        'language' => 'ar', 
-        'keyword' => 'no_date', 
-        'searched_at' => now()->toDateTimeString() 
+        'project_id' => 1,
+        'language' => 'ar',
+        'keyword' => 'no_date',
+        'searched_at' => now()->toDateTimeString(),
     ]);
 
     $result = $this->repository->recompute($this->projectId, $this->language);
@@ -139,29 +135,29 @@ test('recompute handles null last_searched_at correctly', function () {
 
 test('recompute aggregates logs and upserts data successfully', function () {
     $now = now();
-    
+
     // 1. إضافة سجل في log
     DB::table('user_search_logs')->insert([
-        'project_id' => 1, 
-        'language' => 'ar', 
-        'keyword' => 'بحث قوي', 
-        'searched_at' => $now->toDateTimeString()
+        'project_id' => 1,
+        'language' => 'ar',
+        'keyword' => 'بحث قوي',
+        'searched_at' => $now->toDateTimeString(),
     ]);
 
     // 2. إضافة السجل في suggestions مع ضمان تعبئة كل الحقول الإجبارية
     DB::table('search_suggestions')->insert([
-        'project_id' => 1, 
-        'language' => 'ar', 
-        'normalized_keyword' => 'بحث قوي', 
-        'keyword' => 'بحث قوي', 
+        'project_id' => 1,
+        'language' => 'ar',
+        'normalized_keyword' => 'بحث قوي',
+        'keyword' => 'بحث قوي',
         'click_count' => 12,
-        'last_searched_at' => $now->toDateTimeString() // <--- هذا هو السطر الناقص
+        'last_searched_at' => $now->toDateTimeString(), // <--- هذا هو السطر الناقص
     ]);
 
     $result = $this->repository->recompute(1, 'ar');
-    
+
     expect($result['upserted'])->toBe(1);
-    
+
     // التأكد من أن البيانات تم معالجتها
     $upserted = DB::table('popular_searches')->where('keyword', 'بحث قوي')->first();
     expect($upserted)->not->toBeNull()
