@@ -13,29 +13,30 @@ class RabbitMQPublisher
      | topic يتيح التوجيه بناءً على Routing Key مثل: auth.user.registered
      | كل خدمة تستمع فقط للـ keys التي تهمها
      */
-    private const EXCHANGE      = 'microservices';
+    private const EXCHANGE = 'microservices';
+
     private const EXCHANGE_TYPE = 'topic';
 
     /**
      * نشر حدث على RabbitMQ
      *
-     * @param string $routingKey  مسار الحدث مثل: auth.user.registered
-     * @param array  $payload     البيانات المرسلة مع الحدث
+     * @param  string  $routingKey  مسار الحدث مثل: auth.user.registered
+     * @param  array  $payload  البيانات المرسلة مع الحدث
      */
     public function publish(string $routingKey, array $payload): void
     {
         $connection = null;
-        $channel    = null;
+        $channel = null;
 
         try {
             // ─── 1. فتح الاتصال ───────────────────────────────────────────
             // ✅ الصحيح — استخدم config() دائماً
             $connection = new AMQPStreamConnection(
-                host:     config('queue.connections.rabbitmq.host'),
-                port:     config('queue.connections.rabbitmq.port'),
-                user:     config('queue.connections.rabbitmq.login'),
+                host: config('queue.connections.rabbitmq.host'),
+                port: config('queue.connections.rabbitmq.port'),
+                user: config('queue.connections.rabbitmq.login'),
                 password: config('queue.connections.rabbitmq.password'),
-                vhost:    config('queue.connections.rabbitmq.vhost'),
+                vhost: config('queue.connections.rabbitmq.vhost'),
             );
             // $connection = new AMQPStreamConnection(
             //     host:     config('rabbitmq.host'),
@@ -50,10 +51,10 @@ class RabbitMQPublisher
             // ─── 2. التأكد من وجود الـ Exchange ──────────────────────────
             // durable: true = يبقى الـ Exchange حتى بعد إعادة تشغيل RabbitMQ
             $channel->exchange_declare(
-                exchange:    self::EXCHANGE,
-                type:        self::EXCHANGE_TYPE,
-                passive:     false,
-                durable:     true,
+                exchange: self::EXCHANGE,
+                type: self::EXCHANGE_TYPE,
+                passive: false,
+                durable: true,
                 auto_delete: false,
             );
 
@@ -63,13 +64,13 @@ class RabbitMQPublisher
                     ...$payload,
                     // نضيف metadata مفيدة للـ Debugging والـ Tracing
                     '_meta' => [
-                        'source'     => 'auth-service',
-                        'event'      => $routingKey,
+                        'source' => 'auth-service',
+                        'event' => $routingKey,
                         'published_at' => now()->toIso8601String(),
                     ],
                 ]),
                 properties: [
-                    'content_type'  => 'application/json',
+                    'content_type' => 'application/json',
                     // PERSISTENT: الرسالة تبقى حتى لو أُعيد تشغيل RabbitMQ
                     'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT,
                 ],
@@ -77,14 +78,14 @@ class RabbitMQPublisher
 
             // ─── 4. نشر الرسالة ───────────────────────────────────────────
             $channel->basic_publish(
-                msg:         $message,
-                exchange:    self::EXCHANGE,
+                msg: $message,
+                exchange: self::EXCHANGE,
                 routing_key: $routingKey,
             );
 
             Log::info('[RabbitMQPublisher] Event published', [
                 'routing_key' => $routingKey,
-                'user_id'     => $payload['user_id'] ?? null,
+                'user_id' => $payload['user_id'] ?? null,
             ]);
 
         } catch (\Exception $e) {
@@ -94,7 +95,7 @@ class RabbitMQPublisher
              */
             Log::error('[RabbitMQPublisher] Failed to publish event', [
                 'routing_key' => $routingKey,
-                'error'       => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
         } finally {

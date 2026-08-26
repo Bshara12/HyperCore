@@ -13,7 +13,9 @@ use Illuminate\Support\Str;
 class ServiceAuthService
 {
     protected $jwt;
+
     protected $sessions;
+
     protected $services;
 
     public function __construct(

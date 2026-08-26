@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 class HyperCoreController extends Controller
 {
     protected $operations;
+
     protected $serviceAuth;
+
     protected $keyRotation;
 
     public function __construct(
@@ -44,6 +46,7 @@ class HyperCoreController extends Controller
 
         try {
             $this->operations->deleteUser($id, $auth);
+
             return response()->json(['message' => 'User deleted successfully']);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -59,6 +62,7 @@ class HyperCoreController extends Controller
 
         try {
             $this->serviceAuth->deleteService($id, $auth);
+
             return response()->json(['message' => 'Service deleted successfully']);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -74,6 +78,7 @@ class HyperCoreController extends Controller
 
         try {
             $this->keyRotation->rotate($auth);
+
             return response()->json(['message' => 'Keys rotated successfully. All existing tokens are now invalid.']);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 class JwtMiddleware
 {
     protected $jwtService;
+
     protected $sessions;
 
     public function __construct(JwtService $jwtService, SessionRepositoryInterface $sessionRepository)

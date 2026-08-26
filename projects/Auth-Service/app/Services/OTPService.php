@@ -14,8 +14,8 @@ class OtpService
     {
         return DB::transaction(function () use ($user) {
             $user->update([
-                'otp_code'        => random_int(100000, 999999),
-                'otp_expires_at'  => now()->addMinutes(10),
+                'otp_code' => random_int(100000, 999999),
+                'otp_expires_at' => now()->addMinutes(10),
                 'failed_attempts' => 0,
             ]);
 
@@ -30,7 +30,7 @@ class OtpService
     {
         return DB::transaction(function () use ($user) {
             $user->update([
-                'otp_code'       => random_int(100000, 999999),
+                'otp_code' => random_int(100000, 999999),
                 'otp_expires_at' => now()->addMinutes(10),
             ]);
 

@@ -24,99 +24,100 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Resource extends Model
 {
-  use HasFactory, SoftDeletes;
-  protected $fillable = [
-    'data_entry_id',
-    'project_id',
-    'name',
-    'type',
-    'capacity',
-    'status',
-    'payment_type',
-    'price',
-    'settings',
-  ];
+    use HasFactory, SoftDeletes;
 
-  protected $casts = [
-    'capacity' => 'integer',
-    'price' => 'float',
-    'settings' => 'array',
-  ];
+    protected $fillable = [
+        'data_entry_id',
+        'project_id',
+        'name',
+        'type',
+        'capacity',
+        'status',
+        'payment_type',
+        'price',
+        'settings',
+    ];
 
-  // ─── Statuses ─────────────────────────────────────────────────────────────
+    protected $casts = [
+        'capacity' => 'integer',
+        'price' => 'float',
+        'settings' => 'array',
+    ];
 
-  const STATUS_ACTIVE = 'active';
+    // ─── Statuses ─────────────────────────────────────────────────────────────
 
-  const STATUS_INACTIVE = 'inactive';
+    const STATUS_ACTIVE = 'active';
 
-  // ─── Payment Types ────────────────────────────────────────────────────────
+    const STATUS_INACTIVE = 'inactive';
 
-  const PAYMENT_FREE = 'free';
+    // ─── Payment Types ────────────────────────────────────────────────────────
 
-  const PAYMENT_PAID = 'paid';
+    const PAYMENT_FREE = 'free';
 
-  // ─── Relationships ────────────────────────────────────────────────────────
+    const PAYMENT_PAID = 'paid';
 
-  public function availabilities(): HasMany
-  {
-    return $this->hasMany(ResourceAvailability::class);
-  }
+    // ─── Relationships ────────────────────────────────────────────────────────
 
-  public function activeAvailabilities(): HasMany
-  {
-    return $this->hasMany(ResourceAvailability::class)
-      ->where('is_active', true);
-  }
+    public function availabilities(): HasMany
+    {
+        return $this->hasMany(ResourceAvailability::class);
+    }
 
-  public function cancellationPolicies(): HasMany
-  {
-    return $this->hasMany(BookingCancellationPolicy::class)
-      ->orderByDesc('hours_before');
-  }
+    public function activeAvailabilities(): HasMany
+    {
+        return $this->hasMany(ResourceAvailability::class)
+            ->where('is_active', true);
+    }
 
-  public function bookings(): HasMany
-  {
-    return $this->hasMany(Booking::class);
-  }
+    public function cancellationPolicies(): HasMany
+    {
+        return $this->hasMany(BookingCancellationPolicy::class)
+            ->orderByDesc('hours_before');
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  /**
-   * @phpstan-impure
-   */
-  public function isActive(): bool
-  {
-    return $this->status === self::STATUS_ACTIVE;
-  }
+    /**
+     * @phpstan-impure
+     */
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
 
-  public function isBookable(): bool
-  {
-    return $this->isActive();
-  }
+    public function isBookable(): bool
+    {
+        return $this->isActive();
+    }
 
-  public function isFree(): bool
-  {
-    return $this->payment_type === self::PAYMENT_FREE;
-  }
+    public function isFree(): bool
+    {
+        return $this->payment_type === self::PAYMENT_FREE;
+    }
 
-  public function isPaid(): bool
-  {
-    return $this->payment_type === self::PAYMENT_PAID;
-  }
+    public function isPaid(): bool
+    {
+        return $this->payment_type === self::PAYMENT_PAID;
+    }
 
-  // public function availabilityForDay(int $dayOfWeek): ?ResourceAvailability
-  // {
-  //   return $this->activeAvailabilities()
-  //     ->where('day_of_week', $dayOfWeek)
-  //     ->first();
-  // }
-  public function availabilityForDay(int $dayOfWeek): ?ResourceAvailability
-  {
-    /** @var ResourceAvailability|null $availability */
-    $availability = $this->activeAvailabilities()
-      ->where('day_of_week', $dayOfWeek)
-      ->first();
+    // public function availabilityForDay(int $dayOfWeek): ?ResourceAvailability
+    // {
+    //   return $this->activeAvailabilities()
+    //     ->where('day_of_week', $dayOfWeek)
+    //     ->first();
+    // }
+    public function availabilityForDay(int $dayOfWeek): ?ResourceAvailability
+    {
+        /** @var ResourceAvailability|null $availability */
+        $availability = $this->activeAvailabilities()
+            ->where('day_of_week', $dayOfWeek)
+            ->first();
 
-    return $availability;
-  }
+        return $availability;
+    }
 }
