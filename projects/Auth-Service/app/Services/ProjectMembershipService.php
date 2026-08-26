@@ -34,7 +34,7 @@ class ProjectMembershipService
             if (! $existingUser) {
                 $isNewUser = true;
 
-                $user = $this->users->create([   
+                $user = $this->users->create([
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'password' => Hash::make($data['password']),
@@ -136,6 +136,4 @@ class ProjectMembershipService
             'project_id' => $projectId,
         ]);
     }
-
-
 }

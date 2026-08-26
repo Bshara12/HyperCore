@@ -7,12 +7,12 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class VerifyOTPRequest extends FormRequest
 {
-  /**
-   * Get the validation rules that apply to the request.
-   *
-   * @return array<string, ValidationRule|array<mixed>|string>
-   */
-  // app/Http/Requests/VerifyOTPRequest.php
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    // app/Http/Requests/VerifyOTPRequest.php
     public function rules(): array
     {
         return [
