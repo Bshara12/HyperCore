@@ -2,24 +2,22 @@
 
 use App\Domains\Search\DTOs\UserPreferenceDTO;
 use App\Domains\Search\Repositories\Interfaces\UserBehaviorRepositoryInterface;
-use App\Domains\Search\Support\KeywordTokenizer;
-use App\Domains\Search\Support\SearchResultRanker;
+use App\Domains\Search\Support\Ranking\PersonalizationScorer;
+use App\Domains\Search\Support\Text\TextFolder;
 use App\Domains\Search\Support\UserPreferenceAnalyzer;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * تحقّق من مسار الشخصنة كاملاً:
+ * سلسلة التخصيص من طرفها إلى طرفها:
  *
- *   user_click_logs → getClickedEntryTexts → KeywordTokenizer
- *   → termAffinities → SearchResultRanker boost
+ *   user_click_logs → getClickedEntryTexts → تطبيع وتقسيم
+ *   → termAffinities → مضاعِف الترتيب
  *
- * الشرط الحاسم: الرموز على طرفَي المسار يجب أن تكون بنفس الشكل.
- * الـ termAffinities تُبنى من نص الفهرس، والـ ranker يُطابقها برموز
- * العنوان/المحتوى — أي اختلاف في التطبيع يُصفّر الشخصنة العربية صامتاً.
+ * تُغطّي هذه الحالات ما كان يُختبَر على الواجهة السابقة
+ * (SearchResultRanker + KeywordTokenizer)، منقولةً إلى المُسجِّل الحالي.
+ * السلوكيات المطلوبة لم تتغيّر — تغيّر من ينفّذها.
  */
-
-/** نفس نص الـ seeder: ألف بمدّة في العنوان الخام */
-const CLICKED_AR_TEXT = 'آيفون 15 برو ماكس - أفضل سعر. آيفون بشريحة A17 Pro وكاميرا 48 ميجابكسل.';
+const CLICKED_AR_TEXT = 'آيفون 15 برو ماكس';
 
 function preferenceAnalyzer(array $clickedTexts, array $clickCounts = []): UserPreferenceAnalyzer
 {
@@ -27,33 +25,52 @@ function preferenceAnalyzer(array $clickedTexts, array $clickCounts = []): UserP
     $repository->shouldReceive('getClickCountsByDataType')->andReturn($clickCounts);
     $repository->shouldReceive('getClickedEntryTexts')->andReturn($clickedTexts);
 
-    return new UserPreferenceAnalyzer($repository, new KeywordTokenizer());
+    return new UserPreferenceAnalyzer($repository);
 }
 
+/**
+ * صفّ فهرس مصطنع.
+ *
+ * العنوان يُمرَّر خاماً ويُطوى هنا: المُسجِّل يطابق على title_fold،
+ * فصفٌّ بلا طيّ لا يُنتج أي إشارة مهما كان عنوانه.
+ */
 function rankerRow(array $attributes): object
 {
+    $title = (string) ($attributes['title'] ?? '');
+
     return (object) array_merge([
         'entry_id' => 1,
         'data_type_id' => 1,
         'data_type_slug' => 'products',
-        'title' => '',
-        'content' => '',
-        'fulltext_score' => 1.0,
+        'title' => $title,
+        'title_fold' => TextFolder::fold($title),
+        'content_fold' => '',
+        'meta_fold' => '',
+        'title_terms' => 1,
+        'content_terms' => 0,
+        'meta_terms' => 0,
         'click_count' => 0,
         'view_count' => 0,
         'popularity_score' => 0,
-        'ctr_score' => 0,
-        'freshness_score' => 0,
+        'published_at' => null,
     ], $attributes);
+}
+
+/** الدرجة النهائية بعد التخصيص، انطلاقاً من درجة أساسية ثابتة. */
+function personalised(object $row, UserPreferenceDTO $preference, array $recentTerms = []): float
+{
+    return (new PersonalizationScorer)->apply(10.0, $row, $preference, $recentTerms);
 }
 
 beforeEach(function () {
     Cache::flush();
 });
 
-// ─────────────────────────────────────────────────────────────────────
-// بناء الـ termAffinities
-// ─────────────────────────────────────────────────────────────────────
+/*
+|--------------------------------------------------------------------------
+| بناء الـ termAffinities
+|--------------------------------------------------------------------------
+*/
 
 test('termAffinities تُبنى بمفاتيح مُطبَّعة كما يعرّفها UserPreferenceDTO', function () {
     $preference = preferenceAnalyzer([CLICKED_AR_TEXT, CLICKED_AR_TEXT])
@@ -76,80 +93,53 @@ test('الكلمات المحيّدة (price/best) لا تدخل الـ termAffi
         ->and($preference->termAffinities)->not->toHaveKey('best');
 });
 
-// ─────────────────────────────────────────────────────────────────────
-// تطبيق الـ boost في الترتيب
-// ─────────────────────────────────────────────────────────────────────
+/*
+|--------------------------------------------------------------------------
+| تطبيق المضاعِف
+|--------------------------------------------------------------------------
+*/
 
-test('boost الشخصنة يُطبَّق على النص العربي الخام في الفهرس', function () {
+test('التخصيص يرفع الصف الموافق لذوق المستخدم فوق غيره', function () {
     $preference = preferenceAnalyzer([CLICKED_AR_TEXT, CLICKED_AR_TEXT])
         ->analyzeForUser(projectId: 1, userId: 7);
 
-    $ranker = new SearchResultRanker(new KeywordTokenizer());
+    $matching = personalised(rankerRow(['title' => 'آيفون 15 برو ماكس']), $preference);
+    $other = personalised(rankerRow(['title' => 'سامسونج جالكسي S24']), $preference);
 
-    $rows = $ranker->rerank(
-        rows: [
-            rankerRow(['entry_id' => 20, 'title' => 'سامسونج جالكسي S24']),
-            rankerRow(['entry_id' => 10, 'title' => 'آيفون 15 برو ماكس']),
-        ],
-        cleanWords: [],
-        phraseQuery: '',
-        intent: 'general',
-        intentConf: 0.0,
-        preference: $preference,
-    );
-
-    // الصف الذي يطابق ذوق المستخدم يجب أن يتقدّم
-    expect($rows[0]->entry_id)->toBe(10)
-        ->and($rows[0]->final_score)->toBeGreaterThan($rows[1]->final_score);
+    expect($matching)->toBeGreaterThan($other);
 });
 
-test('boost الشخصنة يعمل حين تكون الكلمة المشتركة الوحيدة تحمل همزة', function () {
-    // عزل الحالة: كل الرموز الأخرى مختلفة، والمشترك الوحيد هو "آيفون".
-    // لو أُسقط هذا الرمز بسبب اختلاف التطبيع، لا يبقى أي boost.
+test('التخصيص يعمل حين تكون الكلمة المشتركة الوحيدة تحمل همزة', function () {
+    /*
+     | عزل الحالة: كل الرموز الأخرى مختلفة، والمشترك الوحيد "آيفون"
+     | مقابل "أيفون". لو أُسقط بسبب اختلاف صورة الهمزة لما بقي أي أثر.
+     */
     $preference = preferenceAnalyzer([
         'آيفون تيتانيوم',
         'آيفون سيراميك',
     ])->analyzeForUser(projectId: 1, userId: 7);
 
-    $ranker = new SearchResultRanker(new KeywordTokenizer());
+    $boosted = personalised(rankerRow(['title' => 'أيفون بلس']), $preference);
+    $baseline = personalised(rankerRow(['title' => 'أيفون بلس']), UserPreferenceDTO::noHistory());
 
-    $boosted = $ranker->rerank(
-        rows: [rankerRow(['title' => 'أيفون بلس'])],
-        cleanWords: [], phraseQuery: '', intent: 'general', intentConf: 0.0,
-        preference: $preference,
-    );
-
-    $baseline = $ranker->rerank(
-        rows: [rankerRow(['title' => 'أيفون بلس'])],
-        cleanWords: [], phraseQuery: '', intent: 'general', intentConf: 0.0,
-        preference: UserPreferenceDTO::noHistory(),
-    );
-
-    expect($boosted[0]->final_score)->toBeGreaterThan($baseline[0]->final_score);
+    expect($boosted)->toBeGreaterThan($baseline);
 });
 
-test('boost الشخصنة لا يُطبَّق على صف غير مطابق', function () {
+test('التخصيص لا يُطبَّق على صف غير مطابق ولا يخصّ نوعه', function () {
+    /*
+     | بلا ميل للنوع ولا تطابق مفردات، يجب أن تعود الدرجة كما هي —
+     | التخصيص يرجّح المطابق ولا يرفع الجميع بالقدر نفسه.
+     */
     $preference = preferenceAnalyzer([CLICKED_AR_TEXT, CLICKED_AR_TEXT])
         ->analyzeForUser(projectId: 1, userId: 7);
 
-    $ranker = new SearchResultRanker(new KeywordTokenizer());
+    $row = rankerRow(['title' => 'سامسونج جالكسي S24', 'data_type_id' => 99]);
 
-    $withHistory = $ranker->rerank(
-        rows: [rankerRow(['title' => 'سامسونج جالكسي S24'])],
-        cleanWords: [], phraseQuery: '', intent: 'general', intentConf: 0.0,
-        preference: $preference,
-    );
-
-    $withoutHistory = $ranker->rerank(
-        rows: [rankerRow(['title' => 'سامسونج جالكسي S24'])],
-        cleanWords: [], phraseQuery: '', intent: 'general', intentConf: 0.0,
-        preference: UserPreferenceDTO::noHistory(),
-    );
-
-    expect($withHistory[0]->final_score)->toBe($withoutHistory[0]->final_score);
+    expect(personalised($row, $preference))
+        ->toBe(personalised($row, UserPreferenceDTO::noHistory()));
 });
 
-test('affinity نوع البيانات يُرفع الصفوف من النوع المُفضَّل', function () {
+test('affinity نوع البيانات يرفع الصفوف من النوع المُفضَّل', function () {
     $preference = preferenceAnalyzer([], [1 => 10, 2 => 1])
         ->analyzeForUser(projectId: 1, userId: 7);
 
@@ -157,40 +147,36 @@ test('affinity نوع البيانات يُرفع الصفوف من النوع �
         // نوع بنقرة واحدة تحت MIN_CLICKS_FOR_SIGNAL → لا إشارة
         ->and($preference->affinityFor(2))->toBe(0.0);
 
-    $ranker = new SearchResultRanker(new KeywordTokenizer());
+    $preferred = personalised(rankerRow(['data_type_id' => 1, 'title' => 'كاميرا كانون']), $preference);
+    $other = personalised(rankerRow(['data_type_id' => 2, 'title' => 'مقال عن التصوير']), $preference);
 
-    $rows = $ranker->rerank(
-        rows: [
-            rankerRow(['entry_id' => 30, 'data_type_id' => 2, 'title' => 'مقال عن التصوير']),
-            rankerRow(['entry_id' => 31, 'data_type_id' => 1, 'title' => 'كاميرا كانون']),
-        ],
-        cleanWords: [], phraseQuery: '', intent: 'general', intentConf: 0.0,
-        preference: $preference,
-    );
-
-    expect($rows[0]->entry_id)->toBe(31);
+    expect($preferred)->toBeGreaterThan($other);
 });
 
-test('كلمات بحث المستخدم السابقة تُرفع الصف حتى لو كُتبت بهمزة مختلفة', function () {
-    $ranker = new SearchResultRanker(new KeywordTokenizer());
+test('كلمات بحث المستخدم السابقة ترفع الصف حتى لو كُتبت بهمزة مختلفة', function () {
+    // بحث سابق بـ "أيفون" (همزة على الألف) مقابل عنوان بـ "آيفون".
+    $recent = [['term' => TextFolder::fold('أيفون'), 'age_days' => 0.0]];
 
-    $rows = $ranker->rerank(
-        rows: [
-            rankerRow(['entry_id' => 40, 'title' => 'سامسونج جالكسي S24']),
-            rankerRow(['entry_id' => 41, 'title' => 'آيفون 15 برو ماكس']),
-        ],
-        cleanWords: [], phraseQuery: '', intent: 'general', intentConf: 0.0,
-        preference: UserPreferenceDTO::noHistory(),
-        // المستخدم بحث سابقاً بـ "أيفون" (همزة على الألف)
-        userKeywords: [['word' => 'أيفون', 'weight' => 1.0]],
+    $matching = personalised(
+        rankerRow(['title' => 'آيفون 15 برو ماكس']),
+        new UserPreferenceDTO([], [], 5, true),
+        $recent
     );
 
-    expect($rows[0]->entry_id)->toBe(41);
+    $other = personalised(
+        rankerRow(['title' => 'سامسونج جالكسي S24']),
+        new UserPreferenceDTO([], [], 5, true),
+        $recent
+    );
+
+    expect($matching)->toBeGreaterThan($other);
 });
 
-// ─────────────────────────────────────────────────────────────────────
-// الـ cache
-// ─────────────────────────────────────────────────────────────────────
+/*
+|--------------------------------------------------------------------------
+| الكاش
+|--------------------------------------------------------------------------
+*/
 
 test('التفضيلات تُخزَّن مؤقتاً وتُبطَل عند نقرة جديدة', function () {
     $analyzer = preferenceAnalyzer([CLICKED_AR_TEXT, CLICKED_AR_TEXT]);

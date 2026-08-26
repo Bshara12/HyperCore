@@ -7,15 +7,16 @@ use App\Domains\Search\DTOs\UserPreferenceDTO;
 class SearchResultRanker
 {
     private const TERM_AFFINITY_WEIGHT = 6.0;
+
     private const AFFINITY_WEIGHT = 2.0;
 
     private const INTENT_SLUGS = [
         'product' => ['products', 'product', 'items', 'goods'],
         'article' => ['articles', 'article', 'posts', 'blog', 'news'],
         'service' => ['services', 'service', 'booking', 'appointments'],
-        'buy'     => ['products', 'product', 'items', 'goods'],
-        'repair'  => ['services', 'service', 'booking', 'appointments'],
-        'learn'   => ['articles', 'article', 'posts', 'blog', 'news'],
+        'buy' => ['products', 'product', 'items', 'goods'],
+        'repair' => ['services', 'service', 'booking', 'appointments'],
+        'learn' => ['articles', 'article', 'posts', 'blog', 'news'],
         'compare' => ['articles', 'article', 'posts', 'blog', 'products', 'product'],
     ];
 
@@ -24,13 +25,13 @@ class SearchResultRanker
     ) {}
 
     public function rerank(
-        array             $rows,
-        array             $cleanWords,
-        string            $phraseQuery,
-        string            $intent,
-        float             $intentConf,
+        array $rows,
+        array $cleanWords,
+        string $phraseQuery,
+        string $intent,
+        float $intentConf,
         UserPreferenceDTO $preference,
-        array             $userKeywords = []
+        array $userKeywords = []
     ): array {
 
         if (empty($rows)) {
@@ -38,48 +39,48 @@ class SearchResultRanker
         }
 
         $phraseQueryLower = ArabicTextNormalizer::normalize($phraseQuery);
-        $numberWords      = array_filter($cleanWords, fn($w) => is_numeric($w));
-        $intentSlugs      = $this->getSlugs($intent, $intentConf);
+        $numberWords = array_filter($cleanWords, fn ($w) => is_numeric($w));
+        $intentSlugs = $this->getSlugs($intent, $intentConf);
 
         foreach ($rows as $row) {
             $row->final_score = $this->computeScore(
-                row:              $row,
-                cleanWords:       $cleanWords,
+                row: $row,
+                cleanWords: $cleanWords,
                 phraseQueryLower: $phraseQueryLower,
-                numberWords:      $numberWords,
-                intentSlugs:      $intentSlugs,
-                intentConf:       $intentConf,
-                preference:       $preference,
-                userKeywords:     $userKeywords,
+                numberWords: $numberWords,
+                intentSlugs: $intentSlugs,
+                intentConf: $intentConf,
+                preference: $preference,
+                userKeywords: $userKeywords,
             );
         }
 
-        usort($rows, fn($a, $b) => $b->final_score <=> $a->final_score);
+        usort($rows, fn ($a, $b) => $b->final_score <=> $a->final_score);
 
         return $rows;
     }
 
     private function computeScore(
-        object            $row,
-        array             $cleanWords,
-        string            $phraseQueryLower,
-        array             $numberWords,
-        array             $intentSlugs,
-        float             $intentConf,
+        object $row,
+        array $cleanWords,
+        string $phraseQueryLower,
+        array $numberWords,
+        array $intentSlugs,
+        float $intentConf,
         UserPreferenceDTO $preference,
-        array             $userKeywords,
+        array $userKeywords,
     ): float {
 
         // التطبيع ضروري: الـ cleanWords صارت مُطبَّعة ("ايفون") بينما
         // العنوان المخزَّن خام ("آيفون 15") — بدونه كل boosts النص
         // تفشل على المحتوى العربي ويبقى الترتيب معتمداً على FULLTEXT فقط.
-        $title   = ArabicTextNormalizer::normalize($row->title   ?? '');
+        $title = ArabicTextNormalizer::normalize($row->title ?? '');
         $content = ArabicTextNormalizer::normalize($row->content ?? '');
-        $slug    = $row->data_type_slug ?? '';
+        $slug = $row->data_type_slug ?? '';
 
         $score = (float) ($row->fulltext_score ?? 0) * 3.0;
 
-        if (!empty($phraseQueryLower)) {
+        if (! empty($phraseQueryLower)) {
             if (str_contains($title, $phraseQueryLower)) {
                 $score += 8.0;
             } elseif (str_contains($content, $phraseQueryLower)) {
@@ -104,7 +105,7 @@ class SearchResultRanker
             }
         }
 
-        if (!empty($cleanWords[0])) {
+        if (! empty($cleanWords[0])) {
             $firstWord = ArabicTextNormalizer::normalizeToken($cleanWords[0]);
             $pos = mb_strpos($title, $firstWord, 0, 'UTF-8');
             if ($pos !== false) {
@@ -112,11 +113,11 @@ class SearchResultRanker
             }
         }
 
-        $clickCount      = max(0, (int) ($row->click_count   ?? 0));
-        $viewCount       = max(0, (int) ($row->view_count    ?? 0));
+        $clickCount = max(0, (int) ($row->click_count ?? 0));
+        $viewCount = max(0, (int) ($row->view_count ?? 0));
         $popularityScore = max(0, (float) ($row->popularity_score ?? 0));
-        $ctrScore        = max(0, (float) ($row->ctr_score    ?? 0));
-        $freshnessScore  = max(0, (float) ($row->freshness_score ?? 0));
+        $ctrScore = max(0, (float) ($row->ctr_score ?? 0));
+        $freshnessScore = max(0, (float) ($row->freshness_score ?? 0));
 
         $score += log($clickCount + 1) * 2.5;
         $score += log($viewCount + 1) * 1.5;
@@ -124,12 +125,12 @@ class SearchResultRanker
         $score += $ctrScore * 4.0;
         $score += $freshnessScore * 2.0;
 
-        if (!empty($intentSlugs) && in_array($slug, $intentSlugs, true)) {
+        if (! empty($intentSlugs) && in_array($slug, $intentSlugs, true)) {
             $score += $intentConf * 5.0;
         }
 
-        if (!empty($preference->termAffinities)) {
-            $rowTokens = array_flip($this->tokenizer->tokenize($title . ' ' . $content));
+        if (! empty($preference->termAffinities)) {
+            $rowTokens = array_flip($this->tokenizer->tokenize($title.' '.$content));
 
             foreach ($preference->termAffinities as $term => $termAffinity) {
                 if (isset($rowTokens[$term])) {
@@ -156,7 +157,10 @@ class SearchResultRanker
 
     private function getSlugs(string $intent, float $confidence): array
     {
-        if ($confidence < 0.3) return [];
+        if ($confidence < 0.3) {
+            return [];
+        }
+
         return self::INTENT_SLUGS[$intent] ?? [];
     }
 }

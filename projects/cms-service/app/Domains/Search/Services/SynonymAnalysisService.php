@@ -5,7 +5,7 @@ namespace App\Domains\Search\Services;
 use App\Domains\Search\Actions\AnalyzeSynonymsAction;
 use App\Domains\Search\DTOs\SynonymAnalysisResultDTO;
 use App\Domains\Search\Repositories\Interfaces\SynonymSuggestionRepositoryInterface;
-use App\Domains\Search\Support\SynonymExpander;
+use App\Domains\Search\Support\Lexicon\ProjectSynonyms;
 use Illuminate\Support\Facades\DB;
 
 class SynonymAnalysisService
@@ -13,7 +13,7 @@ class SynonymAnalysisService
     public function __construct(
         private AnalyzeSynonymsAction $analyzeAction,
         private SynonymSuggestionRepositoryInterface $repository,
-        private SynonymExpander $synonymExpander,
+        private ProjectSynonyms $synonyms,
     ) {}
 
     public function analyze(
@@ -71,9 +71,9 @@ class SynonymAnalysisService
 
         // ─── مسح الـ cache إذا تغيرت الحالة إلى approved/rejected ────
         if ($suggestion && in_array($status, ['approved', 'rejected'], true)) {
-            $this->synonymExpander->invalidateCache(
-                $suggestion->project_id,
-                $suggestion->language
+            $this->synonyms->invalidate(
+                (int) $suggestion->project_id,
+                (string) $suggestion->language
             );
         }
     }

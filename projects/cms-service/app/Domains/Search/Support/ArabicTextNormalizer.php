@@ -149,7 +149,7 @@ final class ArabicTextNormalizer
     public static function looseRegex(string $normalizedWord): string
     {
         $unfold = self::unfoldMap();
-        $chars  = preg_split('//u', $normalizedWord, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $chars = preg_split('//u', $normalizedWord, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         // يُسمح بتشكيل/تطويل/zero-width بين كل حرفين
         $filler = '[\x{064B}-\x{065F}\x{0640}\x{200B}-\x{200F}]*';
@@ -160,10 +160,10 @@ final class ArabicTextNormalizer
 
             $parts[] = count($variants) === 1
                 ? preg_quote($variants[0], '/')
-                : '[' . implode('', array_map(
+                : '['.implode('', array_map(
                     static fn ($v) => preg_quote($v, '/'),
                     $variants
-                )) . ']';
+                )).']';
         }
 
         return implode($filler, $parts);

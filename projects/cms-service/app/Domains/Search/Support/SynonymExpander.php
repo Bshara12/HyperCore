@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Log;
  */
 final class SynonymExpander
 {
-    private const CACHE_TTL_SECONDS  = 3600;
+    private const CACHE_TTL_SECONDS = 3600;
 
     /**
      * نسخة مفتاح الـ cache — تُرفَع عند تغيّر شكل المفاتيح المُخزَّنة
@@ -37,8 +37,10 @@ final class SynonymExpander
      * لا تُطابق رموز الـ query.
      */
     private const CACHE_VERSION = 'v2';
+
     private const MAX_SYNONYMS_PER_WORD = 3;
-    private const MIN_CONFIDENCE     = 0.5;
+
+    private const MIN_CONFIDENCE = 0.5;
 
     /**
      * Instance-level cache — آمن مع Octane و Horizon و PHP-FPM.
@@ -56,21 +58,21 @@ final class SynonymExpander
             return ['expanded' => [], 'groups' => [], 'hadExpansion' => false];
         }
 
-        $synonymMap   = $this->loadSynonymMap($projectId, $language);
-        $expandedAll  = [];
-        $groups       = [];
+        $synonymMap = $this->loadSynonymMap($projectId, $language);
+        $expandedAll = [];
+        $groups = [];
         $hadExpansion = false;
 
         foreach ($tokens as $token) {
             // التطبيع لا mb_strtolower فقط: الرموز الواردة من
             // KeywordProcessor مُطبَّعة، ومفاتيح الخريطة كذلك.
-            $token    = ArabicTextNormalizer::normalizeToken($token);
+            $token = ArabicTextNormalizer::normalizeToken($token);
             $synonyms = $synonymMap[$token] ?? [];
-            $group    = [$token];
+            $group = [$token];
 
             foreach ($synonyms as $synonym) {
                 if (! in_array($synonym, $tokens, true) && ! in_array($synonym, $group, true)) {
-                    $group[]      = $synonym;
+                    $group[] = $synonym;
                     $hadExpansion = true;
                 }
             }
@@ -109,10 +111,10 @@ final class SynonymExpander
 
         // ── Level 2: Redis/application cache ──────────────────────────
         $cacheKey = self::cacheKey($projectId, $language);
-        $map      = Cache::remember(
+        $map = Cache::remember(
             $cacheKey,
             self::CACHE_TTL_SECONDS,
-            fn() => $this->buildSynonymMapFromDB($projectId, $language)
+            fn () => $this->buildSynonymMapFromDB($projectId, $language)
         );
 
         // خزّن في instance cache للاستدعاءات التالية في نفس الـ request
@@ -134,7 +136,7 @@ final class SynonymExpander
 
         Log::info('SynonymExpander: cache invalidated', [
             'project_id' => $projectId,
-            'language'   => $language,
+            'language' => $language,
         ]);
     }
 
@@ -175,8 +177,9 @@ final class SynonymExpander
         if ($rows->isEmpty()) {
             Log::info('SynonymExpander: no approved synonyms', [
                 'project_id' => $projectId,
-                'language'   => $language,
+                'language' => $language,
             ]);
+
             return [];
         }
 
@@ -193,8 +196,12 @@ final class SynonymExpander
                 continue;
             }
 
-            if (! isset($map[$wordA])) $map[$wordA] = [];
-            if (! isset($map[$wordB])) $map[$wordB] = [];
+            if (! isset($map[$wordA])) {
+                $map[$wordA] = [];
+            }
+            if (! isset($map[$wordB])) {
+                $map[$wordB] = [];
+            }
 
             if (! in_array($wordB, $map[$wordA], true) && count($map[$wordA]) < self::MAX_SYNONYMS_PER_WORD) {
                 $map[$wordA][] = $wordB;
@@ -206,8 +213,8 @@ final class SynonymExpander
         }
 
         Log::info('SynonymExpander: map built', [
-            'project_id'   => $projectId,
-            'language'     => $language,
+            'project_id' => $projectId,
+            'language' => $language,
             'unique_words' => count($map),
         ]);
 

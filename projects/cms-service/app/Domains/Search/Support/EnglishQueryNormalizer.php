@@ -36,16 +36,16 @@ final class EnglishQueryNormalizer
      */
     private const NEGATION_PATTERNS = [
         'not including' => 2,
-        'other than'    => 2,
-        'aside from'    => 2,
-        'apart from'    => 2,
-        'excluding'     => 1,
-        'without'       => 1,
-        'except'        => 1,
-        'exclude'       => 1,
-        'minus'         => 1,
-        'not'           => 1,
-        'no'            => 1,
+        'other than' => 2,
+        'aside from' => 2,
+        'apart from' => 2,
+        'excluding' => 1,
+        'without' => 1,
+        'except' => 1,
+        'exclude' => 1,
+        'minus' => 1,
+        'not' => 1,
+        'no' => 1,
     ];
 
     /**
@@ -115,10 +115,10 @@ final class EnglishQueryNormalizer
         $excludeTerms = array_values(array_unique($excludeTerms));
 
         return [
-            'normalized'        => implode(' ', $filteredInclude),
-            'excludeTerms'      => $excludeTerms,
+            'normalized' => implode(' ', $filteredInclude),
+            'excludeTerms' => $excludeTerms,
             'isNaturalLanguage' => $hadNegation,
-            'cleanWords'        => $filteredInclude,
+            'cleanWords' => $filteredInclude,
         ];
     }
 
@@ -134,8 +134,7 @@ final class EnglishQueryNormalizer
 
         $patterns = array_keys(self::NEGATION_PATTERNS);
 
-        usort($patterns, fn ($a, $b) =>
-            mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8')
+        usort($patterns, fn ($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8')
         );
 
         foreach ($patterns as $pattern) {
@@ -169,8 +168,7 @@ final class EnglishQueryNormalizer
     {
         $patterns = array_keys(self::NEGATION_PATTERNS);
 
-        usort($patterns, fn ($a, $b) =>
-            mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8')
+        usort($patterns, fn ($a, $b) => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8')
         );
 
         foreach ($patterns as $pattern) {

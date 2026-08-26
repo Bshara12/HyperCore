@@ -1,208 +1,150 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Search\Actions;
 
-// use App\Domains\Search\Repositories\Interfaces\SearchIndexRepositoryInterface;
-use App\Domains\Search\Support\EntryFieldsExtractor;
-use App\Domains\Search\Support\SearchTextBuilder;
+use App\Domains\Search\Repositories\Interfaces\SearchIndexRepositoryInterface;
+use App\Domains\Search\Support\Indexing\IndexedDocument;
+use App\Domains\Search\Support\Indexing\SearchDocumentBuilder;
 use App\Models\DataEntry;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * إعادة بناء الفهرس كاملاً.
+ *
+ * ─── لماذا يشارك البنّاء نفسه ──────────────────────────────────────
+ *
+ * كان هذا الصنف يبني صفوفه بيده، مستقلّاً عن مسار الفهرسة التزايدية.
+ * وقد افترق المساران فعلاً: كلاهما أغفل الأعمدة المحسوبة مسبقاً، لكن
+ * بطرق مختلفة — وهو الشكل النمطي لهذا الصنف من العلل. عمود يُضاف
+ * فيُملأ في مسار وينسى في الآخر، فتختلف نتيجة البحث باختلاف الطريق
+ * الذي دخل منه المستند إلى الفهرس.
+ *
+ * البنّاء المشترك يجعل هذا مستحيلاً: مصدر واحد للصفّ، فإمّا يُملأ
+ * العمود في المسارين أو في أيّهما.
+ */
 class ReindexSearchAction
 {
-  /**
-   * حجم الـ chunk - عدد الـ entries التي تُعالج دفعة واحدة
-   * 100 هو الأنسب: لا يُثقل الذاكرة ولا يُكثّر الـ queries
-   */
-  private const CHUNK_SIZE = 100;
+    public function __construct(
+        private readonly SearchIndexRepositoryInterface $repository,
+        private readonly SearchDocumentBuilder $builder,
+    ) {}
 
-  public function __construct(
-    // private SearchIndexRepositoryInterface $repository,
-    private EntryFieldsExtractor $extractor,
-    private SearchTextBuilder $searchTextBuilder,
-  ) {}
+    /**
+     * @param  callable(int $processed, int $total): void|null  $onProgress
+     * @return array{indexed: int, skipped: int, total: int, documents: int}
+     */
+    public function execute(?callable $onProgress = null, ?int $projectId = null): array
+    {
+        $stats = ['indexed' => 0, 'skipped' => 0, 'total' => 0, 'documents' => 0];
 
-  /**
-   * نقطة الدخول الرئيسية
-   *
-   * @param  callable(int $processed, int $total): void  $onProgress
-   * @return array{indexed: int, skipped: int, total: int}
-   */
-  public function execute(?callable $onProgress = null): array
-  {
-    $stats = [
-      'indexed' => 0,
-      'skipped' => 0,
-      'total' => 0,
-    ];
+        $query = DataEntry::query()
+            ->where('status', 'published')
+            ->whereNull('deleted_at');
 
-    // ─── 1. احسب العدد الكلي (للـ progress bar) ─────────────────
-    $stats['total'] = DataEntry::where('status', 'published')
-      ->whereNull('deleted_at')
-      ->count();
-
-    if ($stats['total'] === 0) {
-      return $stats;
-    }
-
-    // ─── 2. نظّف الجدول بشكل آمن ────────────────────────────────
-    $this->clearIndex();
-
-    // ─── 3. اجلب الـ entries على دفعات ───────────────────────────
-    DataEntry::query()
-      ->with([
-        'values',
-        'values.field',  // لتحديد نوع الحقل (title/content/meta)
-        'project',       // لمعرفة supported_languages
-        'dataType',      // لتعبئة data_type_slug (كان NULL دائماً)
-      ])
-      ->where('status', 'published')
-      ->whereNull('deleted_at')
-      ->select([         // لا تجلب كل الأعمدة لتوفير الذاكرة
-        'id',
-        'data_type_id',
-        'project_id',
-        'status',
-        'published_at',
-      ])
-      ->orderBy('id')    // ترتيب ثابت لضمان consistency في الـ chunks
-      ->chunk(self::CHUNK_SIZE, function ($entries) use (&$stats, $onProgress) {
-        $this->processChunk($entries, $stats);
-
-        if ($onProgress !== null) {
-          ($onProgress)($stats['indexed'] + $stats['skipped'], $stats['total']);
+        if ($projectId !== null) {
+            $query->where('project_id', $projectId);
         }
-      });
 
-    return $stats;
-  }
+        $stats['total'] = (clone $query)->count();
+
+        if ($stats['total'] === 0) {
+            return $stats;
+        }
+
+        $this->repository->clear($projectId);
+
+        $query
+            ->with(['values', 'values.field', 'project', 'dataType'])
+            ->select(['id', 'data_type_id', 'project_id', 'status', 'published_at'])
+            ->orderBy('id')
+            ->chunk(
+                (int) config('search.indexing.chunk_size', 100),
+                function ($entries) use (&$stats, $onProgress) {
+                    $this->processChunk($entries, $stats);
+
+                    if ($onProgress !== null) {
+                        $onProgress($stats['indexed'] + $stats['skipped'], $stats['total']);
+                    }
+                }
+            );
+
+        return $stats;
+    }
 
     // ─────────────────────────────────────────────────────────────────
 
-  /**
-   * معالجة دفعة واحدة من الـ entries
-   * كل دفعة تُدرج في transaction واحدة لتحسين الأداء
-   */
-  private function processChunk($entries, array &$stats): void
-  {
-    // جمع كل الـ rows التي سنُدرجها في هذه الدفعة
-    $rows = [];
+    /**
+     * @param  Collection<int, DataEntry>  $entries
+     * @param  array{indexed:int, skipped:int, total:int, documents:int}  $stats
+     */
+    private function processChunk($entries, array &$stats): void
+    {
+        $documents = [];
 
-    foreach ($entries as $entry) {
-      $entryRows = $this->buildIndexRows($entry);
+        foreach ($entries as $entry) {
+            $built = $this->buildForEntry($entry);
 
-      if (empty($entryRows)) {
-        $stats['skipped']++;
+            if ($built === []) {
+                $stats['skipped']++;
 
-        continue;
-      }
+                continue;
+            }
 
-      foreach ($entryRows as $row) {
-        $rows[] = $row;
-      }
+            foreach ($built as $document) {
+                $documents[] = $document;
+            }
 
-      $stats['indexed']++;
-    }
-
-    if (empty($rows)) {
-      return;
-    }
-
-    // ─── Bulk Insert بدلاً من insert واحد لكل entry ───────────
-    // أسرع بكثير: 100 entry = query واحد بدل 100 query
-    DB::table('search_indices')->insert($rows);
-  }
-
-  /**
-   * بناء rows الفهرسة لـ entry واحد (row لكل لغة)
-   *
-   * @return array[]
-   */
-  private function buildIndexRows(DataEntry $entry): array
-  {
-    $languages = $this->resolveSupportedLanguages($entry->project);
-    $rows = [];
-    $now = now()->toDateTimeString();
-
-    foreach ($languages as $language) {
-      try {
-        $extracted = $this->extractor->extract($entry, $language);
-
-        // تجاهل إذا لم يكن هناك محتوى قابل للفهرسة
-        if (empty($extracted['title'])) {
-          continue;
+            $stats['indexed']++;
         }
 
-        $rows[] = [
-          'entry_id' => $entry->id,
-          'data_type_id' => $entry->data_type_id,
-          'data_type_slug' => $entry->dataType?->slug,
-          'project_id' => $entry->project_id,
-          'language' => $language,
-          'title' => $extracted['title'],
-          'content' => $extracted['content'] ?: null,
-          'meta' => ! empty($extracted['meta'])
-            ? json_encode($extracted['meta'], JSON_UNESCAPED_UNICODE)
-            : null,
-          // الـ bulk insert يتجاوز أحداث الموديل → نبني النص المُطبَّع هنا
-          'search_text' => $this->searchTextBuilder->build(
-            $extracted['title'],
-            $extracted['content'],
-            $extracted['meta'],
-          ) ?: null,
-          'status' => $entry->status,
-          'published_at' => $entry->published_at?->toDateTimeString(),
-          'created_at' => $now,
-          'updated_at' => $now,
-        ];
-      } catch (\Throwable $e) {
-        Log::warning('ReindexSearch: failed to build row', [
-          'entry_id' => $entry->id,
-          'language' => $language,
-          'error' => $e->getMessage(),
-        ]);
-      }
+        if ($documents === []) {
+            return;
+        }
+
+        $this->repository->insertMany($documents);
+        $stats['documents'] += count($documents);
     }
 
-    return $rows;
-  }
+    /**
+     * @return IndexedDocument[]
+     */
+    private function buildForEntry(DataEntry $entry): array
+    {
+        $dataType = $entry->dataType;
+        $dataTypeSlug = $dataType === null ? '' : (string) $dataType->slug;
+        $documents = [];
 
-  /**
-   * تفريغ الجدول بدون حذف الـ FULLTEXT index
-   *
-   * TRUNCATE أسرع من DELETE لكنه يحتاج إذن خاص في بعض الـ setups
-   * لذلك نستخدم DELETE مع إمكانية الـ fallback
-   */
-  private function clearIndex(): void
-  {
-    DB::table('search_indices')->delete();
+        foreach ($this->supportedLanguages($entry) as $language) {
+            try {
+                $document = $this->builder->build($entry, $language, $dataTypeSlug);
 
-    // إعادة تعيين الـ AUTO_INCREMENT اختياري لكن ينظّف الجدول
-    DB::statement('ALTER TABLE search_indices AUTO_INCREMENT = 1');
-  }
+                if ($document->isIndexable()) {
+                    $documents[] = $document;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('ReindexSearchAction: failed to build document', [
+                    'entry_id' => $entry->id,
+                    'language' => $language,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
-  /**
-   * استخراج اللغات المدعومة للمشروع
-   */
-  // private function resolveSupportedLanguages(mixed $project): array
-  // {
-  //     $languages = $project?->supported_languages ?? null;
-
-  //     if (is_array($languages) && count($languages) > 0) {
-  //         return $languages;
-  //     }
-
-  //     return ['en'];
-  // }
-  private function resolveSupportedLanguages(?object $project): array
-  {
-    $languages = $project?->supported_languages;
-
-    if (is_array($languages) && count($languages) > 0) {
-      return $languages;
+        return $documents;
     }
 
-    return ['en'];
-  }
+    /**
+     * @return string[]
+     */
+    private function supportedLanguages(DataEntry $entry): array
+    {
+        $languages = $entry->project?->supported_languages;
+
+        return is_array($languages) && $languages !== []
+            ? array_values(array_unique(array_map('strval', $languages)))
+            : ['en'];
+    }
 }

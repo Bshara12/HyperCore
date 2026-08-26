@@ -306,13 +306,12 @@ Route::prefix('admin/search')
     // TODO(admin): هاد كلو admin/debug endpoints، لازم permission middleware
     // مثلاً ->middleware('permission:search.admin') قبل ما يوصلها أي مستخدم auth عادي
     Route::post('/debug', [SearchAdminController::class, 'debug']);
+    Route::post('/terms', [SearchAdminController::class, 'terms']);
     Route::get('/logs', [SearchAdminController::class, 'logs']);
     Route::get('/problems', [SearchAdminController::class, 'problems']);
     Route::post('/ai/re-run', [SearchAdminController::class, 'aiReRun'])
       ->middleware('throttle:api.ai');
-    Route::post('/compare', [SearchAdminController::class, 'compare']);
     Route::get('/config', [SearchAdminController::class, 'getConfig']);
-    Route::post('/config', [SearchAdminController::class, 'setConfig']);
   });
 
 

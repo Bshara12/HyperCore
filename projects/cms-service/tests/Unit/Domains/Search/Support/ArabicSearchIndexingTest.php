@@ -31,9 +31,9 @@ const AR_META = ['tags' => 'ايفون، ابل، جوال، سعر، شراء']
 function keywordProcessor(): KeywordProcessor
 {
     return new KeywordProcessor(
-        new SynonymProvider(),
-        new IntentDetector(),
-        new SynonymExpander(),
+        new SynonymProvider,
+        new IntentDetector,
+        new SynonymExpander,
     );
 }
 
@@ -42,7 +42,7 @@ function keywordProcessor(): KeywordProcessor
 // ─────────────────────────────────────────────────────────────────────
 
 test('search_text يحتوي الشكل المُطبَّع فتُطابقه الكلمة "ايفون"', function () {
-    $searchText = (new SearchTextBuilder())->build(AR_TITLE, AR_CONTENT, AR_META);
+    $searchText = (new SearchTextBuilder)->build(AR_TITLE, AR_CONTENT, AR_META);
 
     // "آيفون" الخامّة صارت "ايفون" في العمود المُفهرس
     expect($searchText)->toContain('ايفون')
@@ -53,21 +53,21 @@ test('search_text يحتوي الشكل المُطبَّع فتُطابقه ال
 });
 
 test('search_text يضمّ وسوم الـ meta التي كانت خارج الفهرس كلياً', function () {
-    $searchText = (new SearchTextBuilder())->build(AR_TITLE, AR_CONTENT, AR_META);
+    $searchText = (new SearchTextBuilder)->build(AR_TITLE, AR_CONTENT, AR_META);
 
     expect($searchText)->toContain('ابل')
         ->and($searchText)->toContain('شراء');
 });
 
 test('search_text يضمّ المقابل اللاتيني فيعمل البحث المختلط دون fallback', function () {
-    $searchText = (new SearchTextBuilder())->build(AR_TITLE, AR_CONTENT, AR_META);
+    $searchText = (new SearchTextBuilder)->build(AR_TITLE, AR_CONTENT, AR_META);
 
     // صف اللغة ar يحمل "iphone" أيضاً كمصطلح قابل للبحث
     expect($searchText)->toContain('iphone');
 });
 
 test('search_text يعمل بالاتجاه المعاكس: صف إنجليزي يُطابقه بحث عربي', function () {
-    $searchText = (new SearchTextBuilder())->build(
+    $searchText = (new SearchTextBuilder)->build(
         'iPhone 15 Pro Max',
         'The iPhone 15 Pro Max features a titanium design.',
         ['tags' => 'iphone, apple, smartphone'],
@@ -77,7 +77,7 @@ test('search_text يعمل بالاتجاه المعاكس: صف إنجليزي 
 });
 
 test('search_text يقبل meta كنص JSON (مسار الـ backfill)', function () {
-    $builder = new SearchTextBuilder();
+    $builder = new SearchTextBuilder;
 
     $fromArray = $builder->build(AR_TITLE, null, AR_META);
     $fromJson = $builder->build(AR_TITLE, null, json_encode(AR_META, JSON_UNESCAPED_UNICODE));
@@ -86,7 +86,7 @@ test('search_text يقبل meta كنص JSON (مسار الـ backfill)', functio
 });
 
 test('search_text لنص فارغ يبقى فارغاً', function () {
-    expect((new SearchTextBuilder())->build(null, null, null))->toBe('');
+    expect((new SearchTextBuilder)->build(null, null, null))->toBe('');
 });
 
 // ─────────────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ test('search_text لنص فارغ يبقى فارغاً', function () {
 // ─────────────────────────────────────────────────────────────────────
 
 test('ArabicQueryNormalizer لا يستبدل الكلمة العربية بالإنجليزية', function () {
-    $result = (new ArabicQueryNormalizer())->normalize('ايفون');
+    $result = (new ArabicQueryNormalizer)->normalize('ايفون');
 
     // كان يُرجع 'iphone' → ومعه si.language = 'ar' يعني صفر نتائج دائماً
     expect($result['normalized'])->toBe('ايفون')
@@ -102,7 +102,7 @@ test('ArabicQueryNormalizer لا يستبدل الكلمة العربية بال
 });
 
 test('ArabicQueryNormalizer يُطبّع المدخل ويكشف النفي بعد التطبيع', function () {
-    $result = (new ArabicQueryNormalizer())->normalize('بدي آيفون بدون كفر');
+    $result = (new ArabicQueryNormalizer)->normalize('بدي آيفون بدون كفر');
 
     expect($result['normalized'])->toBe('ايفون')
         ->and($result['isNaturalLanguage'])->toBeTrue()
