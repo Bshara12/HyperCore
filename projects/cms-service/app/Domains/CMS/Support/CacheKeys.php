@@ -2,6 +2,8 @@
 
 namespace App\Domains\CMS\Support;
 
+use Illuminate\Support\Facades\Cache;
+
 class CacheKeys
 {
     const TTL_SHORT = 300;    // 5 دقائق
@@ -10,12 +12,58 @@ class CacheKeys
 
     const TTL_LONG = 86400;  // يوم
 
+    /** Cache key holding the project-list version stamp. */
+    const PROJECT_LIST_VERSION = 'projects:list:version';
+
     // ============================================
     // 🔑 Projects
     // ============================================
     public static function allProjects(): string
     {
-        return 'projects:all';
+        return 'projects:all:v'.self::projectListVersion();
+    }
+
+    /**
+     * Per-user project list — a normal user only ever sees the projects they
+     * own or belong to, so the list cannot share one global cache entry.
+     */
+    /**
+     * @param  int[]  $roleProjectIds  folded in so a role grant or revocation
+     *                                 cannot be served from a stale entry
+     */
+    public static function userProjects(
+        int $userId,
+        array $roleProjectIds = []
+    ): string {
+
+        sort($roleProjectIds);
+
+        $scope = empty($roleProjectIds)
+            ? 'own'
+            : md5(implode(',', $roleProjectIds));
+
+        return "projects:user:{$userId}:{$scope}:v".self::projectListVersion();
+    }
+
+    /**
+     * Monotonic stamp folded into every project-list key.
+     *
+     * Bumping it retires every cached list at once — the alternative would be
+     * enumerating one key per user on each create/update/delete, which is not
+     * possible without tracking who has a warm entry.
+     */
+    public static function projectListVersion(): int
+    {
+        return (int) Cache::get(self::PROJECT_LIST_VERSION, 1);
+    }
+
+    public static function bumpProjectListVersion(): void
+    {
+        // add() seeds the counter when it is missing; increment() is a no-op
+        // on a missing key in some stores, which would leave stale lists live.
+        Cache::add(self::PROJECT_LIST_VERSION, 1);
+
+        Cache::increment(self::PROJECT_LIST_VERSION);
     }
 
     public static function project(int $id): string

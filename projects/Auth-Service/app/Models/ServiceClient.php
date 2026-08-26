@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ServiceClient extends Model
 {
@@ -14,7 +15,8 @@ class ServiceClient extends Model
         'client_secret',
     ];
 
-    public function sessions() {
+    public function sessions(): HasMany
+    {
         return $this->hasMany(ServiceSession::class);
     }
 }

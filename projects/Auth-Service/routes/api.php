@@ -42,7 +42,6 @@ Route::middleware(['auth.jwt'])->group(function () {
         Route::post('/projects/{projectId}/remove-role', [OperationController::class, 'removeRoleFromUserForProject']);
     });
 
-
     Route::prefix('hyper-core')->group(function () {
         Route::post('/users/{id}', [HyperCoreController::class, 'deleteUser'])->whereNumber('id');
         Route::post('/services/{id}', [HyperCoreController::class, 'deleteService'])->whereNumber('id');
@@ -74,6 +73,7 @@ Route::middleware('internal.api')
     ->group(function () {
         Route::get('/users/{id}', [MeController::class, 'internalShow'])->whereNumber('id');
         Route::post('/users/by-ids', [AuthController::class, 'getByIds']);
+        Route::post('/users/by-emails', [AuthController::class, 'getByEmails']);
 
         Route::post('/projects/{projectId}/join', [ProjectMembershipController::class, 'join']);
         Route::get('/projects/{projectId}/members', [ProjectMembershipController::class, 'members']);
@@ -87,11 +87,9 @@ Route::get('/ping', function () {
     ]);
 });
 
-
-
 Route::get('/ping', function () {
     return response()->json([
         'ok' => true,
-        'time' => now()
+        'time' => now(),
     ]);
 });

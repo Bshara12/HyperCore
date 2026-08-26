@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Support\SeedContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -18,18 +19,54 @@ class CmsAnalyticsSeeder extends Seeder
   {
     $this->command->info('🌱 [CMS] Starting Seeder...');
 
+    /*
+    | Seeder-level guard.
+    |
+    | Everything below the project resolution — data types, fields, entries,
+    | collections — inserts unconditionally, and data_types is unique on
+    | (project_id, slug). Rather than thread a resolve-or-create through all of
+    | it, skip the whole seeder once its fixtures exist. `db:seed` is re-run
+    | constantly during development and must not abort halfway.
+    */
+    // Qualify the column: data_types has a `slug` too, so a bare `slug` here
+    // is ambiguous across the join.
+    $alreadySeeded = DB::table('projects')
+      ->join('data_types', 'data_types.project_id', '=', 'projects.id')
+      ->where('projects.slug', 'e-commerce-store')
+      ->exists();
+
+    if ($alreadySeeded) {
+      $this->command->warn('⏭  [CMS] Analytics fixtures already present — skipping.');
+
+      return;
+    }
+
     // ─── 1. Users ──────────────────────────────────────────────
+    // The projects are owned by a real Auth account so the owner can sign in;
+    // the ten locals below stay as rating/authoring fixtures only.
+    $ownerId = (new SeedContext)->ownerId('analytics-owner@hypercore.test');
+
     $userIds = [];
 
     for ($i = 1; $i <= 10; $i++) {
-      $userId = DB::table('users')->insertGetId([
-        'name' => "User {$i}",
-        'email' => "user{$i}@test.com",
-        'password' => bcrypt('password'),
-        'created_at' => now()->subMonths(rand(3, 12)),
-        'updated_at' => now(),
-      ]);
-      $userIds[] = $userId;
+      $email = "analytics-user{$i}@hypercore.test";
+
+      // users.email is unique — resolve before inserting so the seeder can be
+      // re-run. (The old address was user{N}@test.com, which also collided
+      // with the Auth service's own seeded fake users.)
+      $userId = DB::table('users')->where('email', $email)->value('id');
+
+      if ($userId === null) {
+        $userId = DB::table('users')->insertGetId([
+          'name' => "Analytics User {$i}",
+          'email' => $email,
+          'password' => bcrypt('password123'),
+          'created_at' => now()->subMonths(rand(3, 12)),
+          'updated_at' => now(),
+        ]);
+      }
+
+      $userIds[] = (int) $userId;
     }
     $this->command->info('✅ Users: ' . implode(', ', $userIds));
 
@@ -54,19 +91,29 @@ class CmsAnalyticsSeeder extends Seeder
 
     $projectIds = [];
     foreach ($projectsData as $p) {
-      $pid = DB::table('projects')->insertGetId([
-        'public_id' => Str::uuid()->toString(),
-        'slug' => Str::slug($p['name']),
-        'name' => $p['name'],
-        'owner_id' => $userIds[0],
-        'supported_languages' => json_encode(['en', 'ar']),
-        'enabled_modules' => $p['enabled_modules'],
-        'ratings_count' => 0,
-        'ratings_avg' => 0,
-        'created_at' => now()->subMonths($p['months_ago']),
-        'updated_at' => now()->subMonths($p['months_ago']),
-      ]);
-      $projectIds[] = $pid;
+      $slug = Str::slug($p['name']);
+
+      // projects.slug is unique GLOBALLY, not per owner, so a second
+      // `db:seed` used to abort here on a duplicate-key error. Resolve the
+      // existing row instead of inserting blindly.
+      $pid = DB::table('projects')->where('slug', $slug)->value('id');
+
+      if ($pid === null) {
+        $pid = DB::table('projects')->insertGetId([
+          'public_id' => Str::uuid()->toString(),
+          'slug' => $slug,
+          'name' => $p['name'],
+          'owner_id' => $ownerId,
+          'supported_languages' => json_encode(['en', 'ar']),
+          'enabled_modules' => $p['enabled_modules'],
+          'ratings_count' => 0,
+          'ratings_avg' => 0,
+          'created_at' => now()->subMonths($p['months_ago']),
+          'updated_at' => now()->subMonths($p['months_ago']),
+        ]);
+      }
+
+      $projectIds[] = (int) $pid;
 
       // ربط المستخدمين بالمشروع
       foreach (array_slice($userIds, 0, 5) as $uid) {
@@ -326,7 +373,7 @@ class CmsAnalyticsSeeder extends Seeder
         ['project_id (first)',  $projectIds[0]],
         ['project_ids',         implode(', ', $projectIds)],
         ['user_ids',            implode(', ', $userIds)],
-        ['owner_id',            $userIds[0]],
+        ['owner_id',            $ownerId],
         ['collection_id (first)', $collectionIds[$projectIds[0]][0]],
         ['entry_ids (sample)',  implode(', ', array_slice($entryIds[$projectIds[0]], 0, 5))],
       ]

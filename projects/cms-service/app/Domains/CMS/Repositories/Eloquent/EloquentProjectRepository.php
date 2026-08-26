@@ -35,6 +35,45 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
         return Project::query()->latest()->get();
     }
 
+    /**
+     * Projects one user is entitled to see:
+     *   - the ones they own (`owner_id`), and
+     *   - the ones they hold a role in, per the Auth Service's
+     *     role_user.project_id pivot carried on the request, and
+     *   - the ones they joined via `project_user`.
+     *
+     * All three are needed: CreateProjectAction does not add the owner to
+     * `project_user`, and nothing in this service writes that table at all —
+     * membership is granted in the Auth Service.
+     *
+     * @param  int[]  $roleProjectIds
+     */
+    public function allForUser(
+        int $userId,
+        array $roleProjectIds = []
+    ): Collection {
+
+        return Project::query()
+            ->where(function ($query) use ($userId, $roleProjectIds) {
+
+                $query
+                    ->where('owner_id', $userId)
+                    ->orWhereExists(function ($sub) use ($userId) {
+
+                        $sub->selectRaw('1')
+                            ->from('project_user')
+                            ->whereColumn('project_user.project_id', 'projects.id')
+                            ->where('project_user.user_id', $userId);
+                    });
+
+                if (! empty($roleProjectIds)) {
+                    $query->orWhereIn('id', $roleProjectIds);
+                }
+            })
+            ->latest()
+            ->get();
+    }
+
     public function delete(Project $project): void
     {
         $project->delete();

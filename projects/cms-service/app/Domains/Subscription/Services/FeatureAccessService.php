@@ -3,7 +3,7 @@
 namespace App\Domains\Subscription\Services;
 
 use App\Domains\Subscription\Actions\Feature\CheckFeatureAccessAction;
-use App\Domains\Subscription\DTOs\Feature\CheckFeatureAccessDTO;
+use App\Domains\Subscription\DTOs\Subscription\CheckFeatureAccessDTO;
 
 class FeatureAccessService
 {

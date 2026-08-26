@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class return_requests extends Model
 {
-  protected $guarded = [];
+    protected $guarded = [];
 
-  public function orderItem(): BelongsTo
-  {
-    return $this->belongsTo(OrderItem::class);
-  }
+    /**
+     * @return BelongsTo<OrderItem, $this>
+     */
+    public function orderItem(): BelongsTo
+    {
+        return $this->belongsTo(OrderItem::class);
+    }
 }

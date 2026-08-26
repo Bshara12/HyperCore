@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Support\SeedContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -9,11 +10,51 @@ class SubscriptionDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::transaction(function () {
+        $ctx = new SeedContext;
 
-            // خليها null عشان السيدر يشتغل بأي بيئة (لا يحتاج project حقيقي موجود مسبقًا).
-            // بدّلها برقم project حقيقي عندك لو بدك تختبر سيناريو multi-tenant.
-            $projectId = null;
+        /*
+        |----------------------------------------------------------------------
+        | Attach to a real project instead of the null tenant this used to use.
+        |
+        | With project_id = null the plans belonged to no project at all, so the
+        | dashboard's Subscriptions section — which scopes every query by the
+        | current project — listed nothing, and the feature/access rules could
+        | never match an event dispatched from a real project.
+        |
+        | The clinic tenant is the target because it has articles worth gating
+        | and does not already seed its own plans (Pulse360 does).
+        |----------------------------------------------------------------------
+        */
+        $projectId = $ctx->findProjectId(ClinicDataSeeder::PROJECT_SLUG);
+
+        if ($projectId === null) {
+            $this->command?->warn(
+                'SubscriptionDemoSeeder: clinic project missing — run ClinicDataSeeder first.'
+            );
+
+            return;
+        }
+
+        // subscription_plans is unique on (project_id, slug).
+        $alreadySeeded = DB::table('subscription_plans')
+            ->where('project_id', $projectId)
+            ->where('slug', 'free-plan')
+            ->exists();
+
+        if ($alreadySeeded) {
+            $this->command?->warn('SubscriptionDemoSeeder: already seeded — skipping.');
+
+            return;
+        }
+
+        // Gate a real entry: content_id used to be the literal 1, which the
+        // seeder's own comment flagged as unusable — AuthorizeContentAccessAction
+        // resolves the content type from the entry, so a missing entry throws
+        // ContentEntryNotFoundException.
+        $postsTypeId = $ctx->dataTypeId($projectId, 'health-posts');
+        $gatedEntryIds = $ctx->entryIds($postsTypeId, 2);
+
+        DB::transaction(function () use ($projectId, $gatedEntryIds) {
 
             /*
             |--------------------------------------------------------------------------
@@ -220,7 +261,7 @@ class SubscriptionDemoSeeder extends Seeder
             DB::table('subscription_feature_rules')->insert([
                 [
                     'project_id' => $projectId,
-                    'event_key' => 'article.create',
+                    'event_key' => 'health-posts.create',
                     'feature_key' => 'articles_per_month',
                     'action' => 'both',
                     'reset_type' => 'monthly',
@@ -250,7 +291,7 @@ class SubscriptionDemoSeeder extends Seeder
 
             DB::table('subscription_access_rules')->insert([
                 'project_id' => $projectId,
-                'event_key' => 'article.view.premium',
+                'event_key' => 'health-posts.view.premium',
                 'requires_subscription' => true,
                 'required_feature' => 'premium_articles',
                 'is_active' => true,
@@ -268,10 +309,20 @@ class SubscriptionDemoSeeder extends Seeder
             | حقيقي بنفس الـ content_id، وإلا رح ترمي ContentEntryNotFoundException.
             */
 
+            if ($gatedEntryIds === []) {
+                echo "
+No published entries to gate — skipped content access.
+";
+
+                return;
+            }
+
             $contentAccessMetadataId = DB::table('content_access_metadata')->insertGetId([
                 'project_id' => $projectId,
-                'content_type' => 'articles', // غيّرها لتطابق slug حقيقي عندك لو حبيت
-                'content_id' => 1,
+                // Resolved from the project's own schema and a real entry, so
+                // the gate is exercisable through the API.
+                'content_type' => 'health-posts',
+                'content_id' => $gatedEntryIds[0],
                 'requires_subscription' => true,
                 'metadata' => null,
                 'is_active' => true,

@@ -11,37 +11,41 @@ use Illuminate\Support\Str;
 class JwtService
 {
     protected $privateKey;
+
     protected $publicKey;
+
     private string $issuer;
+
     protected $algo;
+
     protected $sessions;
 
     public function __construct(SessionRepositoryInterface $sessionRepository)
     {
         $privatePath = config('jwt.private_key');
-        $publicPath  = config('jwt.public_key');
+        $publicPath = config('jwt.public_key');
 
-        if (!file_exists($privatePath)) {
-            throw new \Exception("Private key file not found: {$privatePath}");
+        if (! file_exists($privatePath)) {
+            throw new Exception("Private key file not found: {$privatePath}");
         }
 
-        if (!file_exists($publicPath)) {
-            throw new \Exception("Public key file not found: {$publicPath}");
+        if (! file_exists($publicPath)) {
+            throw new Exception("Public key file not found: {$publicPath}");
         }
 
         $this->privateKey = file_get_contents($privatePath);
-        $this->publicKey  = file_get_contents($publicPath);
+        $this->publicKey = file_get_contents($publicPath);
 
-        if (!$this->privateKey) {
-            throw new \Exception("Private key could not be read");
+        if (! $this->privateKey) {
+            throw new Exception('Private key could not be read');
         }
 
-        if (!$this->publicKey) {
-            throw new \Exception("Public key could not be read");
+        if (! $this->publicKey) {
+            throw new Exception('Public key could not be read');
         }
 
         $this->issuer = config('jwt.issuer');
-        $this->algo   = config('jwt.algo');
+        $this->algo = config('jwt.algo');
         $this->sessions = $sessionRepository;
     }
 
@@ -56,7 +60,7 @@ class JwtService
             'sub' => $user->id,
             'sid' => $sessionId,
             'jti' => $jti,
-            'type'=> 'platform',
+            'type' => 'platform',
         ];
 
         return JWT::encode($payload, $this->privateKey, $this->algo);
@@ -92,7 +96,7 @@ class JwtService
             'jti' => $jti,
             'iss' => $this->issuer,
             'iat' => time(),
-            'type'=> 'refresh',
+            'type' => 'refresh',
         ];
 
         return JWT::encode($payload, $this->privateKey, $this->algo);
@@ -109,7 +113,7 @@ class JwtService
             'sub' => $service->id,
             'sid' => $sessionId,
             'jti' => $jti,
-            'type'=> 'service',
+            'type' => 'service',
         ];
 
         return JWT::encode($payload, $this->privateKey, $this->algo);
@@ -129,7 +133,7 @@ class JwtService
             'jti' => $jti,
             'iss' => $this->issuer,
             'iat' => time(),
-            'type'=> 'refresh',
+            'type' => 'refresh',
         ];
 
         return JWT::encode($payload, $this->privateKey, $this->algo);

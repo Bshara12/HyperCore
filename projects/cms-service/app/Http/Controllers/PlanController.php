@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Domains\Subscription\DTOs\Plan\CreatePlanDTO;
+use App\Domains\Subscription\DTOs\Plan\ListPlansDTO;
 use App\Domains\Subscription\Requests\Plan\CreatePlanRequest;
+use App\Domains\Subscription\Requests\Plan\ListPlansRequest;
 use App\Domains\Subscription\Services\PlanService;
 
 class PlanController extends Controller
@@ -25,9 +27,7 @@ class PlanController extends Controller
         ], 201);
     }
 
-
-    
-      public function index(
+    public function index(
         ListPlansRequest $request
     ) {
 

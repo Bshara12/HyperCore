@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 /**
  * Pulse360BookingSeeder
@@ -42,9 +42,11 @@ class Pulse360BookingSeeder extends Seeder
     private string $eventTypeSlug = 'event';
 
     // ─── Internal state ───────────────────────────────────────────────────────
-    private array $eventEntries  = [];
-    private array $userIds       = [];
-    private array $resourceIds   = [];
+    private array $eventEntries = [];
+
+    private array $userIds = [];
+
+    private array $resourceIds = [];
 
     // =========================================================================
     // ENTRY POINT
@@ -76,7 +78,9 @@ class Pulse360BookingSeeder extends Seeder
 
     private function resolveProjectId(): void
     {
-        if ($this->projectId !== null) return;
+        if ($this->projectId !== null) {
+            return;
+        }
 
         $project = DB::table('projects')->where('slug', 'pulse360')->first();
 
@@ -151,10 +155,10 @@ class Pulse360BookingSeeder extends Seeder
                 : 'paid';
 
             $this->eventEntries[] = [
-                'id'     => $entry->id,
-                'slug'   => $entry->slug,
-                'title'  => $title ?? $entry->slug,
-                'date'   => $date,
+                'id' => $entry->id,
+                'slug' => $entry->slug,
+                'title' => $title ?? $entry->slug,
+                'date' => $date,
                 'access' => $access ?? 'paid',
             ];
         }
@@ -202,9 +206,10 @@ class Pulse360BookingSeeder extends Seeder
 
             if ($existing) {
                 $this->resourceIds[] = [
-                    'id'    => $existing->id,
+                    'id' => $existing->id,
                     'event' => $event,
                 ];
+
                 continue;
             }
 
@@ -213,16 +218,16 @@ class Pulse360BookingSeeder extends Seeder
 
             $resourceId = DB::table('resources')->insertGetId([
                 'data_entry_id' => $event['id'],
-                'project_id'    => $this->projectId,
-                'name'          => $event['title'],
-                'type'          => 'event',
-                'capacity'      => $config['capacity'],
-                'status'        => 'active',
-                'payment_type'  => $config['price'] > 0 ? 'paid' : 'free',
-                'price'         => $config['price'],
-                'settings'      => json_encode([
+                'project_id' => $this->projectId,
+                'name' => $event['title'],
+                'type' => 'event',
+                'capacity' => $config['capacity'],
+                'status' => 'active',
+                'payment_type' => $config['price'] > 0 ? 'paid' : 'free',
+                'price' => $config['price'],
+                'settings' => json_encode([
                     'slot_duration_minutes' => $config['slot_duration'],
-                    'booking_window_days'   => 90,
+                    'booking_window_days' => 90,
                     'max_bookings_per_user' => 1,
                 ]),
                 'created_at' => now(),
@@ -230,7 +235,7 @@ class Pulse360BookingSeeder extends Seeder
             ]);
 
             $this->resourceIds[] = [
-                'id'    => $resourceId,
+                'id' => $resourceId,
                 'event' => $event,
             ];
 
@@ -258,17 +263,19 @@ class Pulse360BookingSeeder extends Seeder
                 ->where('day_of_week', $slot['day'])
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
             DB::table('resource_availabilities')->insert([
-                'resource_id'   => $resourceId,
-                'day_of_week'   => $slot['day'],
-                'start_time'    => $slot['start'],
-                'end_time'      => $slot['end'],
+                'resource_id' => $resourceId,
+                'day_of_week' => $slot['day'],
+                'start_time' => $slot['start'],
+                'end_time' => $slot['end'],
                 'slot_duration' => $slotDuration,
-                'is_active'     => true,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }
@@ -279,51 +286,53 @@ class Pulse360BookingSeeder extends Seeder
             ->where('resource_id', $resourceId)
             ->count();
 
-        if ($existingCount > 0) return;
+        if ($existingCount > 0) {
+            return;
+        }
 
         $policies = $price > 0
             ? [
                 // Paid events: tiered refund policy
                 [
-                    'hours_before'      => 72,
+                    'hours_before' => 72,
                     'refund_percentage' => 100,
-                    'description'       => 'Full refund if cancelled 72+ hours before the event.',
+                    'description' => 'Full refund if cancelled 72+ hours before the event.',
                 ],
                 [
-                    'hours_before'      => 48,
+                    'hours_before' => 48,
                     'refund_percentage' => 75,
-                    'description'       => '75% refund if cancelled 48–72 hours before the event.',
+                    'description' => '75% refund if cancelled 48–72 hours before the event.',
                 ],
                 [
-                    'hours_before'      => 24,
+                    'hours_before' => 24,
                     'refund_percentage' => 50,
-                    'description'       => '50% refund if cancelled 24–48 hours before the event.',
+                    'description' => '50% refund if cancelled 24–48 hours before the event.',
                 ],
                 [
-                    'hours_before'      => 0,
+                    'hours_before' => 0,
                     'refund_percentage' => 0,
-                    'description'       => 'No refund within 24 hours of the event.',
+                    'description' => 'No refund within 24 hours of the event.',
                 ],
             ]
             : [
                 // Free events: simple 24h cancellation
                 [
-                    'hours_before'      => 24,
+                    'hours_before' => 24,
                     'refund_percentage' => 100,
-                    'description'       => 'Cancel at least 24 hours before to free your spot.',
+                    'description' => 'Cancel at least 24 hours before to free your spot.',
                 ],
                 [
-                    'hours_before'      => 0,
+                    'hours_before' => 0,
                     'refund_percentage' => 0,
-                    'description'       => 'No-show policy: spot is forfeited within 24 hours.',
+                    'description' => 'No-show policy: spot is forfeited within 24 hours.',
                 ],
             ];
 
         foreach ($policies as $policy) {
             DB::table('booking_cancellation_policies')->insert(array_merge($policy, [
                 'resource_id' => $resourceId,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]));
         }
     }
@@ -336,10 +345,12 @@ class Pulse360BookingSeeder extends Seeder
     {
         foreach ($this->resourceIds as $resourceData) {
             $resourceId = $resourceData['id'];
-            $event      = $resourceData['event'];
+            $event = $resourceData['event'];
 
             $resource = DB::table('resources')->where('id', $resourceId)->first();
-            if (! $resource) continue;
+            if (! $resource) {
+                continue;
+            }
 
             // Determine booking date base
             $eventDate = $event['date']
@@ -347,8 +358,8 @@ class Pulse360BookingSeeder extends Seeder
                 : Carbon::now()->addDays(rand(10, 90));
 
             // Generate bookings: 3–8 per resource
-            $bookingCount  = rand(3, 8);
-            $usedUserIds   = [];
+            $bookingCount = rand(3, 8);
+            $usedUserIds = [];
             $availableUsers = $this->userIds;
             shuffle($availableUsers);
 
@@ -363,22 +374,26 @@ class Pulse360BookingSeeder extends Seeder
                     ->where('user_id', $userId)
                     ->exists();
 
-                if ($alreadyBooked) continue;
+                if ($alreadyBooked) {
+                    continue;
+                }
 
-                $status   = $statuses[$i % count($statuses)];
+                $status = $statuses[$i % count($statuses)];
                 $slotHour = 9 + ($i * 2); // 09:00, 11:00, 13:00...
-                if ($slotHour >= 18) $slotHour = 9;
+                if ($slotHour >= 18) {
+                    $slotHour = 9;
+                }
 
                 $startAt = (clone $eventDate)->setTime($slotHour, 0, 0);
-                $endAt   = (clone $startAt)->addHours(1);
+                $endAt = (clone $startAt)->addHours(1);
 
                 // For past events, use completed status
                 if ($eventDate->isPast() && $status === 'confirmed') {
                     $status = 'completed';
                 }
 
-                $amount        = $resource->price ?? 0;
-                $refundAmount  = null;
+                $amount = $resource->price ?? 0;
+                $refundAmount = null;
 
                 if ($status === 'cancelled' && $amount > 0) {
                     // Apply 50% refund (simulating 24-48h cancellation window)
@@ -388,22 +403,22 @@ class Pulse360BookingSeeder extends Seeder
                 $createdAt = now()->subDays(rand(1, 45));
 
                 DB::table('bookings')->insert([
-                    'resource_id'         => $resourceId,
-                    'user_id'             => $userId,
-                    'project_id'          => $this->projectId,
-                    'payment_id'          => null,
-                    'start_at'            => $startAt,
-                    'end_at'              => $endAt,
-                    'status'              => $status,
-                    'amount'              => $amount,
-                    'currency'            => 'USD',
-                    'notes'               => $this->randomNote($status),
+                    'resource_id' => $resourceId,
+                    'user_id' => $userId,
+                    'project_id' => $this->projectId,
+                    'payment_id' => null,
+                    'start_at' => $startAt,
+                    'end_at' => $endAt,
+                    'status' => $status,
+                    'amount' => $amount,
+                    'currency' => 'USD',
+                    'notes' => $this->randomNote($status),
                     'cancellation_reason' => $status === 'cancelled'
                         ? $this->randomCancellationReason()
                         : null,
                     'refund_amount' => $refundAmount,
-                    'created_at'    => $createdAt,
-                    'updated_at'    => now(),
+                    'created_at' => $createdAt,
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -420,26 +435,26 @@ class Pulse360BookingSeeder extends Seeder
     private function pricingConfig(): array
     {
         return [
-            'AI Future Summit'               => ['price' => 299, 'capacity' => 500,  'slot_duration' => 60],
-            'Global Tech Innovators'         => ['price' => 199, 'capacity' => 300,  'slot_duration' => 60],
-            'Startup Pitch Night'            => ['price' => 0,   'capacity' => 80,   'slot_duration' => 30],
-            'Space Exploration Expo'         => ['price' => 149, 'capacity' => 2000, 'slot_duration' => 90],
-            'Cybersecurity World Summit'     => ['price' => 249, 'capacity' => 400,  'slot_duration' => 60],
-            'Future of Robotics'             => ['price' => 179, 'capacity' => 200,  'slot_duration' => 60],
-            'Climate Innovation Forum'       => ['price' => 0,   'capacity' => 150,  'slot_duration' => 60],
-            'HealthTech Summit'              => ['price' => 199, 'capacity' => 350,  'slot_duration' => 60],
-            'Global Finance Leaders'         => ['price' => 499, 'capacity' => 100,  'slot_duration' => 120],
-            'Quantum Computing Business'     => ['price' => 349, 'capacity' => 200,  'slot_duration' => 90],
-            'Media & Journalism'             => ['price' => 0,   'capacity' => 200,  'slot_duration' => 60],
-            'Biotech Investment Congress'     => ['price' => 399, 'capacity' => 300,  'slot_duration' => 60],
-            'Web3 & Decentralized Finance'   => ['price' => 149, 'capacity' => 250,  'slot_duration' => 60],
-            'Women in Tech Leadership'       => ['price' => 0,   'capacity' => 500,  'slot_duration' => 60],
-            'Energy Transition Summit'       => ['price' => 249, 'capacity' => 400,  'slot_duration' => 60],
-            'E-Sports World Championship'    => ['price' => 99,  'capacity' => 5000, 'slot_duration' => 120],
-            'Global Mental Health'           => ['price' => 0,   'capacity' => 300,  'slot_duration' => 60],
+            'AI Future Summit' => ['price' => 299, 'capacity' => 500,  'slot_duration' => 60],
+            'Global Tech Innovators' => ['price' => 199, 'capacity' => 300,  'slot_duration' => 60],
+            'Startup Pitch Night' => ['price' => 0,   'capacity' => 80,   'slot_duration' => 30],
+            'Space Exploration Expo' => ['price' => 149, 'capacity' => 2000, 'slot_duration' => 90],
+            'Cybersecurity World Summit' => ['price' => 249, 'capacity' => 400,  'slot_duration' => 60],
+            'Future of Robotics' => ['price' => 179, 'capacity' => 200,  'slot_duration' => 60],
+            'Climate Innovation Forum' => ['price' => 0,   'capacity' => 150,  'slot_duration' => 60],
+            'HealthTech Summit' => ['price' => 199, 'capacity' => 350,  'slot_duration' => 60],
+            'Global Finance Leaders' => ['price' => 499, 'capacity' => 100,  'slot_duration' => 120],
+            'Quantum Computing Business' => ['price' => 349, 'capacity' => 200,  'slot_duration' => 90],
+            'Media & Journalism' => ['price' => 0,   'capacity' => 200,  'slot_duration' => 60],
+            'Biotech Investment Congress' => ['price' => 399, 'capacity' => 300,  'slot_duration' => 60],
+            'Web3 & Decentralized Finance' => ['price' => 149, 'capacity' => 250,  'slot_duration' => 60],
+            'Women in Tech Leadership' => ['price' => 0,   'capacity' => 500,  'slot_duration' => 60],
+            'Energy Transition Summit' => ['price' => 249, 'capacity' => 400,  'slot_duration' => 60],
+            'E-Sports World Championship' => ['price' => 99,  'capacity' => 5000, 'slot_duration' => 120],
+            'Global Mental Health' => ['price' => 0,   'capacity' => 300,  'slot_duration' => 60],
             'Autonomous Vehicles Conference' => ['price' => 179, 'capacity' => 250,  'slot_duration' => 60],
-            'Digital Transformation Awards'  => ['price' => 199, 'capacity' => 200,  'slot_duration' => 120],
-            'Genomics & Precision Medicine'  => ['price' => 299, 'capacity' => 300,  'slot_duration' => 60],
+            'Digital Transformation Awards' => ['price' => 199, 'capacity' => 200,  'slot_duration' => 120],
+            'Genomics & Precision Medicine' => ['price' => 299, 'capacity' => 300,  'slot_duration' => 60],
         ];
     }
 
@@ -457,8 +472,8 @@ class Pulse360BookingSeeder extends Seeder
         $isPaid = ($event['access'] === 'paid');
 
         return [
-            'price'         => $isPaid ? rand(79, 249) : 0,
-            'capacity'      => rand(50, 300),
+            'price' => $isPaid ? rand(79, 249) : 0,
+            'capacity' => rand(50, 300),
             'slot_duration' => [30, 60, 90][array_rand([30, 60, 90])],
         ];
     }
@@ -475,8 +490,10 @@ class Pulse360BookingSeeder extends Seeder
                 null,
                 null,
             ];
+
             return $notes[array_rand($notes)];
         }
+
         return null;
     }
 
@@ -490,6 +507,7 @@ class Pulse360BookingSeeder extends Seeder
             'Personal emergency.',
             'Team restructuring — attendee no longer with company.',
         ];
+
         return $reasons[array_rand($reasons)];
     }
 
@@ -500,7 +518,7 @@ class Pulse360BookingSeeder extends Seeder
     private function printSummary(): void
     {
         $resourceCount = count($this->resourceIds);
-        $bookingCount  = DB::table('bookings')
+        $bookingCount = DB::table('bookings')
             ->where('project_id', $this->projectId)
             ->count();
 
@@ -510,7 +528,7 @@ class Pulse360BookingSeeder extends Seeder
         echo "╠══════════════════════════════════════════════╣\n";
         echo "║ Service:        Booking\n";
         echo "║ Project ID:     {$this->projectId}\n";
-        echo "║ Events loaded:  " . count($this->eventEntries) . "\n";
+        echo '║ Events loaded:  '.count($this->eventEntries)."\n";
         echo "║ Resources:      {$resourceCount}\n";
         echo "║ Total bookings: {$bookingCount}\n";
         echo "╠══════════════════════════════════════════════╣\n";
@@ -522,7 +540,7 @@ class Pulse360BookingSeeder extends Seeder
                 ->where('project_id', $this->projectId)
                 ->where('status', $s)
                 ->count();
-            printf("║  %-12s %d\n", ucfirst($s) . ':', $count);
+            printf("║  %-12s %d\n", ucfirst($s).':', $count);
         }
 
         echo "╚══════════════════════════════════════════════╝\n\n";

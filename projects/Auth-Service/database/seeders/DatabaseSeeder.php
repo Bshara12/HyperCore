@@ -25,6 +25,13 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             UserRoleSeeder::class,
+            // Must run after RolesAndPermissionsSeeder: it needs the
+            // hyper_core role row to exist before it can assign it.
+            HyperCoreUserSeeder::class,
+
+            // The accounts the CMS seeders resolve project ownership against.
+            // Also needs the roles to exist first.
+            DemoProjectOwnersSeeder::class,
         ]);
 
     }

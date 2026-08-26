@@ -29,6 +29,45 @@ class AuthServiceClient
     return $user;
   }
 
+  /**
+   * Resolve Auth account ids from email addresses.
+   *
+   * Identity lives in the Auth service: `projects.owner_id` holds an Auth user
+   * id, not a row from this service's own `users` table. Anything that knows a
+   * user only by address — the demo seeders wiring up ownership — has to ask
+   * for the id rather than invent one.
+   *
+   * @param  array<int, string>  $emails
+   * @return array<string, int>  email => id, missing addresses omitted
+   */
+  public function getUserIdsByEmails(array $emails): array
+  {
+    if ($emails === []) {
+      return [];
+    }
+
+    $response = Http::withHeaders([
+      'X-Internal-Api-Key' => config('services.auth_service.internal_api_key'),
+    ])->post(
+      config('services.auth_service.url') . '/internal/users/by-emails',
+      ['emails' => array_values($emails)]
+    );
+
+    if (! $response->successful()) {
+      throw new \Exception("Auth Service Error: " . $response->body(), $response->status());
+    }
+
+    $resolved = [];
+
+    foreach ($response->json()['data'] ?? [] as $user) {
+      if (isset($user['email'], $user['id'])) {
+        $resolved[$user['email']] = (int) $user['id'];
+      }
+    }
+
+    return $resolved;
+  }
+
   public function getUsersByIds(array $ids)
   {
     $response = Http::post(

@@ -2,7 +2,7 @@
 
 namespace App\Domains\Subscription\Actions\Usage;
 
-use App\Domains\Subscription\DTOs\Usage\CheckUsageLimitDTO;
+use App\Domains\Subscription\DTOs\Subscription\CheckUsageLimitDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Models\SubscriptionFeature;
 

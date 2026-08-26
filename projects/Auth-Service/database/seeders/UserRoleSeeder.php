@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Carbon;
 
 class UserRoleSeeder extends Seeder
 {
@@ -51,7 +51,7 @@ class UserRoleSeeder extends Seeder
                 ->where('email', $email)
                 ->value('id');
 
-            if (!$userId) {
+            if (! $userId) {
                 continue;
             }
 

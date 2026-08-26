@@ -7,17 +7,17 @@ use Carbon\Carbon;
 
 test('it throws an exception if the booking is already cancelled', function () {
     $booking = (object) ['status' => 'cancelled'];
-    $action = new ValidateCancelableAction();
+    $action = new ValidateCancelableAction;
 
-    expect(fn() => $action->execute($booking))
+    expect(fn () => $action->execute($booking))
         ->toThrow(\Exception::class, 'Already cancelled');
 });
 
 test('it throws an exception if the booking is already completed', function () {
     $booking = (object) ['status' => 'completed'];
-    $action = new ValidateCancelableAction();
+    $action = new ValidateCancelableAction;
 
-    expect(fn() => $action->execute($booking))
+    expect(fn () => $action->execute($booking))
         ->toThrow(\Exception::class, 'Already completed');
 });
 
@@ -28,12 +28,12 @@ test('it throws an exception if the booking start time is in the past', function
     // حجز بدأ قبل ساعة من الآن
     $booking = (object) [
         'status' => 'confirmed',
-        'start_at' => '2026-05-09 11:00:00'
+        'start_at' => '2026-05-09 11:00:00',
     ];
-    
-    $action = new ValidateCancelableAction();
 
-    expect(fn() => $action->execute($booking))
+    $action = new ValidateCancelableAction;
+
+    expect(fn () => $action->execute($booking))
         ->toThrow(\Exception::class, 'Cannot cancel past booking');
 
     Carbon::setTestNow(); // إعادة ضبط الوقت
@@ -45,14 +45,14 @@ test('it passes if the booking is confirmed and in the future', function () {
     // حجز سيبدأ غداً
     $booking = (object) [
         'status' => 'confirmed',
-        'start_at' => '2026-05-10 10:00:00'
+        'start_at' => '2026-05-10 10:00:00',
     ];
-    
-    $action = new ValidateCancelableAction();
+
+    $action = new ValidateCancelableAction;
 
     // لا نتوقع رمي أي Exception
     $action->execute($booking);
-    
+
     expect(true)->toBeTrue();
 
     Carbon::setTestNow();

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserOffer extends Model
 {
@@ -13,7 +14,10 @@ class UserOffer extends Model
         'end_at' => 'datetime',
     ];
 
-    public function offer()
+    /**
+     * @return BelongsTo<Offer, $this>
+     */
+    public function offer(): BelongsTo
     {
         return $this->belongsTo(Offer::class);
     }
