@@ -1,4 +1,5 @@
 <?php
+
 // database/migrations/..._add_project_id_to_role_user_table.php
 
 use Illuminate\Database\Migrations\Migration;
@@ -20,7 +21,7 @@ return new class extends Migration
              | لذا التحقق من عدم التكرار سيتم يدوياً داخل الكود (Repository)
              */
             $table->unsignedBigInteger('project_id')->nullable()->after('role_id')->index();
-            $table->index(['user_id','role_id', 'project_id']);
+            $table->index(['user_id', 'role_id', 'project_id']);
         });
     }
 

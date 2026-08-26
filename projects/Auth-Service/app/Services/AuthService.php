@@ -15,9 +15,13 @@ use Illuminate\Support\Facades\Log;
 class AuthService
 {
     protected $users;
+
     protected $jwt;
+
     protected $otp;
+
     protected $operations;
+
     protected $sessions;
 
     public function __construct(
@@ -115,6 +119,7 @@ class AuthService
 
         if (! $user) {
             $this->log(null, 'login_failed', ['identifier' => $identifier, 'ip' => $ip]);
+
             return ['success' => false, 'message' => 'Invalid credentials'];
         }
 
@@ -225,5 +230,23 @@ class AuthService
         $ids = array_unique($ids);
 
         return $this->users->getUsersByIds($ids);
+    }
+
+    /**
+     * Resolve accounts by email address.
+     *
+     * Addresses that do not exist are simply absent from the result — the
+     * caller is asking which of these it knows, so a miss is an answer.
+     *
+     * @param  array<int, string>  $emails
+     */
+    public function getUsersByEmails(array $emails): Collection
+    {
+        $emails = array_values(array_unique(array_map(
+            fn ($email) => mb_strtolower(trim((string) $email)),
+            $emails
+        )));
+
+        return $this->users->getUsersByEmails($emails);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Domains\Subscription\Actions\Feature;
 
-use App\Domains\Subscription\DTOs\Feature\CheckFeatureAccessDTO;
+use App\Domains\Subscription\DTOs\Subscription\CheckFeatureAccessDTO;
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Models\SubscriptionFeature;
 

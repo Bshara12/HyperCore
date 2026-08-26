@@ -10,28 +10,31 @@ use Illuminate\Support\ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
-    public function register(): void
-    {
-        //
-    }
+  /**
+   * Register services.
+   */
+  public function register(): void
+  {
+    //
+  }
+  
+  /**
+   * @var array<class-string, array<int, class-string>>
+   */
+  protected $listen = [
+    UserLoggedIn::class => [
+      PublishLoginLog::class,
+    ],
+    SystemLogEvent::class => [
+      PublishSystemLog::class,
+    ],
+  ];
 
-    protected $listen = [
-        UserLoggedIn::class => [
-            PublishLoginLog::class,
-        ],
-        SystemLogEvent::class => [
-            PublishSystemLog::class,
-        ],
-    ];
-
-    /**
-     * Bootstrap services.
-     */
-    public function boot(): void
-    {
-        //
-    }
+  /**
+   * Bootstrap services.
+   */
+  public function boot(): void
+  {
+    //
+  }
 }

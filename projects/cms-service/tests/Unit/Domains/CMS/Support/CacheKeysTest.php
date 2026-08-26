@@ -6,7 +6,6 @@ test('it generates correct cache keys', function (callable $method, array $args,
   expect(call_user_func_array($method, $args))->toBe($expected);
 })->with([
   // Projects
-  'all projects'        => [[CacheKeys::class, 'allProjects'], [], 'projects:all'],
   'project by id'       => [[CacheKeys::class, 'project'], [10], 'projects:10'],
 
   // DataTypes
@@ -37,4 +36,28 @@ test('it has correct TTL constants', function () {
   expect(CacheKeys::TTL_SHORT)->toBe(300)
     ->and(CacheKeys::TTL_MEDIUM)->toBe(3600)
     ->and(CacheKeys::TTL_LONG)->toBe(86400);
+});
+
+/*
+| مفاتيح قائمة المشاريع تحمل ختم إصدار.
+|
+| رفع الختم يُبطل كل القوائم المُخزَّنة دفعة واحدة؛ البديل تعداد مفتاح لكل
+| مستخدم عند كل إنشاء أو تعديل، وهو متعذّر بلا تتبّع من يملك مدخلاً ساخناً.
+|
+| هذه الحالة خارج الـ dataset عمداً: الـ datasets تُقيَّم قبل إقلاع التطبيق،
+| وقراءة الختم تحتاج الكاش — فتُقيَّم داخل الاختبار لا في تعريفه.
+*/
+test('project list keys carry the version stamp', function () {
+  $version = CacheKeys::projectListVersion();
+
+  expect(CacheKeys::allProjects())->toBe("projects:all:v{$version}")
+    ->and(CacheKeys::userProjects(7))->toBe("projects:user:7:own:v{$version}");
+});
+
+test('bumping the version retires every cached project list at once', function () {
+  $before = CacheKeys::allProjects();
+
+  CacheKeys::bumpProjectListVersion();
+
+  expect(CacheKeys::allProjects())->not->toBe($before);
 });

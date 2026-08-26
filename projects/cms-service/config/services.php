@@ -69,6 +69,12 @@ return [
   'booking_service' => [
     'url' => env('BOOKING_URL'),
   ],
+  'logging_service' => [
+    // Read server-side only, by the platform-operator dashboard. The service
+    // itself has no auth, so it must never be called from a browser.
+    'url' => env('LOGGING_URL', 'http://logging-nginx/api'),
+    'timeout' => env('LOGGING_TIMEOUT', 10),
+  ],
   'openrouter' => [
     'key'      => env('OPENROUTER_KEY'),
     'model'    => env('OPENROUTER_MODEL', 'mistralai/mistral-7b-instruct'),

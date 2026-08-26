@@ -23,14 +23,14 @@ class BookingObserver
     public function created(Booking $booking): void
     {
         $this->publisher->publish('booking.booking.created', [
-            'user_id'     => (string) $booking->user_id,
-            'booking_id'  => $booking->id,
+            'user_id' => (string) $booking->user_id,
+            'booking_id' => $booking->id,
             'resource_id' => $booking->resource_id,
-            'start_at'    => $booking->start_at->toIso8601String(),
-            'end_at'      => $booking->end_at->toIso8601String(),
-            'amount'      => $booking->amount,
-            'currency'    => $booking->currency,
-            'status'      => $booking->status,
+            'start_at' => $booking->start_at->toIso8601String(),
+            'end_at' => $booking->end_at->toIso8601String(),
+            'amount' => $booking->amount,
+            'currency' => $booking->currency,
+            'status' => $booking->status,
         ]);
     }
 
@@ -55,14 +55,14 @@ class BookingObserver
         // ─── إلغاء الحجز ──────────────────────────────────────────────────
         if ($booking->isDirty('status') && $booking->status === Booking::STATUS_CANCELLED) {
             $this->publisher->publish('booking.booking.cancelled', [
-                'user_id'             => (string) $booking->user_id,
-                'booking_id'          => $booking->id,
-                'resource_id'         => $booking->resource_id,
-                'start_at'            => $booking->start_at->toIso8601String(),
-                'end_at'              => $booking->end_at->toIso8601String(),
+                'user_id' => (string) $booking->user_id,
+                'booking_id' => $booking->id,
+                'resource_id' => $booking->resource_id,
+                'start_at' => $booking->start_at->toIso8601String(),
+                'end_at' => $booking->end_at->toIso8601String(),
                 'cancellation_reason' => $booking->cancellation_reason,
-                'refund_amount'       => $booking->refund_amount,
-                'currency'            => $booking->currency,
+                'refund_amount' => $booking->refund_amount,
+                'currency' => $booking->currency,
             ]);
 
             return; // نخرج فوراً لأن الحدثين متضادان
@@ -72,16 +72,16 @@ class BookingObserver
         // نتحقق أن start_at أو end_at تغيّرا بغض النظر عن الـ status
         if ($booking->isDirty('start_at') || $booking->isDirty('end_at')) {
             $this->publisher->publish('booking.booking.rescheduled', [
-                'user_id'      => (string) $booking->user_id,
-                'booking_id'   => $booking->id,
-                'resource_id'  => $booking->resource_id,
+                'user_id' => (string) $booking->user_id,
+                'booking_id' => $booking->id,
+                'resource_id' => $booking->resource_id,
                 // getOriginal() يعيد القيمة قبل التحديث (مفيد لإظهار الموعد القديم في الإشعار)
                 'old_start_at' => $booking->getOriginal('start_at'),
-                'old_end_at'   => $booking->getOriginal('end_at'),
+                'old_end_at' => $booking->getOriginal('end_at'),
                 'new_start_at' => $booking->start_at->toIso8601String(),
-                'new_end_at'   => $booking->end_at->toIso8601String(),
-                'amount'       => $booking->amount,
-                'currency'     => $booking->currency,
+                'new_end_at' => $booking->end_at->toIso8601String(),
+                'amount' => $booking->amount,
+                'currency' => $booking->currency,
             ]);
         }
     }

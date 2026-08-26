@@ -10,6 +10,7 @@ use Exception;
 class OperationServices
 {
     protected $operations;
+
     protected $users;
 
     public function __construct(
@@ -80,12 +81,14 @@ class OperationServices
     public function createRoleService(array $data)
     {
         $projectId = $data['project_id'] ?? null;
+
         return $this->operations->createRole($data['name'], $projectId);
     }
 
     public function createPermissionService(array $data)
     {
         $projectId = $data['project_id'] ?? null;
+
         return $this->operations->addPermession($data['permession'], $projectId);
     }
 

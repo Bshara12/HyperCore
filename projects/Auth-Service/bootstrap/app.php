@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\JwtMiddleware;
 use App\Http\Middleware\ServiceAuthMiddleware;
+use App\Http\Middleware\VerifyInternalApiKey;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -21,13 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.jwt' => JwtMiddleware::class,
             'service.auth' => ServiceAuthMiddleware::class,
-            'internal.api' => \App\Http\Middleware\VerifyInternalApiKey::class,
+            'internal.api' => VerifyInternalApiKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // ✅ يضمن إن أي خطأ بمسارات api/* يرجع JSON دايماً، بغض النظر عن Accept header
         // (مهم لأنه المستهلكين هني خدمات تانية، مش متصفح)
-        $exceptions->shouldRenderJsonWhen(function ($request, \Throwable $e) {
+        $exceptions->shouldRenderJsonWhen(function ($request, Throwable $e) {
             return $request->is('api/*') || $request->expectsJson();
         });
 
@@ -60,7 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ✅ شبكة أمان أخيرة: أي استثناء غير متوقع، فقط لما APP_DEBUG=false
         // (بالتطوير المحلي بيضل يظهر تفاصيل الخطأ الكاملة عادةً، مفيد للتصحيح)
-        $exceptions->render(function (\Throwable $e, $request) {
+        $exceptions->render(function (Throwable $e, $request) {
             if ($request->is('api/*') && ! config('app.debug')) {
                 return response()->json(['message' => 'Server error, please try again later.'], 500);
             }

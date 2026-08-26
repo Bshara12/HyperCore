@@ -35,6 +35,8 @@ class SubscriptionFeature extends Model
 
     public function isLimit(): bool
     {
-        return $this->feature_type === 'limit';
+        // 'number' is the type the whole domain writes and reads
+        // (CheckUsageLimitAction, CheckFeatureAccessAction, ProcessUsageEventAction).
+        return $this->feature_type === 'number';
     }
 }

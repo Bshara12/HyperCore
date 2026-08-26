@@ -6,8 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @method static \Database\Factories\TransactionFactory factory($count = null, $state = [])
+ */
 class Transaction extends Model
 {
+    /** @use HasFactory<\Database\Factories\TransactionFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -27,28 +31,20 @@ class Transaction extends Model
         'processed_at' => 'datetime',
     ];
 
-    // ─── Types ────────────────────────────────────────────────────────────────
-
     const TYPE_CHARGE = 'charge';
-
     const TYPE_REFUND = 'refund';
 
-    // ─── Statuses ─────────────────────────────────────────────────────────────
-
     const STATUS_SUCCESS = 'success';
-
     const STATUS_FAILED = 'failed';
-
     const STATUS_PENDING = 'pending';
 
-    // ─── Relationships ────────────────────────────────────────────────────────
-
+    /**
+     * @return BelongsTo<Payment, $this>
+     */
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
     }
-
-    // ─── Helpers ──────────────────────────────────────────────────────────────
 
     public function isSuccess(): bool
     {

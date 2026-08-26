@@ -19,15 +19,18 @@ class EloquentSubscriptionAccessRuleRepository implements SubscriptionAccessRule
             ->first();
     }
 
+    /**
+     * Alias kept for the AuthorizeEventAction call site.
+     * Delegates instead of duplicating the query.
+     */
     public function findActiveRuleByEvent(
         ?int $projectId,
         string $eventKey
-    ) {
+    ): ?SubscriptionAccessRule {
 
-        return SubscriptionAccessRule::query()
-            ->where('project_id', $projectId)
-            ->where('event_key', $eventKey)
-            ->where('is_active', true)
-            ->first();
+        return $this->findActiveRule(
+            $projectId,
+            $eventKey
+        );
     }
 }

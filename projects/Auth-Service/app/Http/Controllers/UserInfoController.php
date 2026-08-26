@@ -6,24 +6,24 @@ use App\Repositories\UserRepositoryInterface;
 
 class UserInfoController extends Controller
 {
-  protected $users;
+    protected $users;
 
-  public function __construct(UserRepositoryInterface $userRepository)
-  {
-    $this->users = $userRepository;
-  }
-
-  public function show($id)
-  {
-    $user = $this->users->findById((int) $id);
-
-    if (! $user) {
-      return response()->json(['error' => 'User not found'], 404);
+    public function __construct(UserRepositoryInterface $userRepository)
+    {
+        $this->users = $userRepository;
     }
 
-    return response()->json([
-      'id' => $user->id,
-      'email' => $user->email,
-    ]);
-  }
+    public function show($id)
+    {
+        $user = $this->users->findById((int) $id);
+
+        if (! $user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        return response()->json([
+            'id' => $user->id,
+            'email' => $user->email,
+        ]);
+    }
 }

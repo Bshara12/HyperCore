@@ -27,7 +27,7 @@ class ProcessBookingPaymentAction
         }
 
         try {
-          Log::info("Processing payment for booking ID: {$booking->id}, amount: {$dto->amount} {$dto->currency}");
+            Log::info("Processing payment for booking ID: {$booking->id}, amount: {$dto->amount} {$dto->currency}");
             $payment = $this->cmsClient->chargeBooking([
                 'user_id' => $dto->userId,
                 'user_name' => $dto->userName,
@@ -37,7 +37,7 @@ class ProcessBookingPaymentAction
                 'gateway' => $dto->gateway,
                 'token' => $dto->gatewayToken,
             ]);
-            Log::info("Payment processed for booking ID: {$booking->id}, payment response: " . json_encode($payment));
+            Log::info("Payment processed for booking ID: {$booking->id}, payment response: ".json_encode($payment));
 
             $booking->update([
                 'status' => Booking::STATUS_CONFIRMED,

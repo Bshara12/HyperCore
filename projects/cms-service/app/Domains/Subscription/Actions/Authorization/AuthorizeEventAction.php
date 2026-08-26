@@ -7,7 +7,6 @@ use App\Domains\Subscription\Repositories\Interface\SubscriptionAccessRuleReposi
 use App\Domains\Subscription\Repositories\Interface\SubscriptionRepositoryInterface;
 use App\Exceptions\FeatureMissingException;
 use App\Exceptions\SubscriptionRequiredException;
-use App\Models\Subscription;
 
 class AuthorizeEventAction
 {
@@ -45,11 +44,12 @@ class AuthorizeEventAction
             );
         if (! $subscription) {
 
-            // throw new SubscriptionRequiredException(
-            //   'Active subscription required.'
-            // );
+            // required_feature is a single nullable string on the rule,
+            // while the exception reports a list of feature keys.
             throw new SubscriptionRequiredException(
-                requiredFeatures: $rule->required_feature
+                requiredFeatures: array_filter([
+                    $rule->required_feature,
+                ])
             );
         }
 

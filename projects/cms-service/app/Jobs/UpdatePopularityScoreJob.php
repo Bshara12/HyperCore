@@ -73,11 +73,11 @@ class UpdatePopularityScoreJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            $isSqlite = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite';
+            $isSqlite = DB::connection()->getDriverName() === 'sqlite';
 
             if ($isSqlite) {
                 // ─── 1. بيئة الاختبار (SQLite) ──────────────────────────────
-                $query = \Illuminate\Support\Facades\DB::table('search_indices')
+                $query = DB::table('search_indices')
                     ->join('data_entries', 'search_indices.entry_id', '=', 'data_entries.id')
                     ->select(
                         'search_indices.id',
@@ -104,7 +104,7 @@ class UpdatePopularityScoreJob implements ShouldQueue
                             4
                         );
 
-                        \Illuminate\Support\Facades\DB::table('search_indices')
+                        DB::table('search_indices')
                             ->where('id', $index->id)
                             ->update(['popularity_score' => $score]);
                     }
@@ -113,7 +113,7 @@ class UpdatePopularityScoreJob implements ShouldQueue
             } else {
                 // ─── 2. بيئة الإنتاج (MySQL) ────────────────────────────────
                 $bindings = [];
-                $sql = "
+                $sql = '
                     UPDATE search_indices si
                     INNER JOIN data_entries de ON de.id = si.entry_id
                     SET si.popularity_score = ROUND(
@@ -122,18 +122,18 @@ class UpdatePopularityScoreJob implements ShouldQueue
                         + (COALESCE(de.ratings_avg, 0) * 0.5),
                         4
                     )
-                ";
+                ';
 
                 if ($this->projectId) {
-                    $sql .= " WHERE si.project_id = ?";
+                    $sql .= ' WHERE si.project_id = ?';
                     $bindings[] = $this->projectId;
                 }
 
-                \Illuminate\Support\Facades\DB::statement($sql, $bindings);
+                DB::statement($sql, $bindings);
             }
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('UpdatePopularityScoreJob: failed', ['error' => $e->getMessage()]);
+            Log::error('UpdatePopularityScoreJob: failed', ['error' => $e->getMessage()]);
             throw $e;
         }
     }

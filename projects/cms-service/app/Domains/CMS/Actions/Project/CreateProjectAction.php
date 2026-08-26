@@ -8,7 +8,6 @@ use App\Domains\CMS\Support\CacheKeys;
 use App\Domains\Core\Actions\Action;
 use App\Events\SystemLogEvent;
 use App\Models\Project;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class CreateProjectAction extends Action
@@ -43,7 +42,10 @@ class CreateProjectAction extends Action
       ));
       // @codeCoverageIgnoreEnd
       $project = $this->repository->create($data);
-      Cache::forget(CacheKeys::allProjects());
+
+      // Retires the platform-wide list AND every per-user list in one step —
+      // Cache::forget on a single key would leave the owner's scoped list stale.
+      CacheKeys::bumpProjectListVersion();
 
       return $project;
     });

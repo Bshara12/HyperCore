@@ -7,17 +7,17 @@ use Tests\Traits\InteractsWithJwtKeys; // تأكد أن المسار صحيح
 
 abstract class TestCase extends BaseTestCase
 {
-  use CreatesApplication, InteractsWithJwtKeys;
+    use CreatesApplication, InteractsWithJwtKeys;
 
-  protected function setUp(): void
-  {
-    parent::setUp();
-    $this->setupJwtKeys();
-  }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->setupJwtKeys();
+    }
 
-  protected function tearDown(): void
-  {
-    $this->cleanupJwtKeys();
-    parent::tearDown();
-  }
+    protected function tearDown(): void
+    {
+        $this->cleanupJwtKeys();
+        parent::tearDown();
+    }
 }

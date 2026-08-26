@@ -10,31 +10,39 @@ class AuthApiClient
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.auth.url'), '/');
+        $this->baseUrl = rtrim((string) config('services.auth.url'), '/');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getUserFromToken(string $token): array
     {
         $response = Http::withToken($token)
             ->get("{$this->baseUrl}/api/my-profile");
-
-        // if (!$response->successful()) {
-        //   dd($response->status(), $response->body());
-        // }
 
         if ($response->failed()) {
             $error = $response->json('message')
                 ?? substr($response->body(), 0, 200);
 
             throw new \Exception(
-                'Failed to fetch user from auth service: '.$error
+                'Failed to fetch user from auth service: ' . $error
             );
         }
 
+        /** 
+         * @var array{
+         *   roles?: array<int, array{permessions?: array<int, array{name: string}>}>
+         * } & array<string, mixed> $user 
+         */
         $user = $response->json()['data'];
 
-        $permissions = collect($user['roles'])
-            ->flatMap(fn ($role) => $role['permessions'])
+        /** @var array<int, array{permessions?: array<int, array{name: string}>}> $roles */
+        $roles = $user['roles'] ?? [];
+
+        /** @var array<int, string> $permissions */
+        $permissions = collect($roles)
+            ->flatMap(fn(array $role): array => $role['permessions'] ?? [])
             ->pluck('name')
             ->unique()
             ->values()

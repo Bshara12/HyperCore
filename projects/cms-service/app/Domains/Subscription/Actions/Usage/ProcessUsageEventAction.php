@@ -11,7 +11,7 @@ use App\Exceptions\UsageLimitExceededException;
 use App\Models\Subscription;
 use App\Models\SubscriptionFeature;
 use App\Models\SubscriptionFeatureRule;
-use Exception;
+use UnexpectedValueException;
 
 class ProcessUsageEventAction
 {
@@ -75,55 +75,17 @@ class ProcessUsageEventAction
 
     if (! $feature) {
 
-      // throw new Exception(
-      //   sprintf(
-      //     'Feature [%s] missing in plan.',
-      //     $rule->feature_key
-      //   )
-      // );
       throw new FeatureMissingException(
         $rule->feature_key
       );
     }
 
-    // match ($rule->action) {
-
-    //     SubscriptionFeatureRule::ACTION_CHECK => $this->checkLimit(
-    //         $subscription->id,
-    //         $feature,
-    //         $amount
-    //     ),
-
-    //     SubscriptionFeatureRule::ACTION_INCREMENT =>
-    //     // $this->incrementUsage(
-    //     //   $subscription->id,
-    //     //   $feature->feature_key,
-    //     //   $amount
-    //     // ),
-    //     $this->incrementUsage(
-
-    //         $subscription->id,
-
-    //         $rule,
-
-    //         $feature->feature_key,
-
-    //         $amount
-    //     ),
-
-    //     SubscriptionFeatureRule::ACTION_BOTH => $this->checkAndIncrement(
-
-    //         $subscription->id,
-
-    //         $rule,
-
-    //         $feature,
-
-    //         $amount
-    //     ),
-
-    //     default => null
-    // };
+    /*
+    | The column is a plain varchar, so a row seeded or edited outside the
+    | validated endpoint could carry anything. Reject it with a clear message
+    | instead of letting match() raise a bare UnhandledMatchError.
+    */
+    $this->ensureActionIsKnown($rule);
 
     match ($rule->action) {
 
@@ -154,6 +116,31 @@ class ProcessUsageEventAction
 
   // ─────────────────────────────────────
 
+  private function ensureActionIsKnown(
+    SubscriptionFeatureRule $rule
+  ): void {
+
+    $known = [
+      SubscriptionFeatureRule::ACTION_CHECK,
+      SubscriptionFeatureRule::ACTION_INCREMENT,
+      SubscriptionFeatureRule::ACTION_BOTH,
+    ];
+
+    if (in_array($rule->action, $known, true)) {
+      return;
+    }
+
+    throw new UnexpectedValueException(
+      sprintf(
+        'Unknown subscription feature rule action [%s] on rule #%s.',
+        (string) $rule->action,
+        $rule->id
+      )
+    );
+  }
+
+  // ─────────────────────────────────────
+
   private function checkAndIncrement(
     int $subscriptionId,
     SubscriptionFeatureRule $rule,
@@ -167,11 +154,6 @@ class ProcessUsageEventAction
       $amount
     );
 
-    // $this->incrementUsage(
-    //   $subscriptionId,
-    //   $feature->feature_key,
-    //   $amount
-    // );
     $this->incrementUsage(
 
       $subscriptionId,
@@ -211,12 +193,6 @@ class ProcessUsageEventAction
       ($used + $amount) > $limit
     ) {
 
-      // throw new Exception(
-      //   sprintf(
-      //     'Feature limit exceeded [%s].',
-      //     $feature->feature_key
-      //   )
-      // );
       throw new UsageLimitExceededException(
         feature: $feature->feature_key,
         limit: $limit
@@ -225,20 +201,6 @@ class ProcessUsageEventAction
   }
 
   // ─────────────────────────────────────
-
-  // private function incrementUsage(
-  //   int $subscriptionId,
-  //   string $featureKey,
-  //   int $amount
-  // ): void {
-
-  //   $this->subscriptionRepository
-  //     ->incrementFeatureUsage(
-  //       $subscriptionId,
-  //       $featureKey,
-  //       $amount
-  //     );
-  // }
 
   private function incrementUsage(
     int $subscriptionId,

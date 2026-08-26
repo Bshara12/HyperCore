@@ -5,7 +5,10 @@ namespace App\Domains\Subscription\Repositories\Interface;
 use App\Domains\Subscription\DTOs\Subscription\SubscribeUserDTO;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+
 interface SubscriptionRepositoryInterface
 {
     public function create(
@@ -39,26 +42,20 @@ interface SubscriptionRepositoryInterface
         string $featureKey
     ): int;
 
-    // public function incrementFeatureUsage(
-    //   int $subscriptionId,
-    //   string $featureKey,
-    //   int $amount = 1
-    // ): void;
     public function incrementFeatureUsage(
         int $subscriptionId,
         string $featureKey,
         int $amount = 1,
-        ?string $resetAt = null
+        DateTimeInterface|string|null $resetAt = null
     ): void;
 
     public function resetUsage(
         int $subscriptionId,
         string $featureKey,
-        ?string $nextResetAt
+        DateTimeInterface|string|null $nextResetAt
     ): void;
 
-
-     public function findForUser(
+    public function findForUser(
         int $userId,
         ?int $projectId,
         ?string $status
@@ -67,4 +64,24 @@ interface SubscriptionRepositoryInterface
     public function findByIdWithUsages(
         int $id
     ): ?Subscription;
+
+    /**
+     * Every subscription of one project (admin dashboard), paginated.
+     */
+    public function paginateForProject(
+        int $projectId,
+        ?string $status,
+        ?int $planId,
+        ?int $userId,
+        int $perPage
+    ): LengthAwarePaginator;
+
+    /**
+     * Subscription count per status for one project.
+     *
+     * @return array<string, int>
+     */
+    public function statusCountsForProject(
+        int $projectId
+    ): array;
 }

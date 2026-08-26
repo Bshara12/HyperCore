@@ -14,5 +14,5 @@ interface SubscriptionAccessRuleRepositoryInterface
     public function findActiveRuleByEvent(
         ?int $projectId,
         string $eventKey
-    );
+    ): ?SubscriptionAccessRule;
 }

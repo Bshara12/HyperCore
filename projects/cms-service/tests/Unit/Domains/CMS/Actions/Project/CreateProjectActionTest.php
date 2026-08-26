@@ -52,8 +52,9 @@ test('it creates project, logs event, and clears cache', function () {
     }))
     ->andReturn($project);
 
-  // 3. تهيئة الـ Spy للكاش (تم نقل Event::fake للأعلى)
-  Cache::spy();
+  // 3. الختم قبل التنفيذ — الكاش حقيقي هنا لأن رفع الختم قراءة وكتابة معاً
+  Cache::flush();
+  $versionBefore = CacheKeys::projectListVersion();
 
   // 4. التنفيذ
   $action = new CreateProjectAction($repoMock);
@@ -62,8 +63,12 @@ test('it creates project, logs event, and clears cache', function () {
   // 5. التأكيدات
   expect($result)->toBe($project);
 
-  // التأكد من مسح الكاش الصحيح
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::allProjects());
+  /*
+   | القوائم لم تعد تُمسح بمفتاح: مفتاح لكل مستخدم يعني تعداد من يملك مدخلاً
+   | ساخناً، وهو متعذّر. فرفع الختم يُقاعد كلّ القوائم دفعة واحدة — وهذا ما
+   | يتحقّق منه الاختبار.
+   */
+  expect(CacheKeys::projectListVersion())->toBeGreaterThan($versionBefore);
 
   // التأكد من إطلاق الحدث (SystemLogEvent)
   Event::assertDispatched(SystemLogEvent::class, function ($event) use ($dto) {

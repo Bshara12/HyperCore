@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\UserLoggedIn;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\GetUsersByEmailsRequest;
 use App\Http\Requests\GetUsersByIdsRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RefreshTokenRequest;
@@ -20,9 +21,13 @@ use Illuminate\Http\Request;
 class AuthController extends Controller
 {
     protected $authService;
+
     protected $jwtService;
+
     protected $sessions;
+
     protected $otpService;
+
     protected $users;
 
     public function __construct(
@@ -177,6 +182,25 @@ class AuthController extends Controller
     public function getByIds(GetUsersByIdsRequest $request)
     {
         $users = $this->authService->getUsersByIds($request->validated('ids'));
+
+        return response()->json([
+            'message' => 'Users fetched successfully.',
+            'data' => $users,
+        ]);
+    }
+
+    /**
+     * Resolve a set of email addresses to accounts.
+     *
+     * Identity lives in this service, so a sibling service that only knows a
+     * user by address (a seeder wiring up ownership, an importer matching
+     * existing accounts) needs a way to reach the id without guessing it.
+     */
+    public function getByEmails(GetUsersByEmailsRequest $request)
+    {
+        $users = $this->authService->getUsersByEmails(
+            $request->validated('emails')
+        );
 
         return response()->json([
             'message' => 'Users fetched successfully.',

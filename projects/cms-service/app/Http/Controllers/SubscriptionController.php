@@ -10,8 +10,11 @@ use App\Domains\Subscription\Requests\Subscription\RenewSubscriptionRequest;
 use App\Domains\Subscription\Requests\Subscription\SubscribeUserRequest;
 use App\Domains\Subscription\Services\SubscriptionService;
 use App\Models\Subscription;
+use App\Domains\Subscription\Requests\Subscription\ListProjectSubscriptionsRequest;
 use App\Domains\Subscription\Requests\Subscription\ListSubscriptionsRequest;
 use App\Domains\Subscription\DTOs\Subscription\ListSubscriptionsDTO;
+use App\Domains\Subscription\DTOs\Subscription\ListProjectSubscriptionsDTO;
+use App\Domains\Subscription\DTOs\Subscription\ShowSubscriptionDTO;
 
 
 class SubscriptionController extends Controller
@@ -72,8 +75,6 @@ class SubscriptionController extends Controller
         ]);
     }
 
-     // --- جديد ---
-
     public function index(
         ListSubscriptionsRequest $request
     ) {
@@ -103,6 +104,39 @@ class SubscriptionController extends Controller
 
         return response()->json([
             'data' => $subscription,
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin dashboard — every subscription of the current project.
+    |
+    | index() above is the end-user view (own subscriptions only). This one is
+    | scoped to the project resolved from the X-Project-Key header instead, so
+    | an operator can see the project's whole subscriber list.
+    |--------------------------------------------------------------------------
+    */
+    public function projectIndex(
+        ListProjectSubscriptionsRequest $request
+    ) {
+
+        $dto = ListProjectSubscriptionsDTO::fromRequest(
+            $request
+        );
+
+        $subscriptions = $this->service
+            ->listForProject($dto);
+
+        return response()->json([
+            'data' => $subscriptions->items(),
+            'meta' => [
+                'current_page' => $subscriptions->currentPage(),
+                'last_page' => $subscriptions->lastPage(),
+                'per_page' => $subscriptions->perPage(),
+                'total' => $subscriptions->total(),
+            ],
+            'stats' => $this->service
+                ->statsForProject($dto->projectId),
         ]);
     }
 }

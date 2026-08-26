@@ -4,7 +4,7 @@ namespace App\Domains\Subscription\Services;
 
 use App\Domains\Subscription\Actions\Usage\CheckUsageLimitAction;
 use App\Domains\Subscription\Actions\Usage\IncrementUsageAction;
-use App\Domains\Subscription\DTOs\Usage\CheckUsageLimitDTO;
+use App\Domains\Subscription\DTOs\Subscription\CheckUsageLimitDTO;
 
 class UsageLimitService
 {

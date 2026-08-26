@@ -61,6 +61,29 @@ class Project extends Model
         return $this->hasMany(Payment::class);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Relations used by the platform-operator dashboard's withCount().
+    | Declared here rather than counted with sub-selects so the operator view
+    | reads like the rest of the model layer.
+    |--------------------------------------------------------------------------
+    */
+
+    public function dataTypes()
+    {
+        return $this->hasMany(DataType::class);
+    }
+
+    public function entries()
+    {
+        return $this->hasMany(DataEntry::class);
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     public function collections()
     {
         return $this->hasMany(DataCollection::class);

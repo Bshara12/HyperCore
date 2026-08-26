@@ -153,14 +153,14 @@ class EloquentContentAccessMetadataRepository implements ContentAccessMetadataRe
 
     $features = array_values(
       array_unique(
-        // array_filter($features, fn ($f) => is_string($f) && $f !== '')
-        $features = array_values(
-          array_filter(
-            $features,
-            // fn(string $f) => $f !== ''
-            fn(string $f) => trim($f) !== ''
-          )
-
+        array_filter(
+          array_map(
+            // A non-string slipping through (e.g. a numeric key) would have
+            // been a TypeError with the previous `fn (string $f)` signature.
+            fn ($f) => trim((string) $f),
+            $features
+          ),
+          fn (string $f) => $f !== ''
         )
       )
     );

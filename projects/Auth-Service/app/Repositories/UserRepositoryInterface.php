@@ -19,5 +19,12 @@ interface UserRepositoryInterface
 
     public function getUsersByIds(array $ids): Collection;
 
+    /**
+     * Resolve accounts by email. Unknown addresses are absent from the result.
+     *
+     * @param  array<int, string>  $emails
+     */
+    public function getUsersByEmails(array $emails): Collection;
+
     public function delete(User $user): bool;
 }

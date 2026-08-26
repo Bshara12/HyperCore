@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             RabbitMQPublisher::class,
-            fn () => new RabbitMQPublisher()
+            fn () => new RabbitMQPublisher
         );
     }
 

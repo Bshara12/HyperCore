@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
 /**
- * @property-read SubscriptionPlan $plan
+ * @property-read SubscriptionPlan|null $plan
  */
 class Subscription extends Model
 {

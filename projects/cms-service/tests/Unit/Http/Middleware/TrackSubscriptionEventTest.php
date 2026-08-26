@@ -4,8 +4,30 @@ namespace Tests\Unit\Http\Middleware;
 
 use App\Http\Middleware\TrackSubscriptionEvent;
 use App\Domains\Subscription\Services\DomainEventService;
+use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Mockery;
+
+beforeEach(function () {
+  // المشروع الحالي يُحفظ كنسخة مفردة في الحاوية؛ تركه يتسرّب بين الاختبارات
+  App::forgetInstance('currentProject');
+});
+
+/** الهوية تأتي من حيث يضعها AuthUserMiddleware: خصائص الطلب. */
+function actAsSubscriber(Request $request, int $id): void
+{
+  $request->attributes->set('auth_user', ['id' => $id]);
+}
+
+/** يثبّت المشروع الحالي كما يفعل ResolveProject قبل هذا الميدلوير. */
+function bindCurrentProject(int $id): void
+{
+  $project = new Project();
+  $project->id = $id;
+
+  App::instance('currentProject', $project);
+}
 
 // ─── 1. اختبار حالة فشل الطلب (Status >= 400) ──────────────────────────────
 test('it does not track event if response status code is 400 or higher', function () {
@@ -39,21 +61,21 @@ test('it does not track event if user_id is missing from request', function () {
   expect($response->getStatusCode())->toBe(200);
 });
 
-// ─── 3. اختبار النجاح عند قراءة البيانات من المدخلات (Inputs) ───────────────
-test('it tracks event with user_id and project_id from request inputs', function () {
+/*
+| ─── 3. الهوية المُرسَلة في جسم الطلب لا تُصدَّق ────────────────────────────
+|
+| user_id في المدخلات يزوّره العميل، فيحرق حصّة غيره أو يتجاوز حصّته هو.
+| فالميدلوير يتجاهله تماماً — لا يقرؤه ثم يتحقّق منه.
+*/
+test('it ignores a user_id forged in the request body', function () {
   $serviceMock = Mockery::mock(DomainEventService::class);
-
-  // نتحقق من وصول المعاملات بنوع البيانات الصحيح (int)
-  $serviceMock->shouldReceive('dispatch')
-    ->once()
-    ->with(123, 456, 'subscription.activated');
+  $serviceMock->shouldNotReceive('dispatch');
 
   $middleware = new TrackSubscriptionEvent($serviceMock);
 
-  // تمرير البيانات كـ Inputs داخل الـ Request
   $request = Request::create('/any-route', 'POST', [
     'user_id' => '123',
-    'project_id' => '456'
+    'project_id' => '456',
   ]);
 
   $response = $middleware->handle($request, function ($req) {
@@ -63,8 +85,8 @@ test('it tracks event with user_id and project_id from request inputs', function
   expect($response->getStatusCode())->toBe(200);
 });
 
-// ─── 4. اختبار النجاح عند قراءة البيانات من الخصائص (Attributes) ─────────────
-test('it tracks event with user_id and project_id from request attributes', function () {
+// ─── 4. الهوية من خصائص الطلب، والمشروع من المشروع الحالي ────────────────
+test('it tracks the event for the authenticated user and current project', function () {
   $serviceMock = Mockery::mock(DomainEventService::class);
   $serviceMock->shouldReceive('dispatch')
     ->once()
@@ -73,9 +95,8 @@ test('it tracks event with user_id and project_id from request attributes', func
   $middleware = new TrackSubscriptionEvent($serviceMock);
   $request = Request::create('/any-route', 'POST');
 
-  // تعيين البيانات كـ Dynamic Attributes (مثل التي تأتي من Middleware حماية سابق)
-  $request->user_id = '789';
-  $request->project_id = '999';
+  actAsSubscriber($request, 789);
+  bindCurrentProject(999);
 
   $response = $middleware->handle($request, function ($req) {
     return response()->json(['success' => true], 200);
@@ -84,7 +105,7 @@ test('it tracks event with user_id and project_id from request attributes', func
   expect($response->getStatusCode())->toBe(200);
 });
 
-// ─── 5. اختبار إرسال معرف المشروع كـ Null إذا كان مفقوداً ───────────────────
+// ─── 5. غياب المشروع الحالي يُرسَل null لا يُسقط الحدث ────────────────────
 test('it tracks event with null project_id if project_id is missing', function () {
   $serviceMock = Mockery::mock(DomainEventService::class);
   $serviceMock->shouldReceive('dispatch')
@@ -92,10 +113,10 @@ test('it tracks event with null project_id if project_id is missing', function (
     ->with(123, null, 'subscription.cancelled');
 
   $middleware = new TrackSubscriptionEvent($serviceMock);
-  $request = Request::create('/any-route', 'POST', [
-    'user_id' => '123'
-    // 'project_id' مفقود هنا
-  ]);
+  $request = Request::create('/any-route', 'POST');
+
+  actAsSubscriber($request, 123);
+  // لا مشروع حالي: الطلب بلا X-Project-Key
 
   $response = $middleware->handle($request, function ($req) {
     return response()->json(['success' => true], 200);

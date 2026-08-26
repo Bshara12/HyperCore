@@ -5,6 +5,7 @@ use App\Exceptions\ContentEntryNotFoundException;
 use App\Exceptions\SubscriptionException;
 use App\Http\Middleware\AuthUserMiddleware;
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureHyperCore;
 use App\Http\Middleware\ResolveProject;
 use App\Http\Middleware\TrackSubscriptionEvent;
 use App\Models\Project;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => CheckPermission::class,
             'track.event' => TrackSubscriptionEvent::class,
             'project.access' => \App\Http\Middleware\EnsureProjectAccess::class,
+            'hypercore' => EnsureHyperCore::class,
         ]);
 
         // Every request arrives through the nginx container, so without this

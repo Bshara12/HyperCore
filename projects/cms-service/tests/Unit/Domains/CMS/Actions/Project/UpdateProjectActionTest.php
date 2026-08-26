@@ -51,7 +51,9 @@ test('it updates project, logs event, and clears cache', function () {
 
   // 3. تهيئة الـ Fakes
   Event::fake();
-  Cache::spy();
+  Cache::flush();
+  Cache::put(CacheKeys::project($project->id), 'stale');
+  $versionBefore = CacheKeys::projectListVersion();
 
   // 4. التنفيذ
   $action = new UpdateProjectAction($repoMock);
@@ -66,8 +68,12 @@ test('it updates project, logs event, and clears cache', function () {
   });
 
   // التأكد من مسح الكاش الصحيح (لكل من المشروع المفرد والكل)
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::project($project->id));
-  Cache::shouldHaveReceived('forget')->with(CacheKeys::allProjects());
+  /*
+   | مدخل المشروع نفسه يُمسح بمفتاحه، أمّا القوائم فتُقاعَد برفع الختم: مفتاح
+   | لكل مستخدم يعني تعداد من يملك مدخلاً ساخناً، وهو متعذّر.
+   */
+  expect(Cache::has(CacheKeys::project($project->id)))->toBeFalse()
+    ->and(CacheKeys::projectListVersion())->toBeGreaterThan($versionBefore);
 
   // التأكد من القيمة المرجعة
   expect($result)->toBe($updatedProject);
